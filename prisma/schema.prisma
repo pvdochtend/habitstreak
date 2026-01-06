@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ════════════════════════════════════
+// USER
+// ════════════════════════════════════
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  dailyTarget     Int      @default(1) @map("daily_target")
+  streakFreezes   Int      @default(0) @map("streak_freezes")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tasks           Task[]
+  checkIns        CheckIn[]
+
+  @@map("users")
+}
+
+// ════════════════════════════════════
+// TASK
+// ════════════════════════════════════
+enum SchedulePreset {
+  ALL_WEEK
+  WORKWEEK
+  WEEKEND
+  CUSTOM
+}
+
+model Task {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  title           String
+  schedulePreset  SchedulePreset  @map("schedule_preset")
+  daysOfWeek      Int[]           @default([]) @map("days_of_week") // 0=Mon, 6=Sun (ISO 8601)
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkIns        CheckIn[]
+
+  @@index([userId, isActive])
+  @@map("tasks")
+}
+
+// ════════════════════════════════════
+// CHECK-IN
+// ════════════════════════════════════
+enum CheckInStatus {
+  DONE
+}
+
+model CheckIn {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  taskId          String          @map("task_id")
+  date            String          // YYYY-MM-DD format (Europe/Amsterdam)
+  status          CheckInStatus   @default(DONE)
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task            Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, date])
+  @@index([userId, date])
+  @@map("check_ins")
+}
