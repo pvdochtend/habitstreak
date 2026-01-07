@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Task, SchedulePreset, ApiResponse } from '@/types'
 import { getSchedulePresetLabel } from '@/lib/schedule'
+import { IconPicker } from './icon-picker'
 
 interface TaskFormProps {
   task?: Task
@@ -25,12 +26,30 @@ interface TaskFormProps {
 export function TaskForm({ task, open, onOpenChange, onSuccess }: TaskFormProps) {
   const isEdit = !!task
 
-  const [title, setTitle] = useState(task?.title || '')
-  const [schedulePreset, setSchedulePreset] = useState<SchedulePreset>(
-    task?.schedulePreset || 'ALL_WEEK'
-  )
+  // Use task prop directly as initial values, key on task.id forces remount
+  const [title, setTitle] = useState('')
+  const [schedulePreset, setSchedulePreset] = useState<SchedulePreset>('ALL_WEEK')
+  const [icon, setIcon] = useState<string>('CheckSquare')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Reset form whenever dialog opens or task changes
+  useEffect(() => {
+    if (open) {
+      if (task) {
+        // Edit mode - load task data
+        setTitle(task.title)
+        setSchedulePreset(task.schedulePreset)
+        setIcon(task.icon || 'CheckSquare')
+      } else {
+        // Create mode - reset to defaults
+        setTitle('')
+        setSchedulePreset('ALL_WEEK')
+        setIcon('CheckSquare')
+      }
+      setError(null)
+    }
+  }, [open, task])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,6 +66,7 @@ export function TaskForm({ task, open, onOpenChange, onSuccess }: TaskFormProps)
         body: JSON.stringify({
           title,
           schedulePreset,
+          icon,
         }),
       })
 
@@ -59,6 +79,7 @@ export function TaskForm({ task, open, onOpenChange, onSuccess }: TaskFormProps)
       // Reset form
       setTitle('')
       setSchedulePreset('ALL_WEEK')
+      setIcon('CheckSquare')
       onSuccess()
       onOpenChange(false)
     } catch (err) {
@@ -116,6 +137,8 @@ export function TaskForm({ task, open, onOpenChange, onSuccess }: TaskFormProps)
               Op welke dagen wil je deze taak volbrengen?
             </p>
           </div>
+
+          <IconPicker value={icon} onChange={setIcon} disabled={isLoading} />
 
           <div className="flex gap-3 pt-4">
             <Button

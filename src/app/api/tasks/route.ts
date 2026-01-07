@@ -59,6 +59,7 @@ const createTaskSchema = z.object({
     errorMap: () => ({ message: 'Ongeldig schema' }),
   }),
   daysOfWeek: z.array(z.number()).optional(),
+  icon: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { title, schedulePreset, daysOfWeek = [] } = validation.data
+    const { title, schedulePreset, daysOfWeek = [], icon } = validation.data
 
     // Validate CUSTOM preset has valid days
     if (schedulePreset === 'CUSTOM') {
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         schedulePreset,
         daysOfWeek: schedulePreset === 'CUSTOM' ? daysOfWeek : [],
+        icon: icon || 'CheckSquare',
         isActive: true,
       },
     })

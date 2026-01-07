@@ -14,6 +14,7 @@ const updateTaskSchema = z.object({
   schedulePreset: z.nativeEnum(SchedulePreset).optional(),
   daysOfWeek: z.array(z.number()).optional(),
   isActive: z.boolean().optional(),
+  icon: z.string().optional(),
 })
 
 export async function PATCH(
@@ -36,7 +37,7 @@ export async function PATCH(
       )
     }
 
-    const { title, schedulePreset, daysOfWeek, isActive } = validation.data
+    const { title, schedulePreset, daysOfWeek, isActive, icon } = validation.data
 
     // Check if task exists and belongs to user
     const existingTask = await prisma.task.findUnique({
@@ -89,6 +90,7 @@ export async function PATCH(
     if (schedulePreset !== undefined) updateData.schedulePreset = schedulePreset
     if (daysOfWeek !== undefined) updateData.daysOfWeek = daysOfWeek
     if (isActive !== undefined) updateData.isActive = isActive
+    if (icon !== undefined) updateData.icon = icon
 
     // Update task
     const task = await prisma.task.update({

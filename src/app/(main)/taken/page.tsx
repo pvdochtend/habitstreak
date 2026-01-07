@@ -139,7 +139,7 @@ export default function TakenPage() {
       {/* Header */}
       <div className="flex items-center justify-between animate-slide-up">
         <h1 className="text-3xl font-bold">Taken</h1>
-        <Button onClick={() => setShowForm(true)} className="touch-target shadow-sm hover:shadow-md transition-shadow">
+        <Button onClick={() => { setEditingTask(undefined); setShowForm(true); }} className="touch-target shadow-sm hover:shadow-md transition-shadow">
           <Plus className="h-4 w-4 mr-2" />
           Nieuwe taak
         </Button>
@@ -155,7 +155,7 @@ export default function TakenPage() {
                 Je hebt nog geen taken aangemaakt.
               </p>
               <Button
-                onClick={() => setShowForm(true)}
+                onClick={() => { setEditingTask(undefined); setShowForm(true); }}
                 variant="outline"
                 className="mt-4"
               >
@@ -196,6 +196,7 @@ export default function TakenPage() {
 
       {/* Task Form Dialog */}
       <TaskForm
+        key={editingTask?.id || 'new'}
         task={editingTask}
         open={showForm}
         onOpenChange={handleFormClose}

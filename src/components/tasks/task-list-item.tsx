@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Edit2, Trash2, Archive } from 'lucide-react'
 import { getSchedulePresetLabel } from '@/lib/schedule'
 import { cn } from '@/lib/utils'
+import { getTaskIcon } from '@/lib/task-icons'
 
 interface TaskListItemProps {
   task: Task
@@ -52,16 +53,40 @@ export function TaskListItem({
     )}>
       <CardContent className="pt-6">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg">{task.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {getSchedulePresetLabel(task.schedulePreset)}
-            </p>
-            {!task.isActive && (
-              <p className="text-xs text-muted-foreground mt-1 font-medium">Gearchiveerd</p>
-            )}
+          {/* Icon + Content */}
+          <div className="flex items-start gap-3 flex-1">
+            {/* Task Icon */}
+            {(() => {
+              const TaskIcon = getTaskIcon(task.icon)
+              return (
+                <div
+                  className={cn(
+                    'p-2 rounded-lg transition-colors',
+                    task.isActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  <TaskIcon className="h-5 w-5" />
+                </div>
+              )
+            })()}
+
+            {/* Text Content */}
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">{task.title}</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {getSchedulePresetLabel(task.schedulePreset)}
+              </p>
+              {!task.isActive && (
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  Gearchiveerd
+                </p>
+              )}
+            </div>
           </div>
 
+          {/* Action Buttons */}
           <div className="flex gap-1">
             <Button
               variant="ghost"

@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
       .map((task) => ({
         id: task.id,
         title: task.title,
+        icon: task.icon,
         isCompleted: task.checkIns.length > 0,
         checkInId: task.checkIns[0]?.id,
       }))

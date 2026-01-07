@@ -44,6 +44,7 @@ model Task {
   title           String
   schedulePreset  SchedulePreset  @map("schedule_preset")
   daysOfWeek      Int[]           @default([]) @map("days_of_week") // 0=Mon, 6=Sun (ISO 8601)
+  icon            String?         @default("CheckSquare")
   isActive        Boolean         @default(true) @map("is_active")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")

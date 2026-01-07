@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TodayTask } from '@/types'
+import { getTaskIcon } from '@/lib/task-icons'
+import { CelebrationEffect } from './celebration-effect'
 
 interface TodayTaskItemProps {
   task: TodayTask
@@ -13,24 +15,48 @@ interface TodayTaskItemProps {
 
 export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
 
   const handleToggle = async () => {
     setIsLoading(true)
+
+    // Trigger celebration when completing (not uncompleting)
+    const willComplete = !task.isCompleted
+
+    if (willComplete) {
+      setIsAnimating(true)
+      setShowCelebration(true)
+
+      // Wait for initial animation before API call
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+
     try {
       await onToggle(task.id, task.isCompleted)
     } finally {
       setIsLoading(false)
+
+      // Reset animation states after completion
+      if (willComplete) {
+        setTimeout(() => {
+          setIsAnimating(false)
+          setShowCelebration(false)
+        }, 800)
+      }
     }
   }
 
   return (
-    <button
+    <div className="relative">
+      <button
       onClick={handleToggle}
       disabled={isLoading}
       className={cn(
         'w-full flex items-center gap-4 p-4 rounded-lg border transition-all duration-200 touch-target animate-slide-up',
         'hover:bg-accent hover:shadow-md active:scale-[0.98]',
         'disabled:opacity-50 disabled:cursor-not-allowed',
+        isAnimating && 'animate-celebrate animate-glow',
         task.isCompleted
           ? 'bg-primary/5 border-primary shadow-sm'
           : 'bg-card border-border'
@@ -38,18 +64,34 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
       aria-label={`${task.title} - ${task.isCompleted ? 'Voltooid' : 'Niet voltooid'}`}
       aria-pressed={task.isCompleted}
     >
-      {/* Checkbox */}
-      <div
-        className={cn(
-          'flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200 flex-shrink-0',
-          task.isCompleted
-            ? 'bg-primary border-primary scale-110'
-            : 'bg-background border-muted-foreground hover:border-primary/50'
-        )}
-      >
-        {task.isCompleted && (
-          <Check className="h-4 w-4 text-primary-foreground animate-checkmark" />
-        )}
+      {/* Icon + Checkbox */}
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {/* Task Icon */}
+        {(() => {
+          const TaskIcon = getTaskIcon(task.icon)
+          return (
+            <TaskIcon
+              className={cn(
+                'h-5 w-5 transition-colors',
+                task.isCompleted ? 'text-primary' : 'text-muted-foreground'
+              )}
+            />
+          )
+        })()}
+
+        {/* Checkbox */}
+        <div
+          className={cn(
+            'flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200',
+            task.isCompleted
+              ? 'bg-primary border-primary scale-110'
+              : 'bg-background border-muted-foreground hover:border-primary/50'
+          )}
+        >
+          {task.isCompleted && (
+            <Check className="h-4 w-4 text-primary-foreground animate-checkmark" />
+          )}
+        </div>
       </div>
 
       {/* Task Title */}
@@ -62,5 +104,12 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
         {task.title}
       </span>
     </button>
+
+      {/* Celebration Effect */}
+      <CelebrationEffect
+        show={showCelebration}
+        onComplete={() => setShowCelebration(false)}
+      />
+    </div>
   )
 }

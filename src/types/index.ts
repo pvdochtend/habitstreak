@@ -43,6 +43,7 @@ export interface CreateTaskInput {
   title: string
   schedulePreset: SchedulePreset
   daysOfWeek?: number[] // Only for CUSTOM preset
+  icon?: string
 }
 
 export interface UpdateTaskInput {
@@ -50,6 +51,7 @@ export interface UpdateTaskInput {
   schedulePreset?: SchedulePreset
   daysOfWeek?: number[]
   isActive?: boolean
+  icon?: string
 }
 
 // ════════════════════════════════════
@@ -88,6 +90,7 @@ export interface InsightsData {
 export interface TodayTask {
   id: string
   title: string
+  icon?: string
   isCompleted: boolean
   checkInId?: string
 }
