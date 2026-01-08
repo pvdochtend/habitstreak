@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "CHOKIDAR_USEPOLLING=true next dev",
-    "dev:network": "CHOKIDAR_USEPOLLING=true next dev -H 0.0.0.0",
+    "dev:network": "CHOKIDAR_USEPOLLING=true next dev -H 0.0.0.0 -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

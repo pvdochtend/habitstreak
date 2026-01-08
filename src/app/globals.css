@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  /* ============================================
+     BLUE LIGHT THEME (DEFAULT)
+     ============================================ */
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -23,7 +26,82 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+  }
+
+  /* ============================================
+     BLUE DARK THEME
+     ============================================ */
+  .dark.blue {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 217.2 91.2% 59.8%;
+  }
+
+  /* ============================================
+     PINK LIGHT THEME
+     ============================================ */
+  .light.pink {
+    --background: 0 0% 100%;
+    --foreground: 340 82% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 340 82% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 340 82% 12%;
+    --primary: 336 84% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 340 30% 95%;
+    --secondary-foreground: 340 82% 12%;
+    --muted: 340 30% 95%;
+    --muted-foreground: 340 16% 50%;
+    --accent: 340 30% 95%;
+    --accent-foreground: 340 82% 12%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 340 30% 90%;
+    --input: 340 30% 90%;
+    --ring: 336 84% 55%;
+  }
+
+  /* ============================================
+     PINK DARK THEME
+     ============================================ */
+  .dark.pink {
+    --background: 340 50% 8%;
+    --foreground: 340 20% 95%;
+    --card: 340 40% 12%;
+    --card-foreground: 340 20% 95%;
+    --popover: 340 40% 12%;
+    --popover-foreground: 340 20% 95%;
+    --primary: 336 80% 65%;
+    --primary-foreground: 340 50% 10%;
+    --secondary: 340 30% 20%;
+    --secondary-foreground: 340 20% 95%;
+    --muted: 340 30% 20%;
+    --muted-foreground: 340 20% 70%;
+    --accent: 340 30% 20%;
+    --accent-foreground: 340 20% 95%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 340 20% 95%;
+    --border: 340 30% 20%;
+    --input: 340 30% 20%;
+    --ring: 336 80% 65%;
   }
 }
 
@@ -172,6 +250,78 @@
   width: 8px;
   height: 8px;
   pointer-events: none;
+}
+
+/* ============================================
+   ENHANCED MICRO-INTERACTIONS
+   ============================================ */
+
+/* Smooth bounce for buttons */
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+/* Gentle pulse for notifications */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Slide in from right (for dialogs) */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-button-press {
+  animation: buttonPress 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 /* Respect user's motion preferences */

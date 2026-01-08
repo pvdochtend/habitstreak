@@ -6,6 +6,11 @@ import { User, Task, CheckIn, SchedulePreset, CheckInStatus } from '@prisma/clie
 export type { User, Task, CheckIn, SchedulePreset, CheckInStatus }
 
 // ════════════════════════════════════
+// THEME TYPES
+// ════════════════════════════════════
+export type ColorScheme = 'blue' | 'pink'
+
+// ════════════════════════════════════
 // AUTH TYPES
 // ════════════════════════════════════
 export interface AuthUser {

@@ -19,6 +19,8 @@ model User {
   passwordHash    String   @map("password_hash")
   dailyTarget     Int      @default(1) @map("daily_target")
   streakFreezes   Int      @default(0) @map("streak_freezes")
+  colorScheme     String   @default("blue") @map("color_scheme")
+  darkMode        Boolean  @default(false) @map("dark_mode")
   createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations

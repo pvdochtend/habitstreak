@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
         email: true,
         dailyTarget: true,
         streakFreezes: true,
+        colorScheme: true,
+        darkMode: true,
         createdAt: true,
       },
     })
@@ -60,6 +62,14 @@ const updateUserSchema = z.object({
     .min(1, 'Dagelijks doel moet minimaal 1 zijn')
     .max(100, 'Dagelijks doel kan maximaal 100 zijn')
     .optional(),
+  colorScheme: z
+    .enum(['blue', 'pink'], {
+      errorMap: () => ({ message: 'Kleurschema moet "blue" of "pink" zijn' })
+    })
+    .optional(),
+  darkMode: z
+    .boolean({ errorMap: () => ({ message: 'Donkere modus moet true of false zijn' }) })
+    .optional(),
 })
 
 export async function PATCH(request: NextRequest) {
@@ -79,11 +89,13 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const { dailyTarget } = validation.data
+    const { dailyTarget, colorScheme, darkMode } = validation.data
 
     // Build update data
     const updateData: any = {}
     if (dailyTarget !== undefined) updateData.dailyTarget = dailyTarget
+    if (colorScheme !== undefined) updateData.colorScheme = colorScheme
+    if (darkMode !== undefined) updateData.darkMode = darkMode
 
     // Update user
     const user = await prisma.user.update({
@@ -94,6 +106,8 @@ export async function PATCH(request: NextRequest) {
         email: true,
         dailyTarget: true,
         streakFreezes: true,
+        colorScheme: true,
+        darkMode: true,
         createdAt: true,
       },
     })
