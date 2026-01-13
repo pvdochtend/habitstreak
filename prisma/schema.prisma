@@ -82,3 +82,37 @@ model CheckIn {
   @@index([userId, date])
   @@map("check_ins")
 }
+
+// ════════════════════════════════════
+// AUTH ATTEMPTS (Rate Limiting)
+// ════════════════════════════════════
+model AuthAttempt {
+  id              String    @id @default(cuid())
+  identifier      String    // email or IP address
+  identifierType  String    @map("identifier_type") // 'email' or 'ip'
+  attemptType     String    @map("attempt_type")    // 'login' or 'signup'
+  success         Boolean   @default(false)
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([identifier, attemptType, createdAt])
+  @@index([ipAddress, attemptType, createdAt])
+  @@map("auth_attempts")
+}
+
+// ════════════════════════════════════
+// ACCOUNT LOCKOUT (Rate Limiting)
+// ════════════════════════════════════
+model AccountLockout {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  lockedUntil     DateTime  @map("locked_until")
+  failedAttempts  Int       @default(0) @map("failed_attempts")
+  lastFailedAt    DateTime  @map("last_failed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([email, lockedUntil])
+  @@map("account_lockouts")
+}

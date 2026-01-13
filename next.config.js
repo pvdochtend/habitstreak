@@ -33,8 +33,6 @@ const nextConfig = {
       ],
     },
   ],
-  // Enable SWC minification for faster builds
-  swcMinify: true,
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
