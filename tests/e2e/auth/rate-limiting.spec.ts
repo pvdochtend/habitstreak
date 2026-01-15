@@ -1,16 +1,19 @@
 import { test, expect } from '@playwright/test'
+import { signupUser, generateTestEmail, DEFAULT_PASSWORD } from '../helpers/auth'
 
 test.describe('Rate Limiting and Account Lockout', () => {
-  // Use unique emails for each test to avoid conflicts
-  const timestamp = Date.now()
-
+  // Run serially to avoid IP-based rate limit interference between parallel workers
+  test.describe.configure({ mode: 'serial' })
   test.describe('Login Rate Limiting', () => {
-    const testEmail = `ratelimit-login-${timestamp}@example.com`
-    const testPassword = 'correctPassword123'
     const wrongPassword = 'wrongPassword123'
+    let testEmail: string
+    let testPassword: string
 
     test.beforeEach(async ({ page }) => {
-      // Create a test user first
+      // Create a unique test user for each test
+      testEmail = generateTestEmail('ratelimit-login')
+      testPassword = DEFAULT_PASSWORD
+
       await page.goto('/signup')
       await page.getByLabel('E-mailadres').fill(testEmail)
       await page.getByLabel('Wachtwoord', { exact: true }).fill(testPassword)
@@ -42,9 +45,7 @@ test.describe('Rate Limiting and Account Lockout', () => {
         await page.getByLabel('E-mailadres').fill(testEmail)
         await page.getByLabel('Wachtwoord').fill(wrongPassword)
         await page.getByRole('button', { name: 'Inloggen' }).click()
-
-        // Wait a bit between attempts
-        await page.waitForTimeout(100)
+        await page.waitForLoadState('networkidle')
       }
 
       // 6th attempt should be rate limited
@@ -63,7 +64,7 @@ test.describe('Rate Limiting and Account Lockout', () => {
         await page.getByLabel('E-mailadres').fill(testEmail)
         await page.getByLabel('Wachtwoord').fill(wrongPassword)
         await page.getByRole('button', { name: 'Inloggen' }).click()
-        await page.waitForTimeout(100)
+        await page.waitForLoadState('networkidle')
       }
 
       // Try again - should show lockout message
@@ -82,7 +83,7 @@ test.describe('Rate Limiting and Account Lockout', () => {
         await page.getByLabel('E-mailadres').fill(testEmail)
         await page.getByLabel('Wachtwoord').fill(wrongPassword)
         await page.getByRole('button', { name: 'Inloggen' }).click()
-        await page.waitForTimeout(100)
+        await page.waitForLoadState('networkidle')
       }
 
       // Now try with CORRECT password - should still be blocked
@@ -103,28 +104,25 @@ test.describe('Rate Limiting and Account Lockout', () => {
     test('should allow 3 signup attempts', async ({ page }) => {
       // Attempt 1
       await page.goto('/signup')
-      const email1 = `signup-test-1-${timestamp}@example.com`
-      await page.getByLabel('E-mailadres').fill(email1)
-      await page.getByLabel('Wachtwoord', { exact: true }).fill('password123')
-      await page.getByLabel('Bevestig wachtwoord').fill('password123')
+      await page.getByLabel('E-mailadres').fill(generateTestEmail('signup-1'))
+      await page.getByLabel('Wachtwoord', { exact: true }).fill(DEFAULT_PASSWORD)
+      await page.getByLabel('Bevestig wachtwoord').fill(DEFAULT_PASSWORD)
       await page.getByRole('button', { name: 'Account aanmaken' }).click()
       await expect(page).toHaveURL('/vandaag')
 
       // Attempt 2
       await page.goto('/signup')
-      const email2 = `signup-test-2-${timestamp}@example.com`
-      await page.getByLabel('E-mailadres').fill(email2)
-      await page.getByLabel('Wachtwoord', { exact: true }).fill('password123')
-      await page.getByLabel('Bevestig wachtwoord').fill('password123')
+      await page.getByLabel('E-mailadres').fill(generateTestEmail('signup-2'))
+      await page.getByLabel('Wachtwoord', { exact: true }).fill(DEFAULT_PASSWORD)
+      await page.getByLabel('Bevestig wachtwoord').fill(DEFAULT_PASSWORD)
       await page.getByRole('button', { name: 'Account aanmaken' }).click()
       await expect(page).toHaveURL('/vandaag')
 
       // Attempt 3
       await page.goto('/signup')
-      const email3 = `signup-test-3-${timestamp}@example.com`
-      await page.getByLabel('E-mailadres').fill(email3)
-      await page.getByLabel('Wachtwoord', { exact: true }).fill('password123')
-      await page.getByLabel('Bevestig wachtwoord').fill('password123')
+      await page.getByLabel('E-mailadres').fill(generateTestEmail('signup-3'))
+      await page.getByLabel('Wachtwoord', { exact: true }).fill(DEFAULT_PASSWORD)
+      await page.getByLabel('Bevestig wachtwoord').fill(DEFAULT_PASSWORD)
       await page.getByRole('button', { name: 'Account aanmaken' }).click()
       await expect(page).toHaveURL('/vandaag')
     })
@@ -133,21 +131,18 @@ test.describe('Rate Limiting and Account Lockout', () => {
       // Make 3 successful signups
       for (let i = 1; i <= 3; i++) {
         await page.goto('/signup')
-        const email = `signup-ratelimit-${timestamp}-${i}@example.com`
-        await page.getByLabel('E-mailadres').fill(email)
-        await page.getByLabel('Wachtwoord', { exact: true }).fill('password123')
-        await page.getByLabel('Bevestig wachtwoord').fill('password123')
+        await page.getByLabel('E-mailadres').fill(generateTestEmail(`signup-rl-${i}`))
+        await page.getByLabel('Wachtwoord', { exact: true }).fill(DEFAULT_PASSWORD)
+        await page.getByLabel('Bevestig wachtwoord').fill(DEFAULT_PASSWORD)
         await page.getByRole('button', { name: 'Account aanmaken' }).click()
         await expect(page).toHaveURL('/vandaag')
-        await page.waitForTimeout(100)
       }
 
       // 4th attempt should be rate limited
       await page.goto('/signup')
-      const email4 = `signup-ratelimit-${timestamp}-4@example.com`
-      await page.getByLabel('E-mailadres').fill(email4)
-      await page.getByLabel('Wachtwoord', { exact: true }).fill('password123')
-      await page.getByLabel('Bevestig wachtwoord').fill('password123')
+      await page.getByLabel('E-mailadres').fill(generateTestEmail('signup-rl-4'))
+      await page.getByLabel('Wachtwoord', { exact: true }).fill(DEFAULT_PASSWORD)
+      await page.getByLabel('Bevestig wachtwoord').fill(DEFAULT_PASSWORD)
       await page.getByRole('button', { name: 'Account aanmaken' }).click()
 
       // Should show rate limit error
@@ -156,13 +151,13 @@ test.describe('Rate Limiting and Account Lockout', () => {
     })
 
     test('should show error for duplicate email before rate limit', async ({ page }) => {
-      const email = `duplicate-test-${timestamp}@example.com`
+      const email = generateTestEmail('duplicate')
 
       // Create first account
       await page.goto('/signup')
       await page.getByLabel('E-mailadres').fill(email)
-      await page.getByLabel('Wachtwoord', { exact: true }).fill('password123')
-      await page.getByLabel('Bevestig wachtwoord').fill('password123')
+      await page.getByLabel('Wachtwoord', { exact: true }).fill(DEFAULT_PASSWORD)
+      await page.getByLabel('Bevestig wachtwoord').fill(DEFAULT_PASSWORD)
       await page.getByRole('button', { name: 'Account aanmaken' }).click()
       await expect(page).toHaveURL('/vandaag')
 
@@ -179,10 +174,13 @@ test.describe('Rate Limiting and Account Lockout', () => {
   })
 
   test.describe('Rate Limit Error Messages', () => {
-    const testEmail = `error-messages-${timestamp}@example.com`
-    const testPassword = 'password123'
+    let testEmail: string
+    let testPassword: string
 
     test.beforeEach(async ({ page }) => {
+      testEmail = generateTestEmail('error-msg')
+      testPassword = DEFAULT_PASSWORD
+
       // Create test user
       await page.goto('/signup')
       await page.getByLabel('E-mailadres').fill(testEmail)
@@ -199,7 +197,7 @@ test.describe('Rate Limiting and Account Lockout', () => {
         await page.getByLabel('E-mailadres').fill(testEmail)
         await page.getByLabel('Wachtwoord').fill('wrongpassword')
         await page.getByRole('button', { name: 'Inloggen' }).click()
-        await page.waitForTimeout(100)
+        await page.waitForLoadState('networkidle')
       }
 
       // Next attempt should show Dutch error
@@ -231,10 +229,13 @@ test.describe('Rate Limiting and Account Lockout', () => {
   })
 
   test.describe('Successful Login After Failed Attempts', () => {
-    const testEmail = `success-after-fail-${timestamp}@example.com`
-    const testPassword = 'correctPassword123'
+    let testEmail: string
+    let testPassword: string
 
     test.beforeEach(async ({ page }) => {
+      testEmail = generateTestEmail('success-after-fail')
+      testPassword = DEFAULT_PASSWORD
+
       // Create test user
       await page.goto('/signup')
       await page.getByLabel('E-mailadres').fill(testEmail)
@@ -252,7 +253,6 @@ test.describe('Rate Limiting and Account Lockout', () => {
         await page.getByLabel('Wachtwoord').fill('wrongpassword')
         await page.getByRole('button', { name: 'Inloggen' }).click()
         await expect(page.getByText('Ongeldige inloggegevens')).toBeVisible()
-        await page.waitForTimeout(100)
       }
 
       // Now try with correct password - should succeed
@@ -268,9 +268,9 @@ test.describe('Rate Limiting and Account Lockout', () => {
 
   test.describe('Different Users Independent Rate Limits', () => {
     test('should track rate limits independently per email', async ({ page }) => {
-      const email1 = `independent-1-${timestamp}@example.com`
-      const email2 = `independent-2-${timestamp}@example.com`
-      const password = 'password123'
+      const email1 = generateTestEmail('independent-1')
+      const email2 = generateTestEmail('independent-2')
+      const password = DEFAULT_PASSWORD
 
       // Create both users
       for (const email of [email1, email2]) {
@@ -289,7 +289,7 @@ test.describe('Rate Limiting and Account Lockout', () => {
         await page.getByLabel('E-mailadres').fill(email1)
         await page.getByLabel('Wachtwoord').fill('wrongpassword')
         await page.getByRole('button', { name: 'Inloggen' }).click()
-        await page.waitForTimeout(100)
+        await page.waitForLoadState('networkidle')
       }
 
       // email1 should be rate limited/locked

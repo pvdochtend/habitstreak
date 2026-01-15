@@ -1,30 +1,13 @@
 import { test, expect } from '@playwright/test'
-
-// Helper to create a test user and login
-async function loginAsTestUser(page: any) {
-  const timestamp = Date.now()
-  const email = `theme-test-${timestamp}@example.com`
-  const password = 'TestPassword123!'
-
-  // Sign up
-  await page.goto('/signup')
-  await page.fill('input[type="email"]', email)
-  await page.fill('input[type="password"]', password)
-  await page.click('button[type="submit"]')
-
-  // Wait for redirect to main app
-  await page.waitForURL('/vandaag', { timeout: 10000 })
-
-  return { email, password }
-}
+import { signupUser } from '../helpers/auth'
+import { waitForThemeApplied, waitForModeApplied } from '../helpers/waits'
 
 test.describe('Theme Settings', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsTestUser(page)
+    await signupUser(page)
   })
 
   test('should display theme controls in settings page', async ({ page }) => {
-    // Navigate to settings
     await page.goto('/instellingen')
 
     // Check that theme card exists
@@ -65,15 +48,12 @@ test.describe('Theme Settings', () => {
     // Click Pink button
     await page.click('button:has-text("Roze")')
 
-    // Wait for theme to apply
-    await page.waitForTimeout(500)
-
-    // Check HTML classes updated
+    // Wait for theme to apply using assertion
     const html = page.locator('html')
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
     await expect(html).toHaveClass(/light/)
-    await expect(html).toHaveClass(/pink/)
 
-    // Check Pink button shows checkmark
+    // Check Pink button shows selected border
     const pinkButton = page.locator('button:has-text("Roze")')
     await expect(pinkButton).toHaveClass(/border-\[#E11D74\]/)
 
@@ -88,12 +68,9 @@ test.describe('Theme Settings', () => {
     // Click Dark button
     await page.click('button:has-text("Donker")')
 
-    // Wait for theme to apply
-    await page.waitForTimeout(500)
-
-    // Check HTML classes updated
+    // Wait for theme to apply using assertion
     const html = page.locator('html')
-    await expect(html).toHaveClass(/dark/)
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
     await expect(html).toHaveClass(/blue/)
 
     // Check Dark button shows checkmark
@@ -103,17 +80,17 @@ test.describe('Theme Settings', () => {
 
   test('should switch to Pink Dark theme (all 4 combinations)', async ({ page }) => {
     await page.goto('/instellingen')
+    const html = page.locator('html')
 
     // Switch to Pink
     await page.click('button:has-text("Roze")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
 
     // Switch to Dark
     await page.click('button:has-text("Donker")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
 
     // Check HTML has both classes
-    const html = page.locator('html')
     await expect(html).toHaveClass(/dark/)
     await expect(html).toHaveClass(/pink/)
 
@@ -124,22 +101,20 @@ test.describe('Theme Settings', () => {
 
   test('should persist theme after page reload', async ({ page }) => {
     await page.goto('/instellingen')
+    const html = page.locator('html')
 
     // Switch to Pink Dark
     await page.click('button:has-text("Roze")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
     await page.click('button:has-text("Donker")')
-    await page.waitForTimeout(500)
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
 
     // Reload page
     await page.reload()
-
-    // Wait for theme to initialize
-    await page.waitForTimeout(1000)
+    await page.waitForLoadState('domcontentloaded')
 
     // Check theme persisted
-    const html = page.locator('html')
-    await expect(html).toHaveClass(/dark/)
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
     await expect(html).toHaveClass(/pink/)
 
     // Both buttons should still show as selected
@@ -149,19 +124,19 @@ test.describe('Theme Settings', () => {
 
   test('should persist theme across navigation', async ({ page }) => {
     await page.goto('/instellingen')
+    const html = page.locator('html')
 
     // Switch to Pink Dark
     await page.click('button:has-text("Roze")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
     await page.click('button:has-text("Donker")')
-    await page.waitForTimeout(500)
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
 
     // Navigate to another page
     await page.goto('/vandaag')
-    await page.waitForTimeout(500)
+    await page.waitForLoadState('domcontentloaded')
 
     // Check theme still applied
-    const html = page.locator('html')
     await expect(html).toHaveClass(/dark/)
     await expect(html).toHaveClass(/pink/)
 
@@ -175,32 +150,27 @@ test.describe('Theme Settings', () => {
 
   test('should switch theme instantly without reload', async ({ page }) => {
     await page.goto('/instellingen')
+    const html = page.locator('html')
 
     // Record initial HTML classes
-    const html = page.locator('html')
     await expect(html).toHaveClass(/light/)
 
-    // Click Dark button
+    // Click Dark button - theme should change immediately
     await page.click('button:has-text("Donker")')
+    await expect(html).toHaveClass(/dark/, { timeout: 1000 })
 
-    // Theme should change immediately (within 100ms)
-    await page.waitForTimeout(100)
-    await expect(html).toHaveClass(/dark/)
-
-    // Click Light button
+    // Click Light button - should switch back immediately
     await page.click('button:has-text("Licht")')
-
-    // Should switch back immediately
-    await page.waitForTimeout(100)
-    await expect(html).toHaveClass(/light/)
+    await expect(html).toHaveClass(/light/, { timeout: 1000 })
   })
 
-  test('should update localStorage when theme changes', async ({ page, context }) => {
+  test('should update localStorage when theme changes', async ({ page }) => {
     await page.goto('/instellingen')
+    const html = page.locator('html')
 
     // Switch to Pink
     await page.click('button:has-text("Roze")')
-    await page.waitForTimeout(500)
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
 
     // Check localStorage
     const colorScheme = await page.evaluate(() => localStorage.getItem('habitstreak-color-scheme'))
@@ -208,7 +178,7 @@ test.describe('Theme Settings', () => {
 
     // Switch to Dark
     await page.click('button:has-text("Donker")')
-    await page.waitForTimeout(500)
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
 
     // Check localStorage
     const darkMode = await page.evaluate(() => localStorage.getItem('habitstreak-dark-mode'))
@@ -241,6 +211,7 @@ test.describe('Theme Settings', () => {
 
   test('should have all 4 theme CSS variables defined', async ({ page }) => {
     await page.goto('/instellingen')
+    const html = page.locator('html')
 
     // Test Blue Light (default)
     let primaryColor = await page.evaluate(() => {
@@ -250,7 +221,7 @@ test.describe('Theme Settings', () => {
 
     // Switch to Pink Light
     await page.click('button:has-text("Roze")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
 
     primaryColor = await page.evaluate(() => {
       return getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
@@ -259,9 +230,9 @@ test.describe('Theme Settings', () => {
 
     // Switch to Blue Dark
     await page.click('button:has-text("Blauw")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/blue/, { timeout: 5000 })
     await page.click('button:has-text("Donker")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
 
     primaryColor = await page.evaluate(() => {
       return getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
@@ -270,7 +241,7 @@ test.describe('Theme Settings', () => {
 
     // Switch to Pink Dark
     await page.click('button:has-text("Roze")')
-    await page.waitForTimeout(300)
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
 
     primaryColor = await page.evaluate(() => {
       return getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()

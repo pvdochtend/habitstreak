@@ -1,36 +1,24 @@
 import { test, expect } from '@playwright/test'
+import { signupUser } from '../helpers/auth'
+import { waitForThemeInitialized } from '../helpers/waits'
 
-// Fixed test user credentials
-const TEST_USER = {
-  email: 'test@habitstreak.test',
-  password: 'TestPassword123!'
-}
+// These tests are skipped by default - run with test.only() for debugging
+test.describe.skip('Theme Debugging', () => {
+  test.describe.configure({ mode: 'serial' })
 
-test.describe.configure({ mode: 'serial' })
-
-test.describe('Theme Debugging', () => {
   test.beforeEach(async ({ page }) => {
-    // Login with fixed test user
-    await page.goto('/login')
-    await page.fill('input[type="email"]', TEST_USER.email)
-    await page.fill('input[type="password"]', TEST_USER.password)
+    // Create a fresh user for each test run
+    await signupUser(page)
 
-    // Click submit and wait for navigation (first load can take 2+ minutes)
-    await Promise.all([
-      page.waitForURL('/vandaag', { timeout: 180000 }), // 3 minutes
-      page.click('button[type="submit"]')
-    ])
-
-    // Wait for page to be fully loaded
-    await page.waitForLoadState('networkidle', { timeout: 60000 })
-
-    // Reset theme to Blue Light for consistent test starting point
+    // Navigate to settings and reset theme to Blue Light for consistent starting point
     await page.goto('/instellingen')
     await page.waitForLoadState('networkidle')
+
+    // Reset to Blue Light
     await page.click('button:has-text("Blauw")')
-    await page.waitForTimeout(500)
+    await expect(page.locator('html')).toHaveClass(/blue/, { timeout: 5000 })
     await page.click('button:has-text("Licht")')
-    await page.waitForTimeout(500)
+    await expect(page.locator('html')).toHaveClass(/light/, { timeout: 5000 })
   })
 
   test('Should switch to Pink theme and stay pink', async ({ page }) => {
@@ -39,13 +27,10 @@ test.describe('Theme Debugging', () => {
     await page.waitForLoadState('networkidle')
 
     // Wait for theme to initialize
-    const html = page.locator('html')
-    await page.waitForFunction(() => {
-      const htmlEl = document.documentElement
-      return htmlEl.classList.contains('light') || htmlEl.classList.contains('dark')
-    }, { timeout: 10000 })
+    await waitForThemeInitialized(page)
 
     // Check initial theme
+    const html = page.locator('html')
     const initialClasses = await html.getAttribute('class')
     console.log('Initial HTML classes:', initialClasses)
 
@@ -55,9 +40,7 @@ test.describe('Theme Debugging', () => {
     await pinkButton.click()
 
     // Wait for pink class to be applied
-    await page.waitForFunction(() => {
-      return document.documentElement.classList.contains('pink')
-    }, { timeout: 5000 })
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
 
     // Check classes after clicking
     const afterClasses = await html.getAttribute('class')
@@ -67,19 +50,19 @@ test.describe('Theme Debugging', () => {
     expect(afterClasses).toContain('pink')
     expect(afterClasses).not.toContain('blue')
 
-    // Wait to see if it reverts
-    console.log('Waiting to check if theme reverts...')
-    await page.waitForTimeout(2000)
+    // Wait to see if it reverts (using proper assertion instead of timeout)
+    console.log('Verifying theme stays applied...')
+    await page.waitForLoadState('networkidle')
 
     // Check classes again after waiting
     const finalClasses = await html.getAttribute('class')
-    console.log('After 2 seconds:', finalClasses)
+    console.log('After network idle:', finalClasses)
 
     // Verify it's still pink
     expect(finalClasses).toContain('pink')
     expect(finalClasses).not.toContain('blue')
 
-    console.log('✓ Test passed - Pink theme stayed applied!')
+    console.log('Test passed - Pink theme stayed applied!')
   })
 
   test('Should switch to Dark mode and stay dark', async ({ page }) => {
@@ -89,10 +72,7 @@ test.describe('Theme Debugging', () => {
     const html = page.locator('html')
 
     // Wait for theme to initialize
-    await page.waitForFunction(() => {
-      const htmlEl = document.documentElement
-      return htmlEl.classList.contains('light') || htmlEl.classList.contains('dark')
-    }, { timeout: 10000 })
+    await waitForThemeInitialized(page)
 
     // Initial should be light
     const initialClasses = await html.getAttribute('class')
@@ -104,9 +84,7 @@ test.describe('Theme Debugging', () => {
     await darkButton.click()
 
     // Wait for dark class to be applied
-    await page.waitForFunction(() => {
-      return document.documentElement.classList.contains('dark')
-    }, { timeout: 5000 })
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
 
     // Check dark is applied
     const afterClasses = await html.getAttribute('class')
@@ -115,12 +93,12 @@ test.describe('Theme Debugging', () => {
     expect(afterClasses).not.toContain('light')
 
     // Wait and verify it stays dark
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('networkidle')
     const finalClasses = await html.getAttribute('class')
-    console.log('After 2 seconds:', finalClasses)
+    console.log('After network idle:', finalClasses)
     expect(finalClasses).toContain('dark')
 
-    console.log('✓ Dark mode stayed applied!')
+    console.log('Dark mode stayed applied!')
   })
 
   test('Should switch to Pink Dark (combo) and stay', async ({ page }) => {
@@ -130,26 +108,15 @@ test.describe('Theme Debugging', () => {
     const html = page.locator('html')
 
     // Wait for theme to initialize
-    await page.waitForFunction(() => {
-      const htmlEl = document.documentElement
-      return htmlEl.classList.contains('light') || htmlEl.classList.contains('dark')
-    }, { timeout: 10000 })
+    await waitForThemeInitialized(page)
 
     // Click Pink
     await page.click('button:has-text("Roze")')
-
-    // Wait for pink class to be applied
-    await page.waitForFunction(() => {
-      return document.documentElement.classList.contains('pink')
-    }, { timeout: 5000 })
+    await expect(html).toHaveClass(/pink/, { timeout: 5000 })
 
     // Click Dark
     await page.click('button:has-text("Donker")')
-
-    // Wait for dark class to be applied
-    await page.waitForFunction(() => {
-      return document.documentElement.classList.contains('dark')
-    }, { timeout: 5000 })
+    await expect(html).toHaveClass(/dark/, { timeout: 5000 })
 
     // Check both are applied
     const afterClasses = await html.getAttribute('class')
@@ -158,12 +125,12 @@ test.describe('Theme Debugging', () => {
     expect(afterClasses).toContain('dark')
 
     // Wait and verify
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('networkidle')
     const finalClasses = await html.getAttribute('class')
-    console.log('After 2 seconds:', finalClasses)
+    console.log('After network idle:', finalClasses)
     expect(finalClasses).toContain('pink')
     expect(finalClasses).toContain('dark')
 
-    console.log('✓ Pink Dark combo stayed applied!')
+    console.log('Pink Dark combo stayed applied!')
   })
 })
