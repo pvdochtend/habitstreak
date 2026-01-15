@@ -14,7 +14,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --workers=1",
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {

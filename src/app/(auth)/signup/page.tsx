@@ -66,16 +66,27 @@ export default function SignupPage() {
         redirect: false,
       })
 
-      if (signInResult?.error) {
-        // Signup succeeded but login failed - redirect to login page
-        router.push('/login?message=Account aangemaakt. Log nu in.')
+      if (!signInResult) {
+        setError('Er is een fout opgetreden. Probeer het opnieuw.')
+        setIsLoading(false)
         return
       }
 
-      if (signInResult?.ok) {
+      if (signInResult.error) {
+        // Signup succeeded but login failed - redirect to login page
+        router.push('/login?message=Account aangemaakt. Log nu in.')
+        setIsLoading(false)
+        return
+      }
+
+      if (signInResult.ok) {
         router.push('/vandaag')
         router.refresh()
+        return
       }
+
+      setError('Er is een fout opgetreden. Probeer het opnieuw.')
+      setIsLoading(false)
     } catch (err) {
       setError('Er is een fout opgetreden. Probeer het opnieuw.')
       setIsLoading(false)

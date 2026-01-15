@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/test'
 import { signupUser } from '../helpers/auth'
 
 test.describe('Task CRUD Operations', () => {
@@ -71,16 +71,13 @@ test.describe('Task CRUD Operations', () => {
     // Verify task exists
     await expect(page.getByText('Task to Delete')).toBeVisible({ timeout: 5000 })
 
+    // Accept browser confirm dialog
+    page.once('dialog', dialog => dialog.accept())
+
     // Click delete button
     const deleteButton = page.locator('button[title="Verwijderen"]').first()
     await expect(deleteButton).toBeVisible()
     await deleteButton.click()
-
-    // Confirm deletion if there's a confirmation dialog
-    const confirmButton = page.getByRole('button', { name: /Verwijderen|Bevestigen/i })
-    if (await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await confirmButton.click()
-    }
 
     // Verify task is removed
     await expect(page.getByText('Task to Delete')).not.toBeVisible({ timeout: 5000 })

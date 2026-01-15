@@ -77,7 +77,6 @@ export function ThemeProvider({
 
   // Apply theme classes to html element
   useEffect(() => {
-    if (isLoading) return
 
     const html = document.documentElement
 

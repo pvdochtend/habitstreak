@@ -22,13 +22,38 @@ export async function signupUser(
 ): Promise<{ email: string; password: string }> {
   const userEmail = email ?? generateTestEmail()
   const userPassword = password ?? DEFAULT_PASSWORD
+  const testIp = (page as any).__testIp as string | undefined
+  const requestHeaders = testIp ? { 'x-test-ip': testIp } : undefined
 
-  await page.goto('/signup')
-  await page.getByLabel('E-mailadres').fill(userEmail)
-  await page.getByLabel('Wachtwoord', { exact: true }).fill(userPassword)
-  await page.getByLabel('Bevestig wachtwoord').fill(userPassword)
-  await page.getByRole('button', { name: 'Account aanmaken' }).click()
-  await page.waitForURL('/vandaag', { timeout: 10000 })
+  const signupResponse = await page.request.post('/api/auth/signup', {
+    data: { email: userEmail, password: userPassword },
+    headers: requestHeaders,
+  })
+  if (!signupResponse.ok()) {
+    throw new Error(`Signup failed with status ${signupResponse.status()}`)
+  }
+
+  const csrfResponse = await page.request.get('/api/auth/csrf', {
+    headers: requestHeaders,
+  })
+  const csrfData = await csrfResponse.json()
+
+  const loginResponse = await page.request.post('/api/auth/callback/credentials', {
+    form: {
+      csrfToken: csrfData.csrfToken,
+      email: userEmail,
+      password: userPassword,
+      callbackUrl: '/vandaag',
+      json: 'true',
+    },
+    headers: requestHeaders,
+  })
+
+  if (!loginResponse.ok()) {
+    throw new Error(`Login failed with status ${loginResponse.status()}`)
+  }
+
+  await page.goto('/vandaag')
 
   return { email: userEmail, password: userPassword }
 }
@@ -41,11 +66,30 @@ export async function loginUser(
   email: string,
   password: string
 ): Promise<void> {
-  await page.goto('/login')
-  await page.getByLabel('E-mailadres').fill(email)
-  await page.getByLabel('Wachtwoord').fill(password)
-  await page.getByRole('button', { name: 'Inloggen' }).click()
-  await page.waitForURL('/vandaag', { timeout: 10000 })
+  const testIp = (page as any).__testIp as string | undefined
+  const requestHeaders = testIp ? { 'x-test-ip': testIp } : undefined
+
+  const csrfResponse = await page.request.get('/api/auth/csrf', {
+    headers: requestHeaders,
+  })
+  const csrfData = await csrfResponse.json()
+
+  const loginResponse = await page.request.post('/api/auth/callback/credentials', {
+    form: {
+      csrfToken: csrfData.csrfToken,
+      email,
+      password,
+      callbackUrl: '/vandaag',
+      json: 'true',
+    },
+    headers: requestHeaders,
+  })
+
+  if (!loginResponse.ok()) {
+    throw new Error(`Login failed with status ${loginResponse.status()}`)
+  }
+
+  await page.goto('/vandaag')
 }
 
 /**
@@ -54,5 +98,5 @@ export async function loginUser(
 export async function logoutUser(page: Page): Promise<void> {
   await page.goto('/instellingen')
   await page.getByRole('button', { name: 'Uitloggen' }).click()
-  await page.waitForURL('/login', { timeout: 10000 })
+  await page.waitForURL('/login', { timeout: 10000, waitUntil: 'domcontentloaded' })
 }

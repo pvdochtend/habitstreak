@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/test'
 import { signupUser } from '../helpers/auth'
-import { waitForThemeApplied, waitForModeApplied } from '../helpers/waits'
+import { waitForThemeApplied, waitForModeApplied, waitForThemeInitialized } from '../helpers/waits'
 
 test.describe('Theme Settings', () => {
   test.beforeEach(async ({ page }) => {
@@ -11,22 +11,22 @@ test.describe('Theme Settings', () => {
     await page.goto('/instellingen')
 
     // Check that theme card exists
-    const themeCard = page.locator('text=Thema')
-    await expect(themeCard).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Thema' })).toBeVisible()
 
     // Check color scheme selector
-    await expect(page.locator('text=Kleurschema')).toBeVisible()
+    await expect(page.getByText('Kleurschema', { exact: true })).toBeVisible()
     await expect(page.locator('button:has-text("Blauw")')).toBeVisible()
     await expect(page.locator('button:has-text("Roze")')).toBeVisible()
 
     // Check dark mode toggle
-    await expect(page.locator('text=Weergave')).toBeVisible()
+    await expect(page.getByText('Weergave', { exact: true })).toBeVisible()
     await expect(page.locator('button:has-text("Licht")')).toBeVisible()
     await expect(page.locator('button:has-text("Donker")')).toBeVisible()
   })
 
   test('should default to Blue Light theme', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
 
     // Check HTML has correct classes
     const html = page.locator('html')
@@ -44,6 +44,7 @@ test.describe('Theme Settings', () => {
 
   test('should switch to Pink Light theme', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
 
     // Click Pink button
     await page.click('button:has-text("Roze")')
@@ -64,6 +65,7 @@ test.describe('Theme Settings', () => {
 
   test('should switch to Blue Dark theme', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
 
     // Click Dark button
     await page.click('button:has-text("Donker")')
@@ -80,6 +82,7 @@ test.describe('Theme Settings', () => {
 
   test('should switch to Pink Dark theme (all 4 combinations)', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
     const html = page.locator('html')
 
     // Switch to Pink
@@ -101,6 +104,7 @@ test.describe('Theme Settings', () => {
 
   test('should persist theme after page reload', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
     const html = page.locator('html')
 
     // Switch to Pink Dark
@@ -124,6 +128,7 @@ test.describe('Theme Settings', () => {
 
   test('should persist theme across navigation', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
     const html = page.locator('html')
 
     // Switch to Pink Dark
@@ -150,6 +155,7 @@ test.describe('Theme Settings', () => {
 
   test('should switch theme instantly without reload', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
     const html = page.locator('html')
 
     // Record initial HTML classes
@@ -166,6 +172,7 @@ test.describe('Theme Settings', () => {
 
   test('should update localStorage when theme changes', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
     const html = page.locator('html')
 
     // Switch to Pink
@@ -187,6 +194,7 @@ test.describe('Theme Settings', () => {
 
   test('should show checkmark animation when theme is selected', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
 
     // Click Pink button
     const pinkButton = page.locator('button:has-text("Roze")')
@@ -203,6 +211,7 @@ test.describe('Theme Settings', () => {
 
   test('should display theme info message', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
 
     // Check for info message
     const infoMessage = page.locator('text=Thema wijzigingen worden direct toegepast')
@@ -211,6 +220,7 @@ test.describe('Theme Settings', () => {
 
   test('should have all 4 theme CSS variables defined', async ({ page }) => {
     await page.goto('/instellingen')
+    await waitForThemeInitialized(page)
     const html = page.locator('html')
 
     // Test Blue Light (default)

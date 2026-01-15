@@ -36,7 +36,10 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError(result.error)
+        const message = result.error === 'CredentialsSignin'
+          ? 'Ongeldige inloggegevens'
+          : result.error
+        setError(message)
         setIsLoading(false)
         return
       }
@@ -44,7 +47,11 @@ export default function LoginPage() {
       if (result?.ok) {
         router.push('/vandaag')
         router.refresh()
+        return
       }
+
+      setError('Ongeldige inloggegevens')
+      setIsLoading(false)
     } catch (err) {
       setError('Er is een fout opgetreden. Probeer het opnieuw.')
       setIsLoading(false)

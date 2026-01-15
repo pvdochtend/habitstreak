@@ -15,7 +15,7 @@ LOCAL_IP=$(ip addr show | grep -E "inet.*eth0|inet.*wlan0|inet.*en0" | grep -v "
 
 echo -e "${GREEN}✓${NC} Your local IP: ${GREEN}${LOCAL_IP}${NC}"
 echo -e "${GREEN}✓${NC} Access URLs:"
-echo -e "  - Computer: http://localhost:3001"
+echo -e "  - Computer: http://${LOCAL_IP}:3001"
 echo -e "  - Mobile:   http://${LOCAL_IP}:3001"
 echo ""
 
@@ -31,6 +31,14 @@ mkdir -p logs
 
 # Generate log filename with date
 LOG_FILE="logs/nextjs-$(date +%Y-%m-%d).log"
+
+# Ensure NextAuth uses the network URL for client requests
+if [ -z "$NEXTAUTH_URL" ]; then
+  export NEXTAUTH_URL="http://${LOCAL_IP}:3001"
+fi
+if [ -z "$NEXTAUTH_URL_INTERNAL" ]; then
+  export NEXTAUTH_URL_INTERNAL="http://localhost:3001"
+fi
 
 # Start Next.js with network access (logging to both console and file)
 echo -e "${BLUE}Starting Next.js dev server...${NC}"

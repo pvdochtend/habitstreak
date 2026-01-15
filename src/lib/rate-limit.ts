@@ -366,11 +366,23 @@ export async function countRecentFailures(
 ): Promise<number> {
   if (!RATE_LIMITING_ENABLED) return 0
 
-  const cutoff = new Date(Date.now() - windowMs)
+  const normalizedEmail = email.toLowerCase()
+  const key = `login-email:${normalizedEmail}`
+  const now = Date.now()
+  const attempts = rateLimitStore.get(key) || []
+  const inMemoryCount = attempts.filter(
+    attempt => !attempt.success && now - attempt.timestamp < windowMs
+  ).length
+
+  if (inMemoryCount > 0) {
+    return inMemoryCount
+  }
+
+  const cutoff = new Date(now - windowMs)
 
   const count = await prisma.authAttempt.count({
     where: {
-      identifier: email.toLowerCase(),
+      identifier: normalizedEmail,
       identifierType: 'email',
       attemptType: 'login',
       success: false,

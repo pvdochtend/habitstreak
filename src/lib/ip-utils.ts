@@ -1,6 +1,22 @@
 import { NextRequest } from 'next/server'
 import { createHash } from 'crypto'
 
+type HeadersLike = Headers | Record<string, string | string[] | undefined>
+
+function getHeader(headers: HeadersLike | undefined, name: string): string | undefined {
+  if (!headers) return undefined
+
+  if (typeof (headers as Headers).get === 'function') {
+    const value = (headers as Headers).get(name)
+    return value ?? undefined
+  }
+
+  const record = headers as Record<string, string | string[] | undefined>
+  const directValue = record[name] ?? record[name.toLowerCase()]
+  if (Array.isArray(directValue)) return directValue[0]
+  return directValue
+}
+
 /**
  * Extract the real client IP address from a NextRequest
  * Vercel-aware: handles x-forwarded-for and x-real-ip headers
@@ -10,18 +26,28 @@ import { createHash } from 'crypto'
  * 2. First IP in x-forwarded-for header
  * 3. Fallback to localhost for development
  *
- * @param request - NextRequest object
+ * @param request - Request-like object with headers
  * @returns Client IP address as string
  */
-export function getClientIp(request: NextRequest): string {
+export function getClientIp(request: NextRequest | { headers?: HeadersLike }): string {
+  const headers = request?.headers as HeadersLike | undefined
+
+  // Allow test overrides in non-production
+  const testIp = process.env.NODE_ENV !== 'production'
+    ? getHeader(headers, 'x-test-ip')
+    : undefined
+  if (testIp) {
+    return testIp.trim()
+  }
+
   // Try x-real-ip header (Vercel provides this)
-  const realIp = request.headers.get('x-real-ip')
+  const realIp = getHeader(headers, 'x-real-ip')
   if (realIp) {
     return realIp.trim()
   }
 
   // Try x-forwarded-for header (standard proxy header)
-  const forwardedFor = request.headers.get('x-forwarded-for')
+  const forwardedFor = getHeader(headers, 'x-forwarded-for')
   if (forwardedFor) {
     // x-forwarded-for can contain multiple IPs: "client, proxy1, proxy2"
     // We want the first one (the original client)
