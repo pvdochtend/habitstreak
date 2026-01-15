@@ -26,9 +26,16 @@ docker-compose up -d
 # Wait a moment for PostgreSQL to be ready
 sleep 2
 
-# Start Next.js with network access
+# Ensure logs directory exists
+mkdir -p logs
+
+# Generate log filename with date
+LOG_FILE="logs/nextjs-$(date +%Y-%m-%d).log"
+
+# Start Next.js with network access (logging to both console and file)
 echo -e "${BLUE}Starting Next.js dev server...${NC}"
 echo -e "${GREEN}✓${NC} Server will be accessible from your mobile device"
+echo -e "${GREEN}✓${NC} Logs: ${LOG_FILE}"
 echo ""
 
-npm run dev:network
+npm run dev:network 2>&1 | tee -a "$LOG_FILE"
