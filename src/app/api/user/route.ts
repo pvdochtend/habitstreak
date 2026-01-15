@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-helpers'
 import { ApiResponse } from '@/types'
+import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
 // GET /api/user - Get user profile
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
       data: user,
     })
   } catch (error) {
-    console.error('GET /api/user error:', error)
+    logger.error('GET /api/user error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(
@@ -117,7 +118,7 @@ export async function PATCH(request: NextRequest) {
       data: user,
     })
   } catch (error) {
-    console.error('PATCH /api/user error:', error)
+    logger.error('PATCH /api/user error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(

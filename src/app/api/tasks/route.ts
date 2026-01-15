@@ -5,6 +5,7 @@ import { requireAuth } from '@/lib/auth-helpers'
 import { ApiResponse } from '@/types'
 import { SchedulePreset } from '@prisma/client'
 import { isValidDaysOfWeek } from '@/lib/schedule'
+import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
 // GET /api/tasks - List all tasks
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
       data: tasks,
     })
   } catch (error) {
-    console.error('GET /api/tasks error:', error)
+    logger.error('GET /api/tasks error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('POST /api/tasks error:', error)
+    logger.error('POST /api/tasks error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(

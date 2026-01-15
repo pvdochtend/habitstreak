@@ -5,6 +5,7 @@ import { ApiResponse, InsightsData, DayInsight } from '@/types'
 import { getLastNDays } from '@/lib/dates'
 import { isTaskScheduledForDate } from '@/lib/schedule'
 import { calculateCurrentStreak, calculateBestStreak } from '@/lib/streak'
+import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
 // GET /api/insights - Get 7-day insights
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
       data,
     })
   } catch (error) {
-    console.error('GET /api/insights error:', error)
+    logger.error('GET /api/insights error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(

@@ -5,6 +5,7 @@ import { requireAuth } from '@/lib/auth-helpers'
 import { ApiResponse } from '@/types'
 import { SchedulePreset } from '@prisma/client'
 import { isValidDaysOfWeek } from '@/lib/schedule'
+import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
 // PATCH /api/tasks/[id] - Update task
@@ -103,7 +104,7 @@ export async function PATCH(
       data: task,
     })
   } catch (error) {
-    console.error('PATCH /api/tasks/[id] error:', error)
+    logger.error('PATCH /api/tasks/[id] error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(
@@ -158,7 +159,7 @@ export async function DELETE(
       data: { id: params.id },
     })
   } catch (error) {
-    console.error('DELETE /api/tasks/[id] error:', error)
+    logger.error('DELETE /api/tasks/[id] error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(

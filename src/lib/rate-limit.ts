@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -258,7 +259,7 @@ export async function recordAttempt(
       },
     })
     .catch(err => {
-      console.error('Failed to record auth attempt in database:', err)
+      logger.error('Failed to record auth attempt in database', err)
     })
 }
 
@@ -293,7 +294,7 @@ export async function isAccountLocked(email: string): Promise<LockoutInfo> {
     await prisma.accountLockout.delete({
       where: { email: email.toLowerCase() },
     }).catch(err => {
-      console.error('Failed to delete expired lockout:', err)
+      logger.error('Failed to delete expired lockout', err)
     })
 
     return { isLocked: false }

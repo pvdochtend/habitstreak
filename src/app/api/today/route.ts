@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth-helpers'
 import { ApiResponse, TodayData } from '@/types'
 import { getTodayInAmsterdam } from '@/lib/dates'
 import { isTaskScheduledForDate } from '@/lib/schedule'
+import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
 // GET /api/today - Get today's tasks
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       data,
     })
   } catch (error) {
-    console.error('GET /api/today error:', error)
+    logger.error('GET /api/today error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(

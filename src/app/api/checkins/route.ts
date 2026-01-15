@@ -5,6 +5,7 @@ import { requireAuth } from '@/lib/auth-helpers'
 import { ApiResponse } from '@/types'
 import { isValidDateString } from '@/lib/dates'
 import { isTaskScheduledForDate } from '@/lib/schedule'
+import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
 // POST /api/checkins - Create check-in
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('POST /api/checkins error:', error)
+    logger.error('POST /api/checkins error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(
@@ -202,7 +203,7 @@ export async function DELETE(request: NextRequest) {
       data: { taskId, date },
     })
   } catch (error) {
-    console.error('DELETE /api/checkins error:', error)
+    logger.error('DELETE /api/checkins error', error)
 
     if (error instanceof Error && error.message === 'Authenticatie vereist') {
       return NextResponse.json<ApiResponse>(

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { ApiResponse } from '@/types'
 import { getClientIp } from '@/lib/ip-utils'
 import { checkRateLimit, recordAttempt, RATE_LIMIT_CONFIG } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 const signupSchema = z.object({
   email: z.string().email('Ongeldig e-mailadres'),
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Signup error:', error)
+    logger.error('Signup error', error)
 
     // Record failed signup attempt (server error)
     await recordAttempt(clientIp, 'ip', 'signup', false, clientIp, userAgent)
