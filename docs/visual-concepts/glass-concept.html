@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HabitStreak - Glassmorphism Concept</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .concept-container {
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .style-label {
+      text-align: center;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .variant-label {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ============================================
+       PHONE FRAME
+       ============================================ */
+    .phone-frame {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    .phone-screen {
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ============================================
+       BLUE GLASS THEME
+       ============================================ */
+    .blue-theme .phone-screen {
+      background: linear-gradient(180deg,
+        rgba(30, 58, 138, 0.9) 0%,
+        rgba(30, 64, 175, 0.85) 30%,
+        rgba(59, 130, 246, 0.7) 70%,
+        rgba(96, 165, 250, 0.6) 100%);
+    }
+
+    .blue-theme .header {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 50px 20px 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .blue-theme .app-title {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .blue-theme .subtitle {
+      color: rgba(255, 255, 255, 0.85);
+      text-align: center;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .blue-theme .content {
+      padding: 20px;
+    }
+
+    .blue-theme .task-card {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .blue-theme .task-card:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .blue-theme .task-checkbox {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .blue-theme .task-checkbox.completed {
+      background: rgba(34, 197, 94, 0.8);
+      border-color: rgba(34, 197, 94, 0.9);
+      box-shadow:
+        0 0 20px rgba(34, 197, 94, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .blue-theme .task-checkbox.completed svg {
+      width: 16px;
+      height: 16px;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    .blue-theme .task-info h3 {
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .blue-theme .task-info p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .blue-theme .task-card.completed {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .blue-theme .task-card.completed h3 {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Streak Section - Blue Glass */
+    .blue-theme .streak-section {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 24px;
+      padding: 24px;
+      margin-top: 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .blue-theme .streak-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%);
+    }
+
+    .blue-theme .streak-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle,
+        rgba(249, 115, 22, 0.4) 0%,
+        transparent 70%);
+      filter: blur(20px);
+    }
+
+    .blue-theme .streak-icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    .blue-theme .streak-count {
+      font-size: 56px;
+      font-weight: 800;
+      color: white;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .blue-theme .streak-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Bottom Nav - Blue Glass */
+    .blue-theme .bottom-nav {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 20px 30px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .blue-theme .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 11px;
+    }
+
+    .blue-theme .nav-item.active {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .blue-theme .nav-item.active .nav-dot {
+      width: 4px;
+      height: 4px;
+      background: white;
+      border-radius: 50%;
+      margin-top: 4px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    }
+
+    .blue-theme .nav-icon {
+      font-size: 24px;
+    }
+
+    /* ============================================
+       PINK GLASS THEME
+       ============================================ */
+    .pink-theme .concept-container {
+      background: none;
+    }
+
+    .pink-theme .phone-screen {
+      background: linear-gradient(180deg,
+        rgba(157, 23, 77, 0.9) 0%,
+        rgba(190, 24, 93, 0.85) 30%,
+        rgba(236, 72, 153, 0.7) 70%,
+        rgba(244, 114, 182, 0.6) 100%);
+    }
+
+    .pink-theme .header {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 50px 20px 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pink-theme .app-title {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .pink-theme .subtitle {
+      color: rgba(255, 255, 255, 0.85);
+      text-align: center;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .pink-theme .content {
+      padding: 20px;
+    }
+
+    .pink-theme .task-card {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .pink-theme .task-card:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .pink-theme .task-checkbox {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pink-theme .task-checkbox.completed {
+      background: rgba(34, 197, 94, 0.8);
+      border-color: rgba(34, 197, 94, 0.9);
+      box-shadow:
+        0 0 20px rgba(34, 197, 94, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .pink-theme .task-checkbox.completed svg {
+      width: 16px;
+      height: 16px;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    .pink-theme .task-info h3 {
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .pink-theme .task-info p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .pink-theme .task-card.completed {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .pink-theme .task-card.completed h3 {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Streak Section - Pink Glass */
+    .pink-theme .streak-section {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 24px;
+      padding: 24px;
+      margin-top: 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pink-theme .streak-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        transparent 100%);
+    }
+
+    .pink-theme .streak-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle,
+        rgba(249, 115, 22, 0.4) 0%,
+        transparent 70%);
+      filter: blur(20px);
+    }
+
+    .pink-theme .streak-icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    .pink-theme .streak-count {
+      font-size: 56px;
+      font-weight: 800;
+      color: white;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .pink-theme .streak-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Bottom Nav - Pink Glass */
+    .pink-theme .bottom-nav {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 20px 30px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .pink-theme .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 11px;
+    }
+
+    .pink-theme .nav-item.active {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .pink-theme .nav-item.active .nav-dot {
+      width: 4px;
+      height: 4px;
+      background: white;
+      border-radius: 50%;
+      margin-top: 4px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    }
+
+    .pink-theme .nav-icon {
+      font-size: 24px;
+    }
+
+    /* ============================================
+       FALLBACK FOR NO BACKDROP-FILTER SUPPORT
+       ============================================ */
+    @supports not (backdrop-filter: blur(10px)) {
+      .style-label {
+        background: rgba(100, 100, 150, 0.8);
+      }
+
+      .blue-theme .header,
+      .blue-theme .task-card,
+      .blue-theme .streak-section,
+      .blue-theme .bottom-nav {
+        background: rgba(30, 64, 175, 0.85);
+      }
+
+      .pink-theme .header,
+      .pink-theme .task-card,
+      .pink-theme .streak-section,
+      .pink-theme .bottom-nav {
+        background: rgba(190, 24, 93, 0.85);
+      }
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- BLUE GLASS VARIANT -->
+  <div class="concept-container blue-theme">
+    <div class="style-label">Style: Glassmorphism</div>
+    <div class="variant-label">Blue Theme</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <header class="header">
+          <h1 class="app-title">HabitStreak</h1>
+          <p class="subtitle">Vandaag - Donderdag 16 jan</p>
+        </header>
+
+        <main class="content">
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Mediteren</h3>
+              <p>10 minuten mindfulness</p>
+            </div>
+          </div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Water drinken</h3>
+              <p>8 glazen per dag</p>
+            </div>
+          </div>
+
+          <div class="task-card completed">
+            <div class="task-checkbox completed">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="task-info">
+              <h3>Ochtendstretch</h3>
+              <p>15 minuten yoga</p>
+            </div>
+          </div>
+
+          <section class="streak-section">
+            <div class="streak-glow"></div>
+            <div class="streak-icon">&#128293;</div>
+            <div class="streak-count">7</div>
+            <div class="streak-label">dagen op rij!</div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav">
+          <div class="nav-item active">
+            <span class="nav-icon">&#9776;</span>
+            <span>Vandaag</span>
+            <span class="nav-dot"></span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#128200;</span>
+            <span>Inzichten</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#9881;</span>
+            <span>Instellingen</span>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- PINK GLASS VARIANT -->
+  <div class="concept-container pink-theme">
+    <div class="style-label">Style: Glassmorphism</div>
+    <div class="variant-label">Pink Theme</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <header class="header">
+          <h1 class="app-title">HabitStreak</h1>
+          <p class="subtitle">Vandaag - Donderdag 16 jan</p>
+        </header>
+
+        <main class="content">
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Mediteren</h3>
+              <p>10 minuten mindfulness</p>
+            </div>
+          </div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Water drinken</h3>
+              <p>8 glazen per dag</p>
+            </div>
+          </div>
+
+          <div class="task-card completed">
+            <div class="task-checkbox completed">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="task-info">
+              <h3>Ochtendstretch</h3>
+              <p>15 minuten yoga</p>
+            </div>
+          </div>
+
+          <section class="streak-section">
+            <div class="streak-glow"></div>
+            <div class="streak-icon">&#128293;</div>
+            <div class="streak-count">7</div>
+            <div class="streak-label">dagen op rij!</div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav">
+          <div class="nav-item active">
+            <span class="nav-icon">&#9776;</span>
+            <span>Vandaag</span>
+            <span class="nav-dot"></span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#128200;</span>
+            <span>Inzichten</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#9881;</span>
+            <span>Instellingen</span>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
