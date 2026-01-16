@@ -35,7 +35,7 @@ A playful, energetic redesign of HabitStreak's user interface. The app already w
 - [ ] Streak milestone celebrations — hitting streak milestones should feel like achievements
 - [ ] Inviting daily overview — opening the app should feel welcoming and show progress beautifully
 - [ ] Consistent playful personality — the whole experience should feel fun, not just isolated moments
-- [ ] Visual concept exploration — design options to review before committing to a specific style
+- [x] Visual concept exploration — design options to review before committing to a specific style (VISUAL-04 satisfied: glassmorphism chosen)
 
 ### Out of Scope
 
@@ -66,8 +66,9 @@ A playful, energetic redesign of HabitStreak's user interface. The app already w
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Keep blue/pink palette | User wants evolution not revolution; existing brand recognition | — Pending |
-| Explore multiple visual styles | User wants to see concepts before committing | — Pending |
+| Explore multiple visual styles | User wants to see concepts before committing | Completed |
 | Full-energy animations | User explicitly chose maximum motion/delight | — Pending |
+| Visual direction: Glassmorphism | User reviewed gradient, flat, and glass mockups; chose glass for its modern depth and elegant appearance | Proceeding with glassmorphism approach |
 
 ---
-*Last updated: 2026-01-15 after initialization*
+*Last updated: 2026-01-16 after visual direction decision (glassmorphism)*
