@@ -6,6 +6,7 @@ import { TodayTask } from '@/types'
 import { getTaskIcon } from '@/lib/task-icons'
 import { CelebrationEffect } from './celebration-effect'
 import { AnimatedCheckmark } from '@/components/ui/animated-checkmark'
+import { triggerHaptic } from '@/lib/haptics'
 
 interface TodayTaskItemProps {
   task: TodayTask
@@ -25,6 +26,9 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
     const willComplete = !task.isCompleted
 
     if (willComplete) {
+      // Trigger haptic immediately for instant feedback
+      triggerHaptic('success')
+
       setIsAnimating(true)
       setShowCelebration(true)
 
