@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HabitStreak - Vibrant Gradients Concept</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .concept-container {
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .style-label {
+      text-align: center;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+
+    .variant-label {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ============================================
+       PHONE FRAME
+       ============================================ */
+    .phone-frame {
+      background: #1a1a2e;
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .phone-screen {
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ============================================
+       BLUE GRADIENT THEME
+       ============================================ */
+    .blue-theme .phone-screen {
+      background: linear-gradient(180deg, #1e3a5f 0%, #0f172a 100%);
+    }
+
+    .blue-theme .header {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+      padding: 50px 20px 30px;
+    }
+
+    .blue-theme .app-title {
+      background: linear-gradient(90deg, #fff 0%, #e0e7ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 28px;
+      font-weight: 800;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .blue-theme .subtitle {
+      color: rgba(255, 255, 255, 0.8);
+      text-align: center;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .blue-theme .content {
+      padding: 20px;
+    }
+
+    .blue-theme .task-card {
+      background: linear-gradient(145deg, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .blue-theme .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    .blue-theme .task-checkbox {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(59, 130, 246, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .blue-theme .task-checkbox.completed {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border: none;
+      box-shadow:
+        0 0 20px rgba(59, 130, 246, 0.5),
+        0 0 40px rgba(139, 92, 246, 0.3);
+    }
+
+    .blue-theme .task-checkbox.completed svg {
+      width: 16px;
+      height: 16px;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    .blue-theme .task-info h3 {
+      color: #e2e8f0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .blue-theme .task-info p {
+      color: rgba(148, 163, 184, 0.8);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .blue-theme .task-card.completed {
+      background: linear-gradient(145deg, rgba(34, 197, 94, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .blue-theme .task-card.completed h3 {
+      color: rgba(226, 232, 240, 0.7);
+    }
+
+    /* Streak Section - Blue */
+    .blue-theme .streak-section {
+      background: linear-gradient(135deg, #f97316 0%, #ef4444 50%, #ec4899 100%);
+      border-radius: 20px;
+      padding: 24px;
+      margin-top: 20px;
+      text-align: center;
+      box-shadow:
+        0 10px 30px rgba(249, 115, 22, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .blue-theme .streak-icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    .blue-theme .streak-count {
+      font-size: 56px;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .blue-theme .streak-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* Bottom Nav - Blue */
+    .blue-theme .bottom-nav {
+      background: linear-gradient(180deg, rgba(30, 58, 95, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+      border-top: 1px solid rgba(59, 130, 246, 0.2);
+      padding: 12px 20px 30px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .blue-theme .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: rgba(148, 163, 184, 0.6);
+      font-size: 11px;
+    }
+
+    .blue-theme .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .blue-theme .nav-item.active .nav-icon {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .blue-theme .nav-icon {
+      font-size: 24px;
+    }
+
+    /* ============================================
+       PINK GRADIENT THEME
+       ============================================ */
+    .pink-theme .phone-screen {
+      background: linear-gradient(180deg, #4a1942 0%, #1a0a1a 100%);
+    }
+
+    .pink-theme .header {
+      background: linear-gradient(135deg, #ec4899 0%, #f472b6 50%, #fb7185 100%);
+      padding: 50px 20px 30px;
+    }
+
+    .pink-theme .app-title {
+      background: linear-gradient(90deg, #fff 0%, #fce7f3 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 28px;
+      font-weight: 800;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .pink-theme .subtitle {
+      color: rgba(255, 255, 255, 0.8);
+      text-align: center;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .pink-theme .content {
+      padding: 20px;
+    }
+
+    .pink-theme .task-card {
+      background: linear-gradient(145deg, rgba(236, 72, 153, 0.15) 0%, rgba(244, 114, 182, 0.1) 100%);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .pink-theme .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(236, 72, 153, 0.3);
+    }
+
+    .pink-theme .task-checkbox {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(236, 72, 153, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pink-theme .task-checkbox.completed {
+      background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+      border: none;
+      box-shadow:
+        0 0 20px rgba(236, 72, 153, 0.5),
+        0 0 40px rgba(244, 114, 182, 0.3);
+    }
+
+    .pink-theme .task-checkbox.completed svg {
+      width: 16px;
+      height: 16px;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    .pink-theme .task-info h3 {
+      color: #fce7f3;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .pink-theme .task-info p {
+      color: rgba(251, 207, 232, 0.7);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .pink-theme .task-card.completed {
+      background: linear-gradient(145deg, rgba(34, 197, 94, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .pink-theme .task-card.completed h3 {
+      color: rgba(252, 231, 243, 0.7);
+    }
+
+    /* Streak Section - Pink */
+    .pink-theme .streak-section {
+      background: linear-gradient(135deg, #f97316 0%, #ef4444 50%, #ec4899 100%);
+      border-radius: 20px;
+      padding: 24px;
+      margin-top: 20px;
+      text-align: center;
+      box-shadow:
+        0 10px 30px rgba(236, 72, 153, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .pink-theme .streak-icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    .pink-theme .streak-count {
+      font-size: 56px;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .pink-theme .streak-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* Bottom Nav - Pink */
+    .pink-theme .bottom-nav {
+      background: linear-gradient(180deg, rgba(74, 25, 66, 0.95) 0%, rgba(26, 10, 26, 0.98) 100%);
+      border-top: 1px solid rgba(236, 72, 153, 0.2);
+      padding: 12px 20px 30px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .pink-theme .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: rgba(251, 207, 232, 0.5);
+      font-size: 11px;
+    }
+
+    .pink-theme .nav-item.active {
+      color: #ec4899;
+    }
+
+    .pink-theme .nav-item.active .nav-icon {
+      background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .pink-theme .nav-icon {
+      font-size: 24px;
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- BLUE GRADIENT VARIANT -->
+  <div class="concept-container blue-theme">
+    <div class="style-label">Style: Vibrant Gradients</div>
+    <div class="variant-label">Blue Theme</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <header class="header">
+          <h1 class="app-title">HabitStreak</h1>
+          <p class="subtitle">Vandaag - Donderdag 16 jan</p>
+        </header>
+
+        <main class="content">
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Mediteren</h3>
+              <p>10 minuten mindfulness</p>
+            </div>
+          </div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Water drinken</h3>
+              <p>8 glazen per dag</p>
+            </div>
+          </div>
+
+          <div class="task-card completed">
+            <div class="task-checkbox completed">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="task-info">
+              <h3>Ochtendstretch</h3>
+              <p>15 minuten yoga</p>
+            </div>
+          </div>
+
+          <section class="streak-section">
+            <div class="streak-icon">&#128293;</div>
+            <div class="streak-count">7</div>
+            <div class="streak-label">dagen op rij!</div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav">
+          <div class="nav-item active">
+            <span class="nav-icon">&#9776;</span>
+            <span>Vandaag</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#128200;</span>
+            <span>Inzichten</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#9881;</span>
+            <span>Instellingen</span>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- PINK GRADIENT VARIANT -->
+  <div class="concept-container pink-theme">
+    <div class="style-label">Style: Vibrant Gradients</div>
+    <div class="variant-label">Pink Theme</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <header class="header">
+          <h1 class="app-title">HabitStreak</h1>
+          <p class="subtitle">Vandaag - Donderdag 16 jan</p>
+        </header>
+
+        <main class="content">
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Mediteren</h3>
+              <p>10 minuten mindfulness</p>
+            </div>
+          </div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Water drinken</h3>
+              <p>8 glazen per dag</p>
+            </div>
+          </div>
+
+          <div class="task-card completed">
+            <div class="task-checkbox completed">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="task-info">
+              <h3>Ochtendstretch</h3>
+              <p>15 minuten yoga</p>
+            </div>
+          </div>
+
+          <section class="streak-section">
+            <div class="streak-icon">&#128293;</div>
+            <div class="streak-count">7</div>
+            <div class="streak-label">dagen op rij!</div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav">
+          <div class="nav-item active">
+            <span class="nav-icon">&#9776;</span>
+            <span>Vandaag</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#128200;</span>
+            <span>Inzichten</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#9881;</span>
+            <span>Instellingen</span>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
