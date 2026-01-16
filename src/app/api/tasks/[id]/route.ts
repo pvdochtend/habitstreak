@@ -20,9 +20,10 @@ const updateTaskSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAuth()
     const body = await request.json()
 
@@ -42,7 +43,7 @@ export async function PATCH(
 
     // Check if task exists and belongs to user
     const existingTask = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existingTask) {
@@ -95,7 +96,7 @@ export async function PATCH(
 
     // Update task
     const task = await prisma.task.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     })
 
@@ -125,14 +126,15 @@ export async function PATCH(
 // ════════════════════════════════════
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAuth()
 
     // Check if task exists and belongs to user
     const existingTask = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existingTask) {
@@ -151,12 +153,12 @@ export async function DELETE(
 
     // Delete task (cascade deletes check-ins)
     await prisma.task.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json<ApiResponse>({
       success: true,
-      data: { id: params.id },
+      data: { id },
     })
   } catch (error) {
     logger.error('DELETE /api/tasks/[id] error', error)
