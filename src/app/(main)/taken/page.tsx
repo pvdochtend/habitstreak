@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Task, ApiResponse } from '@/types'
 import { Plus, Loader2 } from 'lucide-react'
+import { PageTransition } from '@/components/ui/page-transition'
 
 export default function TakenPage() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -135,7 +136,7 @@ export default function TakenPage() {
   }
 
   return (
-    <div className="p-4 space-y-6 animate-fade-in">
+    <PageTransition className="p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between animate-slide-up">
         <h1 className="text-3xl font-bold">Taken</h1>
@@ -202,6 +203,6 @@ export default function TakenPage() {
         onOpenChange={handleFormClose}
         onSuccess={handleFormSuccess}
       />
-    </div>
+    </PageTransition>
   )
 }

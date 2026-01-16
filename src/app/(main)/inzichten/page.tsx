@@ -6,6 +6,7 @@ import { StreakCard } from '@/components/insights/streak-card'
 import { Card, CardContent } from '@/components/ui/card'
 import { InsightsData, ApiResponse } from '@/types'
 import { Loader2 } from 'lucide-react'
+import { PageTransition } from '@/components/ui/page-transition'
 
 export default function InzichtenPage() {
   const [data, setData] = useState<InsightsData | null>(null)
@@ -86,7 +87,7 @@ export default function InzichtenPage() {
   }
 
   return (
-    <div className="p-4 space-y-6 animate-fade-in">
+    <PageTransition className="p-4 space-y-6">
       {/* Header */}
       <h1 className="text-3xl font-bold animate-slide-up">Inzichten</h1>
 
@@ -125,6 +126,6 @@ export default function InzichtenPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageTransition>
   )
 }

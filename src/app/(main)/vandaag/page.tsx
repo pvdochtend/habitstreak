@@ -5,6 +5,7 @@ import { TodayTaskItem } from '@/components/tasks/today-task-item'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TodayData, ApiResponse } from '@/types'
 import { Loader2 } from 'lucide-react'
+import { PageTransition } from '@/components/ui/page-transition'
 
 export default function VandaagPage() {
   const [data, setData] = useState<TodayData | null>(null)
@@ -110,7 +111,7 @@ export default function VandaagPage() {
   }
 
   return (
-    <div className="p-4 space-y-6 animate-fade-in">
+    <PageTransition className="p-4 space-y-6">
       {/* Header with Progress */}
       <div className="animate-slide-up">
         <h1 className="text-3xl font-bold mb-2">Vandaag</h1>
@@ -180,6 +181,6 @@ export default function VandaagPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageTransition>
   )
 }

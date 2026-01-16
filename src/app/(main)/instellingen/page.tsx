@@ -11,6 +11,7 @@ import { ApiResponse, ColorScheme } from '@/types'
 import { Loader2, LogOut, Palette, Moon, Sun, Check } from 'lucide-react'
 import { useTheme } from '@/contexts/theme-context'
 import { cn } from '@/lib/utils'
+import { PageTransition } from '@/components/ui/page-transition'
 
 interface UserData {
   id: string
@@ -131,7 +132,7 @@ export default function InstellingenPage() {
   }
 
   return (
-    <div className="p-4 space-y-6 animate-fade-in">
+    <PageTransition className="p-4 space-y-6">
       {/* Header */}
       <h1 className="text-3xl font-bold animate-slide-up">Instellingen</h1>
 
@@ -365,6 +366,6 @@ export default function InstellingenPage() {
           </Button>
         </CardContent>
       </Card>
-    </div>
+    </PageTransition>
   )
 }
