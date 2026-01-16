@@ -47,9 +47,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 01-01: Set up animation infrastructure and vibrant color palette
-- [ ] 02-02: Implement button feedback, skeletons, and page transitions
-- [ ] 02-03: Add prefers-reduced-motion support
+- [ ] 02-01: Color & glass foundation (vibrant palette, glassmorphism utilities)
+- [ ] 02-02: Animation feedback & transitions (button feedback, shimmer skeletons, page transitions)
+- [ ] 02-03: Motion sensitivity & verification (prefers-reduced-motion, visual checkpoint)
 
 ### Phase 3: Task Completion Experience
 **Goal**: Rewarding task check-in interactions that spark joy
