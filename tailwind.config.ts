@@ -49,6 +49,11 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      backdropBlur: {
+        xs: '2px',
+        glass: '12px',
+        'glass-strong': '20px',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],
