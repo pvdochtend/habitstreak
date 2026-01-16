@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TodayTask } from '@/types'
 import { getTaskIcon } from '@/lib/task-icons'
 import { CelebrationEffect } from './celebration-effect'
+import { AnimatedCheckmark } from '@/components/ui/animated-checkmark'
 
 interface TodayTaskItemProps {
   task: TodayTask
@@ -56,7 +56,7 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
         'w-full flex items-center gap-4 p-4 rounded-lg border transition-all duration-200 touch-target animate-slide-up',
         'hover:bg-accent hover:shadow-md active:scale-[0.98]',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        isAnimating && 'animate-celebrate animate-glow',
+        isAnimating && 'animate-task-complete animate-glow',
         task.isCompleted
           ? 'bg-primary/5 border-primary shadow-sm'
           : 'bg-card border-border'
@@ -85,11 +85,16 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
             'flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200',
             task.isCompleted
               ? 'bg-primary border-primary scale-110'
-              : 'bg-background border-muted-foreground hover:border-primary/50'
+              : 'bg-background border-muted-foreground hover:border-primary/50',
+            isAnimating && 'animate-checkbox-fill'
           )}
         >
           {task.isCompleted && (
-            <Check className="h-4 w-4 text-primary-foreground animate-checkmark" />
+            <AnimatedCheckmark
+              isChecked={task.isCompleted}
+              className="text-primary-foreground"
+              size={16}
+            />
           )}
         </div>
       </div>
