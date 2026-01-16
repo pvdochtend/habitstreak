@@ -220,6 +220,58 @@
   animation: checkmark 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
+/* Checkmark draw animation (stroke-dashoffset) */
+@keyframes drawCheckmark {
+  from {
+    stroke-dashoffset: 30;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-checkmark {
+  animation: drawCheckmark 0.35s ease-out forwards;
+  animation-delay: 0.05s;
+}
+
+/* Enhanced checkbox fill animation (color fills from center) */
+@keyframes checkboxFill {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-checkbox-fill {
+  animation: checkboxFill 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Task row completion background transition (subtle color spread) */
+@keyframes taskComplete {
+  0% {
+    background-color: hsl(var(--card));
+  }
+  50% {
+    background-color: hsl(var(--primary) / 0.12);
+  }
+  100% {
+    background-color: hsl(var(--primary) / 0.05);
+  }
+}
+
+.animate-task-complete {
+  animation: taskComplete 0.5s ease-out forwards;
+}
+
 /* Celebration animations for task completion */
 @keyframes celebrate {
   0% {
@@ -400,6 +452,9 @@
   .animate-fade-in,
   .animate-scale-in,
   .animate-checkmark,
+  .animate-draw-checkmark,
+  .animate-checkbox-fill,
+  .animate-task-complete,
   .animate-button-press,
   .animate-pulse,
   .animate-slide-in-right,
