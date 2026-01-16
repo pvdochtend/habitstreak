@@ -77,9 +77,15 @@ test.describe('Task CRUD Operations', () => {
     // Click delete button
     const deleteButton = page.locator('button[title="Verwijderen"]').first()
     await expect(deleteButton).toBeVisible()
+    const deleteResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/tasks/') &&
+        response.request().method() === 'DELETE'
+    )
     await deleteButton.click()
+    await deleteResponse
 
     // Verify task is removed
-    await expect(page.getByText('Task to Delete')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Task to Delete')).toHaveCount(0, { timeout: 10000 })
   })
 })

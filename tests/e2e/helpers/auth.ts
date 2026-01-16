@@ -23,7 +23,9 @@ export async function signupUser(
   const userEmail = email ?? generateTestEmail()
   const userPassword = password ?? DEFAULT_PASSWORD
   const testIp = (page as any).__testIp as string | undefined
-  const requestHeaders = testIp ? { 'x-test-ip': testIp } : undefined
+  const requestHeaders = testIp
+    ? { 'x-test-ip': testIp, 'x-forwarded-for': testIp }
+    : undefined
 
   const signupResponse = await page.request.post('/api/auth/signup', {
     data: { email: userEmail, password: userPassword },
@@ -67,7 +69,9 @@ export async function loginUser(
   password: string
 ): Promise<void> {
   const testIp = (page as any).__testIp as string | undefined
-  const requestHeaders = testIp ? { 'x-test-ip': testIp } : undefined
+  const requestHeaders = testIp
+    ? { 'x-test-ip': testIp, 'x-forwarded-for': testIp }
+    : undefined
 
   const csrfResponse = await page.request.get('/api/auth/csrf', {
     headers: requestHeaders,

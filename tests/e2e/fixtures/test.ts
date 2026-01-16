@@ -33,7 +33,10 @@ export const test = base.extend<{
    * Inject a test IP header for all requests from this page
    */
   page: async ({ page, testIp }, use) => {
-    await page.context().setExtraHTTPHeaders({ 'x-test-ip': testIp })
+    await page.context().setExtraHTTPHeaders({
+      'x-test-ip': testIp,
+      'x-forwarded-for': testIp,
+    })
     ;(page as any).__testIp = testIp
     const originalGoto = page.goto.bind(page)
     ;(page as Page).goto = ((url: string, options: Parameters<Page['goto']>[1] = {}) => {

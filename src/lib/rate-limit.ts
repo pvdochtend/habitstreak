@@ -169,6 +169,8 @@ export async function checkRateLimit(
 
   const now = Date.now()
   const key = `${type}:${identifier}`
+  const useDb = process.env.NODE_ENV !== 'production' ||
+    process.env.RATE_LIMIT_USE_DB === 'true'
 
   // Get existing attempts for this identifier
   const attempts = rateLimitStore.get(key) || []
@@ -181,10 +183,44 @@ export async function checkRateLimit(
   // Update store with filtered attempts
   rateLimitStore.set(key, recentAttempts)
 
+  let dbCount = 0
+  let oldestAttemptTimestamp = recentAttempts[0]?.timestamp
+  if (useDb) {
+    const attemptType = type === 'signup-ip' ? 'signup' : 'login'
+    const identifierType = type === 'login-email' ? 'email' : 'ip'
+    const windowStart = new Date(now - windowMs)
+    const [count, oldestAttempt] = await Promise.all([
+      prisma.authAttempt.count({
+        where: {
+          identifier,
+          attemptType,
+          identifierType,
+          createdAt: { gte: windowStart },
+        },
+      }),
+      prisma.authAttempt.findFirst({
+        where: {
+          identifier,
+          attemptType,
+          identifierType,
+          createdAt: { gte: windowStart },
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true },
+      }),
+    ])
+    dbCount = count
+    if (!oldestAttemptTimestamp && oldestAttempt) {
+      oldestAttemptTimestamp = oldestAttempt.createdAt.getTime()
+    }
+  }
+
+  const recentAttemptsCount = Math.max(recentAttempts.length, dbCount)
+
   // Check if limit exceeded
-  if (recentAttempts.length >= maxAttempts) {
-    const oldestAttempt = recentAttempts[0]
-    const resetAt = new Date(oldestAttempt.timestamp + windowMs)
+  if (recentAttemptsCount >= maxAttempts) {
+    const oldestTimestamp = oldestAttemptTimestamp ?? now
+    const resetAt = new Date(oldestTimestamp + windowMs)
     const remainingMs = resetAt.getTime() - now
     const remainingMinutes = formatMinutes(remainingMs)
 
@@ -207,7 +243,7 @@ export async function checkRateLimit(
 
   return {
     allowed: true,
-    remainingAttempts: maxAttempts - recentAttempts.length,
+    remainingAttempts: maxAttempts - recentAttemptsCount,
     resetAt: new Date(now + windowMs),
   }
 }
@@ -234,6 +270,8 @@ export async function recordAttempt(
   if (!RATE_LIMITING_ENABLED) return
 
   const now = Date.now()
+  const useDb = process.env.NODE_ENV !== 'production' ||
+    process.env.RATE_LIMIT_USE_DB === 'true'
   // Determine the correct AttemptType based on attemptType and identifierType
   const type: AttemptType = attemptType === 'signup'
     ? 'signup-ip'
@@ -245,22 +283,29 @@ export async function recordAttempt(
   attempts.push({ timestamp: now, success })
   rateLimitStore.set(key, attempts)
 
-  // Store in database for audit trail (async, non-blocking)
-  // Don't await - we don't want DB issues to block auth flow
-  prisma.authAttempt
-    .create({
-      data: {
-        identifier,
-        identifierType,
-        attemptType,
-        success,
-        ipAddress,
-        userAgent,
-      },
-    })
-    .catch(err => {
+  const createPromise = prisma.authAttempt.create({
+    data: {
+      identifier,
+      identifierType,
+      attemptType,
+      success,
+      ipAddress,
+      userAgent,
+    },
+  })
+
+  if (useDb) {
+    try {
+      await createPromise
+    } catch (err) {
+      logger.error('Failed to record auth attempt in database', err)
+    }
+  } else {
+    // Store in database for audit trail (async, non-blocking)
+    createPromise.catch(err => {
       logger.error('Failed to record auth attempt in database', err)
     })
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════

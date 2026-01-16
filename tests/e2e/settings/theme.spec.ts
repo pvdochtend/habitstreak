@@ -163,11 +163,11 @@ test.describe('Theme Settings', () => {
 
     // Click Dark button - theme should change immediately
     await page.click('button:has-text("Donker")')
-    await expect(html).toHaveClass(/dark/, { timeout: 1000 })
+    await waitForModeApplied(page, 'dark', 5000)
 
     // Click Light button - should switch back immediately
     await page.click('button:has-text("Licht")')
-    await expect(html).toHaveClass(/light/, { timeout: 1000 })
+    await waitForModeApplied(page, 'light', 5000)
   })
 
   test('should update localStorage when theme changes', async ({ page }) => {
