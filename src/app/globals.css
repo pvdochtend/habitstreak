@@ -125,6 +125,39 @@
   }
 }
 
+/* ============================================
+   GLASSMORPHISM UTILITIES
+   ============================================ */
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: hsl(var(--card) / 0.7);
+  border: 1px solid hsl(var(--border) / 0.3);
+}
+
+.glass-subtle {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: hsl(var(--card) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.2);
+}
+
+.glass-strong {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: hsl(var(--card) / 0.85);
+  border: 1px solid hsl(var(--border) / 0.4);
+}
+
+/* Fallback for browsers without backdrop-filter */
+@supports not (backdrop-filter: blur(12px)) {
+  .glass,
+  .glass-subtle,
+  .glass-strong {
+    background: hsl(var(--card) / 0.95);
+  }
+}
+
 /* Custom animations */
 @keyframes slideUp {
   from {
