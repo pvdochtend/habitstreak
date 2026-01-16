@@ -388,17 +388,52 @@
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-/* Respect user's motion preferences */
+/* ============================================
+   REDUCED MOTION ACCESSIBILITY
+   ============================================ */
 @media (prefers-reduced-motion: reduce) {
+  /* Disable all custom animations */
   .animate-celebrate,
   .animate-glow,
-  .animate-confetti {
+  .animate-confetti,
+  .animate-slide-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-checkmark,
+  .animate-button-press,
+  .animate-pulse,
+  .animate-slide-in-right,
+  .animate-shimmer,
+  .animate-press,
+  .animate-page-in {
     animation: none !important;
   }
 
-  /* Simple fade instead of animations */
-  .animate-celebrate {
-    transition: opacity 0.2s ease-out;
+  /* Disable transitions except color changes */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep subtle hover states for feedback */
+  button:hover,
+  a:hover {
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+
+  /* Skeleton shows static background instead of shimmer */
+  .animate-shimmer {
+    background: hsl(var(--muted)) !important;
+    background-size: 100% 100% !important;
+  }
+
+  /* Page transition shows instantly */
+  .transition-all {
+    transition: none !important;
   }
 }
 
