@@ -8,15 +8,23 @@ interface CelebrationEffectProps {
   onComplete?: () => void
 }
 
+interface Particle {
+  id: number
+  angle: number      // Direction in radians (0 to 2π)
+  distance: number   // How far to travel (30-80px)
+  size: 'sm' | 'md' | 'lg'
+  shape: 'circle' | 'square'
+  color: string
+  delay: number      // Stagger the start (0-100ms)
+}
+
 export function CelebrationEffect({ show, onComplete }: CelebrationEffectProps) {
-  const [particles, setParticles] = useState<
-    Array<{ id: number; x: number; y: number; color: string }>
-  >([])
+  const [particles, setParticles] = useState<Particle[]>([])
 
   useEffect(() => {
     if (!show) return
 
-    // Generate confetti particles
+    // Vibrant particle colors
     const colors = [
       'bg-primary',
       'bg-green-500',
@@ -26,11 +34,15 @@ export function CelebrationEffect({ show, onComplete }: CelebrationEffectProps) 
       'bg-blue-500',
     ]
 
-    const newParticles = Array.from({ length: 12 }, (_, i) => ({
+    // Generate particles in radial burst pattern
+    const newParticles = Array.from({ length: 18 }, (_, i) => ({
       id: i,
-      x: Math.random() * 100 - 50, // -50 to 50
-      y: Math.random() * 30 + 10, // 10 to 40
+      angle: (i / 18) * Math.PI * 2 + (Math.random() * 0.3 - 0.15), // Radial with jitter
+      distance: 35 + Math.random() * 45, // 35-80px
+      size: (['sm', 'md', 'lg'] as const)[Math.floor(Math.random() * 3)],
+      shape: (Math.random() > 0.3 ? 'circle' : 'square') as 'circle' | 'square',
       color: colors[Math.floor(Math.random() * colors.length)],
+      delay: i * 15, // Stagger by 15ms each
     }))
 
     setParticles(newParticles)
@@ -51,12 +63,19 @@ export function CelebrationEffect({ show, onComplete }: CelebrationEffectProps) 
       {particles.map((particle) => (
         <div
           key={particle.id}
-          className={cn('confetti-particle rounded-full animate-confetti', particle.color)}
+          className={cn(
+            'particle absolute',
+            particle.shape === 'circle' ? 'rounded-full' : 'rotate-45',
+            particle.color,
+            particle.size === 'sm' ? 'w-1 h-1' : particle.size === 'md' ? 'w-1.5 h-1.5' : 'w-2 h-2'
+          )}
           style={{
-            left: `calc(50% + ${particle.x}px)`,
-            top: `50%`,
-            animationDelay: `${particle.id * 30}ms`,
-          }}
+            '--particle-x': `${Math.cos(particle.angle) * particle.distance}px`,
+            '--particle-y': `${Math.sin(particle.angle) * particle.distance}px`,
+            left: '50%',
+            top: '50%',
+            animationDelay: `${particle.delay}ms`,
+          } as React.CSSProperties}
         />
       ))}
     </div>
