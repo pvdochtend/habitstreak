@@ -82,28 +82,28 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ANIM-01 | — | Pending |
-| ANIM-02 | — | Pending |
-| ANIM-03 | — | Pending |
-| ANIM-04 | — | Pending |
-| TASK-01 | — | Pending |
-| TASK-02 | — | Pending |
-| TASK-03 | — | Pending |
-| TASK-04 | — | Pending |
-| CELEB-01 | — | Pending |
-| CELEB-02 | — | Pending |
-| STREAK-01 | — | Pending |
-| STREAK-02 | — | Pending |
-| VISUAL-01 | — | Pending |
-| VISUAL-02 | — | Pending |
-| VISUAL-03 | — | Pending |
-| VISUAL-04 | — | Pending |
+| ANIM-01 | Phase 2 | Pending |
+| ANIM-02 | Phase 2 | Pending |
+| ANIM-03 | Phase 2 | Pending |
+| ANIM-04 | Phase 2 | Pending |
+| TASK-01 | Phase 3 | Pending |
+| TASK-02 | Phase 3 | Pending |
+| TASK-03 | Phase 3 | Pending |
+| TASK-04 | Phase 3 | Pending |
+| CELEB-01 | Phase 3 | Pending |
+| CELEB-02 | Phase 4 | Pending |
+| STREAK-01 | Phase 4 | Pending |
+| STREAK-02 | Phase 4 | Pending |
+| VISUAL-01 | Phase 2 | Pending |
+| VISUAL-02 | Phase 5 | Pending |
+| VISUAL-03 | Phase 5 | Pending |
+| VISUAL-04 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16 ⚠️
+- Mapped to phases: 16 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-16*
-*Last updated: 2026-01-16 after initial definition*
+*Last updated: 2026-01-16 after roadmap creation*
