@@ -293,7 +293,18 @@
    ENHANCED MICRO-INTERACTIONS
    ============================================ */
 
-/* Smooth bounce for buttons */
+/* Button press feedback */
+@keyframes pressIn {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+.animate-press {
+  animation: pressIn 0.15s ease-out;
+}
+
+/* Smooth bounce for buttons (legacy) */
 @keyframes buttonPress {
   0% { transform: scale(1); }
   50% { transform: scale(0.96); }
