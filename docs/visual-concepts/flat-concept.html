@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HabitStreak - Bold Flat Concept</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .concept-container {
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .style-label {
+      text-align: center;
+      padding: 12px 20px;
+      background: #1f2937;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .variant-label {
+      text-align: center;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    /* ============================================
+       PHONE FRAME
+       ============================================ */
+    .phone-frame {
+      background: #111827;
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .phone-screen {
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ============================================
+       BLUE FLAT THEME
+       ============================================ */
+    .blue-theme .phone-screen {
+      background: #0f172a;
+    }
+
+    .blue-theme .header {
+      background: #2563eb;
+      padding: 50px 20px 30px;
+    }
+
+    .blue-theme .app-title {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: -1px;
+    }
+
+    .blue-theme .subtitle {
+      color: rgba(255, 255, 255, 0.85);
+      text-align: center;
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .blue-theme .content {
+      padding: 20px;
+    }
+
+    .blue-theme .section-label {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .blue-theme .task-card {
+      background: #1e293b;
+      border-left: 4px solid #3b82f6;
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform 0.15s ease;
+    }
+
+    .blue-theme .task-card:hover {
+      transform: translateX(4px);
+    }
+
+    .blue-theme .task-checkbox {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #3b82f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .blue-theme .task-checkbox.completed {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+
+    .blue-theme .task-checkbox.completed svg {
+      width: 18px;
+      height: 18px;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    .blue-theme .task-info h3 {
+      color: #f1f5f9;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .blue-theme .task-info p {
+      color: #64748b;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .blue-theme .task-card.completed {
+      border-left-color: #22c55e;
+      opacity: 0.7;
+    }
+
+    .blue-theme .task-card.completed h3 {
+      text-decoration: line-through;
+      color: #94a3b8;
+    }
+
+    /* Streak Section - Blue Flat */
+    .blue-theme .streak-section {
+      background: #dc2626;
+      padding: 28px;
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .blue-theme .streak-icon {
+      font-size: 52px;
+      margin-bottom: 4px;
+    }
+
+    .blue-theme .streak-count {
+      font-size: 72px;
+      font-weight: 900;
+      color: white;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .blue-theme .streak-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    /* Bottom Nav - Blue Flat */
+    .blue-theme .bottom-nav {
+      background: #0f172a;
+      border-top: 2px solid #1e293b;
+      padding: 12px 20px 30px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .blue-theme .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .blue-theme .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .blue-theme .nav-icon {
+      font-size: 26px;
+    }
+
+    /* ============================================
+       PINK FLAT THEME
+       ============================================ */
+    .pink-theme .phone-screen {
+      background: #18061a;
+    }
+
+    .pink-theme .header {
+      background: #db2777;
+      padding: 50px 20px 30px;
+    }
+
+    .pink-theme .app-title {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: -1px;
+    }
+
+    .pink-theme .subtitle {
+      color: rgba(255, 255, 255, 0.85);
+      text-align: center;
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .pink-theme .content {
+      padding: 20px;
+    }
+
+    .pink-theme .section-label {
+      color: #9d4e8c;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .pink-theme .task-card {
+      background: #2d1230;
+      border-left: 4px solid #ec4899;
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform 0.15s ease;
+    }
+
+    .pink-theme .task-card:hover {
+      transform: translateX(4px);
+    }
+
+    .pink-theme .task-checkbox {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #ec4899;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pink-theme .task-checkbox.completed {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+
+    .pink-theme .task-checkbox.completed svg {
+      width: 18px;
+      height: 18px;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    .pink-theme .task-info h3 {
+      color: #fce7f3;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .pink-theme .task-info p {
+      color: #9d4e8c;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .pink-theme .task-card.completed {
+      border-left-color: #22c55e;
+      opacity: 0.7;
+    }
+
+    .pink-theme .task-card.completed h3 {
+      text-decoration: line-through;
+      color: #d8a8d0;
+    }
+
+    /* Streak Section - Pink Flat */
+    .pink-theme .streak-section {
+      background: #ea580c;
+      padding: 28px;
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .pink-theme .streak-icon {
+      font-size: 52px;
+      margin-bottom: 4px;
+    }
+
+    .pink-theme .streak-count {
+      font-size: 72px;
+      font-weight: 900;
+      color: white;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .pink-theme .streak-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    /* Bottom Nav - Pink Flat */
+    .pink-theme .bottom-nav {
+      background: #18061a;
+      border-top: 2px solid #2d1230;
+      padding: 12px 20px 30px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .pink-theme .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #9d4e8c;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pink-theme .nav-item.active {
+      color: #ec4899;
+    }
+
+    .pink-theme .nav-icon {
+      font-size: 26px;
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- BLUE FLAT VARIANT -->
+  <div class="concept-container blue-theme">
+    <div class="style-label">Style: Bold Flat</div>
+    <div class="variant-label">Blue Theme</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <header class="header">
+          <h1 class="app-title">HabitStreak</h1>
+          <p class="subtitle">Vandaag - Donderdag 16 jan</p>
+        </header>
+
+        <main class="content">
+          <div class="section-label">Je taken</div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Mediteren</h3>
+              <p>10 minuten mindfulness</p>
+            </div>
+          </div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Water drinken</h3>
+              <p>8 glazen per dag</p>
+            </div>
+          </div>
+
+          <div class="task-card completed">
+            <div class="task-checkbox completed">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="task-info">
+              <h3>Ochtendstretch</h3>
+              <p>15 minuten yoga</p>
+            </div>
+          </div>
+
+          <section class="streak-section">
+            <div class="streak-icon">&#128293;</div>
+            <div class="streak-count">7</div>
+            <div class="streak-label">Dagen op rij</div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav">
+          <div class="nav-item active">
+            <span class="nav-icon">&#9776;</span>
+            <span>Vandaag</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#128200;</span>
+            <span>Inzichten</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#9881;</span>
+            <span>Instellingen</span>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- PINK FLAT VARIANT -->
+  <div class="concept-container pink-theme">
+    <div class="style-label">Style: Bold Flat</div>
+    <div class="variant-label">Pink Theme</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <header class="header">
+          <h1 class="app-title">HabitStreak</h1>
+          <p class="subtitle">Vandaag - Donderdag 16 jan</p>
+        </header>
+
+        <main class="content">
+          <div class="section-label">Je taken</div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Mediteren</h3>
+              <p>10 minuten mindfulness</p>
+            </div>
+          </div>
+
+          <div class="task-card">
+            <div class="task-checkbox"></div>
+            <div class="task-info">
+              <h3>Water drinken</h3>
+              <p>8 glazen per dag</p>
+            </div>
+          </div>
+
+          <div class="task-card completed">
+            <div class="task-checkbox completed">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="task-info">
+              <h3>Ochtendstretch</h3>
+              <p>15 minuten yoga</p>
+            </div>
+          </div>
+
+          <section class="streak-section">
+            <div class="streak-icon">&#128293;</div>
+            <div class="streak-count">7</div>
+            <div class="streak-label">Dagen op rij</div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav">
+          <div class="nav-item active">
+            <span class="nav-icon">&#9776;</span>
+            <span>Vandaag</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#128200;</span>
+            <span>Inzichten</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">&#9881;</span>
+            <span>Instellingen</span>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
