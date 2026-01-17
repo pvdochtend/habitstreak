@@ -52,11 +52,17 @@ reason: User requested skip
 expected: Tapping a completed task to uncomplete it should NOT trigger celebration effects (no particles, no special animations). Only completing triggers celebrations.
 result: pass
 
+### 9. Mobile Focus State Clears After Tap
+expected: On mobile, after tapping a task to complete it, the task should not stay in a "selected" or highlighted state. It should return to normal appearance (like tapping the background would clear selection).
+result: issue
+reported: "On mobile, task stays selected after tap. Grey on blue readability is poor. No hover state on mobile to clear it."
+severity: major
+
 ## Summary
 
-total: 8
+total: 9
 passed: 4
-issues: 3
+issues: 4
 pending: 0
 skipped: 2
 
@@ -104,3 +110,18 @@ skipped: 2
   missing:
     - "Align all visual feedback to optimistic state (same root cause as test 2)"
     - "Consider softening spring easing from 1.56 overshoot to 1.2-1.3"
+
+- truth: "Task returns to normal state after mobile tap (no sticky selection)"
+  status: failed
+  reason: "User reported: On mobile, task stays selected after tap. Grey on blue readability is poor. No hover state on mobile to clear it."
+  severity: major
+  test: 9
+  root_cause: "Focus state persists on mobile after tap. Unlike desktop where hover clears on mouseout, mobile has no equivalent. The button likely has :focus or :hover styles that remain active. Also the 'hover:bg-accent' class applies on tap and sticks."
+  artifacts:
+    - path: "src/components/tasks/today-task-item.tsx"
+      issue: "Button has hover:bg-accent that sticks on mobile, no focus management after tap"
+  missing:
+    - "Use @media (hover: hover) to scope hover styles to devices with true hover capability"
+    - "Or blur the button after the interaction completes"
+    - "Use :focus-visible instead of :focus for keyboard-only focus indicators"
+    - "Consider -webkit-tap-highlight-color: transparent to remove tap highlight"
