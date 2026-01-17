@@ -474,6 +474,49 @@
 }
 
 /* ============================================
+   PHASE 4: STREAK ANIMATIONS
+   ============================================ */
+
+/* Flame flicker animation */
+@keyframes flameFlicker {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.05) rotate(-2deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(0.98) rotate(1deg);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.02) rotate(-1deg);
+    opacity: 0.95;
+  }
+}
+
+.animate-flame-flicker {
+  animation: flameFlicker 1.5s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Flame glow effect (subtle) */
+@keyframes flameGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(249, 115, 22, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.5));
+  }
+}
+
+.animate-flame-glow {
+  animation: flameGlow 2s ease-in-out infinite;
+}
+
+/* ============================================
    REDUCED MOTION ACCESSIBILITY
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
@@ -494,8 +537,15 @@
   .animate-shimmer,
   .animate-press,
   .animate-page-in,
-  .particle {
+  .particle,
+  .animate-flame-flicker,
+  .animate-flame-glow {
     animation: none !important;
+  }
+
+  /* Number rolling transitions become instant */
+  .transition-transform {
+    transition-duration: 0s !important;
   }
 
   /* Disable transitions except color changes */
