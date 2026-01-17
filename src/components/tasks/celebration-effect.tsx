@@ -11,8 +11,8 @@ interface CelebrationEffectProps {
 interface Particle {
   id: number
   angle: number      // Direction in radians (0 to 2π)
-  distance: number   // How far to travel (30-80px)
-  size: 'sm' | 'md' | 'lg'
+  distance: number   // How far to travel (25-45px) - close-range sparkle
+  size: 'sm' | 'md'  // Smaller particles to complement canvas-confetti
   shape: 'circle' | 'square'
   color: string
   delay: number      // Stagger the start (0-100ms)
@@ -35,23 +35,25 @@ export function CelebrationEffect({ show, onComplete }: CelebrationEffectProps) 
     ]
 
     // Generate particles in radial burst pattern
-    const newParticles = Array.from({ length: 18 }, (_, i) => ({
+    // Reduced count (18 → 10) to complement canvas-confetti
+    // Small, fast particles stay close for "sparkle" effect at checkbox
+    const newParticles = Array.from({ length: 10 }, (_, i) => ({
       id: i,
-      angle: (i / 18) * Math.PI * 2 + (Math.random() * 0.3 - 0.15), // Radial with jitter
-      distance: 35 + Math.random() * 45, // 35-80px
-      size: (['sm', 'md', 'lg'] as const)[Math.floor(Math.random() * 3)],
+      angle: (i / 10) * Math.PI * 2 + (Math.random() * 0.3 - 0.15), // Radial with jitter
+      distance: 25 + Math.random() * 20, // 25-45px (shorter range, close to checkbox)
+      size: (['sm', 'md'] as const)[Math.floor(Math.random() * 2)], // Smaller particles only
       shape: (Math.random() > 0.3 ? 'circle' : 'square') as 'circle' | 'square',
       color: colors[Math.floor(Math.random() * colors.length)],
-      delay: i * 15, // Stagger by 15ms each
+      delay: i * 10, // Faster stagger (15ms → 10ms)
     }))
 
     setParticles(newParticles)
 
-    // Cleanup after animation
+    // Cleanup after animation (800ms → 600ms for faster sparkle)
     const timer = setTimeout(() => {
       setParticles([])
       onComplete?.()
-    }, 800)
+    }, 600)
 
     return () => clearTimeout(timer)
   }, [show, onComplete])
