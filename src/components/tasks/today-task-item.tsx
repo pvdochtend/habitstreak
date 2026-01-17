@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { TodayTask } from '@/types'
 import { getTaskIcon } from '@/lib/task-icons'
 import { CelebrationEffect } from './celebration-effect'
 import { AnimatedCheckmark } from '@/components/ui/animated-checkmark'
 import { triggerHaptic } from '@/lib/haptics'
+import { fireTaskConfetti } from '@/lib/confetti'
 
 interface TodayTaskItemProps {
   task: TodayTask
@@ -18,6 +19,18 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const getConfettiOrigin = (): { x: number; y: number } | undefined => {
+    if (!buttonRef.current) return undefined;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    // Calculate center of button as viewport ratio
+    const x = (rect.left + rect.width / 2) / window.innerWidth;
+    const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+    return { x, y };
+  };
 
   const handleToggle = async () => {
     setIsLoading(true)
@@ -28,6 +41,9 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
     if (willComplete) {
       // Trigger haptic immediately for instant feedback
       triggerHaptic('success')
+
+      // Fire confetti from button position
+      fireTaskConfetti(getConfettiOrigin())
 
       setIsAnimating(true)
       setShowCelebration(true)
@@ -54,6 +70,7 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
   return (
     <div className="relative">
       <button
+      ref={buttonRef}
       onClick={handleToggle}
       disabled={isLoading}
       className={cn(
