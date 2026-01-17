@@ -6,11 +6,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TodayData, ApiResponse } from '@/types'
 import { Loader2 } from 'lucide-react'
 import { PageTransition } from '@/components/ui/page-transition'
+import { usePrevious } from '@/lib/hooks'
+import { fireAllTasksConfetti } from '@/lib/confetti'
+import { triggerHaptic } from '@/lib/haptics'
 
 export default function VandaagPage() {
   const [data, setData] = useState<TodayData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Track previous completedCount to detect when all tasks just completed
+  const prevCompletedCount = usePrevious(data?.completedCount)
+
+  // Derive celebration condition
+  const allTasksComplete = data && data.totalCount > 0 && data.completedCount === data.totalCount
+  const justCompletedAll = allTasksComplete &&
+    prevCompletedCount !== undefined &&
+    prevCompletedCount < data.totalCount
+
+  // Fire celebration when all tasks just completed
+  useEffect(() => {
+    if (justCompletedAll) {
+      fireAllTasksConfetti()
+      triggerHaptic('success')
+    }
+  }, [justCompletedAll])
 
   const fetchTodayData = async () => {
     try {
