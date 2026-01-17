@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { TodayTask } from '@/types'
 import { getTaskIcon } from '@/lib/task-icons'
@@ -19,7 +19,13 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [localIsCompleted, setLocalIsCompleted] = useState(task.isCompleted)
   const buttonRef = useRef<HTMLButtonElement>(null)
+
+  // Sync local state with props when task.isCompleted changes
+  useEffect(() => {
+    setLocalIsCompleted(task.isCompleted)
+  }, [task.isCompleted])
 
   const getConfettiOrigin = (): { x: number; y: number } | undefined => {
     if (!buttonRef.current) return undefined;
@@ -33,10 +39,10 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
   };
 
   const handleToggle = async () => {
-    setIsLoading(true)
+    const willComplete = !localIsCompleted
 
-    // Trigger celebration when completing (not uncompleting)
-    const willComplete = !task.isCompleted
+    // Optimistic update - flip visual state immediately
+    setLocalIsCompleted(willComplete)
 
     if (willComplete) {
       // Trigger haptic immediately for instant feedback
@@ -47,17 +53,16 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
 
       setIsAnimating(true)
       setShowCelebration(true)
-
-      // Wait for initial animation before API call
-      await new Promise((resolve) => setTimeout(resolve, 100))
     }
 
+    setIsLoading(true)
     try {
       await onToggle(task.id, task.isCompleted)
+    } catch {
+      // Rollback on error
+      setLocalIsCompleted(task.isCompleted)
     } finally {
       setIsLoading(false)
-
-      // Reset animation states after completion
       if (willComplete) {
         setTimeout(() => {
           setIsAnimating(false)
@@ -74,16 +79,17 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
       onClick={handleToggle}
       disabled={isLoading}
       className={cn(
-        'w-full flex items-center gap-4 p-4 rounded-lg border transition-all duration-200 touch-target animate-slide-up',
+        'w-full flex items-center gap-4 p-4 rounded-lg border touch-target animate-slide-up',
         'hover:bg-accent hover:shadow-md active:scale-[0.98]',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        isAnimating && 'animate-task-complete animate-glow',
-        task.isCompleted
+        'transition-all duration-500',
+        isAnimating && 'animate-glow',
+        localIsCompleted
           ? 'bg-primary/5 border-primary shadow-sm'
           : 'bg-card border-border'
       )}
-      aria-label={`${task.title} - ${task.isCompleted ? 'Voltooid' : 'Niet voltooid'}`}
-      aria-pressed={task.isCompleted}
+      aria-label={`${task.title} - ${localIsCompleted ? 'Voltooid' : 'Niet voltooid'}`}
+      aria-pressed={localIsCompleted}
     >
       {/* Icon + Checkbox */}
       <div className="flex items-center gap-3 flex-shrink-0">
@@ -94,7 +100,7 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
             <TaskIcon
               className={cn(
                 'h-5 w-5 transition-colors',
-                task.isCompleted ? 'text-primary' : 'text-muted-foreground'
+                localIsCompleted ? 'text-primary' : 'text-muted-foreground'
               )}
             />
           )
@@ -104,15 +110,15 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
         <div
           className={cn(
             'flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200',
-            task.isCompleted
+            localIsCompleted
               ? 'bg-primary border-primary scale-110'
               : 'bg-background border-muted-foreground hover:border-primary/50',
             isAnimating && 'animate-checkbox-fill'
           )}
         >
-          {task.isCompleted && (
+          {localIsCompleted && (
             <AnimatedCheckmark
-              isChecked={task.isCompleted}
+              isChecked={localIsCompleted}
               className="text-primary-foreground"
               size={16}
             />
@@ -124,7 +130,7 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
       <span
         className={cn(
           'text-left font-medium flex-1 transition-all duration-200',
-          task.isCompleted && 'line-through text-muted-foreground'
+          localIsCompleted && 'line-through text-muted-foreground'
         )}
       >
         {task.title}
