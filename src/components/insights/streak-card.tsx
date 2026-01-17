@@ -1,6 +1,9 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Flame, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { usePrevious } from '@/lib/hooks'
+import { AnimatedStreakNumber } from './animated-streak-number'
+import { AnimatedFlame } from './animated-flame'
 
 interface StreakCardProps {
   type: 'current' | 'best'
@@ -9,6 +12,7 @@ interface StreakCardProps {
 
 export function StreakCard({ type, value }: StreakCardProps) {
   const isCurrent = type === 'current'
+  const prevValue = usePrevious(value)
 
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
@@ -23,7 +27,7 @@ export function StreakCard({ type, value }: StreakCardProps) {
             )}
           >
             {isCurrent ? (
-              <Flame className="h-6 w-6" strokeWidth={2.5} />
+              <AnimatedFlame isActive={value > 0} />
             ) : (
               <Trophy className="h-6 w-6" strokeWidth={2.5} />
             )}
@@ -33,7 +37,10 @@ export function StreakCard({ type, value }: StreakCardProps) {
               {isCurrent ? 'Huidige streak' : 'Beste streak'}
             </p>
             <p className="text-2xl font-bold mt-1">
-              {value} <span className="text-lg font-normal text-muted-foreground">{value === 1 ? 'dag' : 'dagen'}</span>
+              <AnimatedStreakNumber value={value} previousValue={prevValue} />{' '}
+              <span className="text-lg font-normal text-muted-foreground">
+                {value === 1 ? 'dag' : 'dagen'}
+              </span>
             </p>
           </div>
         </div>
