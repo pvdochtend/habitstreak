@@ -122,6 +122,15 @@
 @layer utilities {
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
+    /* Remove tap highlight on touch devices for cleaner UX */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile-friendly hover - only applies on devices with true hover capability */
+  @media (hover: hover) and (pointer: fine) {
+    .task-item-hover:hover {
+      @apply bg-accent shadow-md;
+    }
   }
 }
 

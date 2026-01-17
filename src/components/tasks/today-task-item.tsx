@@ -39,6 +39,9 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
   };
 
   const handleToggle = async () => {
+    // Blur to clear focus state after interaction (prevents sticky focus on mobile)
+    buttonRef.current?.blur()
+
     const willComplete = !localIsCompleted
 
     // Optimistic update - flip visual state immediately
@@ -80,7 +83,8 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
       disabled={isLoading}
       className={cn(
         'w-full flex items-center gap-4 p-4 rounded-lg border touch-target animate-slide-up',
-        'hover:bg-accent hover:shadow-md active:scale-[0.98]',
+        'task-item-hover active:scale-[0.98]',
+        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         'transition-all duration-500',
         isAnimating && 'animate-glow',
