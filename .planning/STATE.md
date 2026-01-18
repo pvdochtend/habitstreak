@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-18)
 ## Current Position
 
 Phase: 6 of 8 (Docker Deployment)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-18 — v1.1 roadmap created
+Plan: 1 of 3 (Docker Preparation)
+Status: In progress
+Last activity: 2026-01-18 — Completed 06-01-PLAN.md (Docker Preparation)
 
-Progress: █████░░░░░ 62% (5/8 phases complete)
+Progress: █████░░░░░ 64% (16/25 plans complete)
 
 ## Milestone History
 
@@ -28,12 +28,21 @@ Progress: █████░░░░░ 62% (5/8 phases complete)
 - Total execution time: ~2.9 hours
 - Average duration: ~10 minutes per plan
 
+**v1.1 In Progress:**
+- Plans completed: 1
+- Last plan duration: 34 minutes
+
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
 All v1.0 decisions marked with outcomes.
+
+**Recent (v1.1):**
+- **Docker standalone output** (06-01): Use Next.js standalone build to reduce image from 1GB+ to ~200MB
+- **Health endpoint design** (06-01): Public endpoint without DB checks for fast orchestration polling
+- **Health endpoint version** (06-01): Hardcode version 1.1.0 rather than reading from package.json
 
 ### Pending Todos
 
@@ -54,8 +63,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: v1.1 roadmap created (3 phases, 13 requirements)
+Stopped at: Completed 06-01-PLAN.md (Docker Preparation)
 Resume file: None
 
 ---
-*Last updated: 2026-01-18 after creating v1.1 roadmap*
+*Last updated: 2026-01-18 after completing 06-01-PLAN.md*
