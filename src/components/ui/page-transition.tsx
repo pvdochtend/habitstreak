@@ -19,7 +19,7 @@ export function PageTransition({ children, className }: PageTransitionProps) {
     <div
       className={cn(
         'transition-all duration-300 ease-out',
-        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
+        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
         className
       )}
     >
