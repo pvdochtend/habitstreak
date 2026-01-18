@@ -120,6 +120,10 @@ Celebrations and streaks - 2/2 plans complete:
    - Area: ui
    - File: `.planning/todos/pending/2026-01-18-streak-calculation-weekend-weekday-mismatch.md`
 
+2. **Make flame animation more visible/bolder** (2026-01-18)
+   - Area: ui
+   - File: `.planning/todos/pending/2026-01-18-flame-animation-too-subtle.md`
+
 ### Blockers/Concerns
 
 None. All blocking issues resolved.
