@@ -86,7 +86,7 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
         'task-item-hover active:scale-[0.98]',
         'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        'transition-all duration-500',
+        'transition-[background-color,border-color,transform,opacity] duration-500',
         isAnimating && 'animate-glow',
         localIsCompleted
           ? 'bg-primary/5 border-primary shadow-sm'
