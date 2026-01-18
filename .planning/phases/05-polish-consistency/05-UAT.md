@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 05-polish-consistency
 source: 05-01-SUMMARY.md
 started: 2026-01-18T09:00:00Z
-updated: 2026-01-18T09:02:00Z
+updated: 2026-01-18T09:03:00Z
 ---
 
 ## Current Test
@@ -53,7 +53,13 @@ skipped: 4
   reason: "User reported: i don't see anything in the background"
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Tailwind CSS JIT compiler purges dynamically accessed background color classes (bg-blue-400, bg-indigo-400, etc.) because they cannot be statically detected in the AnimatedBackground component"
+  artifacts:
+    - path: "src/components/backgrounds/animated-background.tsx"
+      issue: "Uses dynamic class names via object property access (colors.orb1) that Tailwind cannot detect"
+    - path: "tailwind.config.ts"
+      issue: "No safelist defined to preserve dynamic classes"
+  missing:
+    - "Replace Tailwind color classes with inline styles using HSL values (recommended)"
+    - "OR add safelist to tailwind.config.ts with all orb color classes"
+  debug_session: ".planning/debug/animated-orbs-not-visible.md"
