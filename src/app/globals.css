@@ -517,6 +517,68 @@
 }
 
 /* ============================================
+   PHASE 5: BACKGROUND ANIMATIONS
+   ============================================ */
+
+/* Floating orb animations - different timing for organic feel */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 30px) scale(0.95);
+  }
+}
+
+@keyframes floatMedium {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(-25px, 20px) scale(1.08);
+  }
+  50% {
+    transform: translate(35px, -15px) scale(0.92);
+  }
+  75% {
+    transform: translate(-15px, -25px) scale(1.03);
+  }
+}
+
+@keyframes floatFast {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(20px, 25px) scale(0.95);
+  }
+  40% {
+    transform: translate(-30px, -20px) scale(1.1);
+  }
+  60% {
+    transform: translate(25px, -30px) scale(0.98);
+  }
+  80% {
+    transform: translate(-20px, 15px) scale(1.05);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 25s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: floatMedium 18s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: floatFast 12s ease-in-out infinite;
+}
+
+/* ============================================
    REDUCED MOTION ACCESSIBILITY
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
@@ -539,7 +601,10 @@
   .animate-page-in,
   .particle,
   .animate-flame-flicker,
-  .animate-flame-glow {
+  .animate-flame-glow,
+  .animate-float-slow,
+  .animate-float-medium,
+  .animate-float-fast {
     animation: none !important;
   }
 
