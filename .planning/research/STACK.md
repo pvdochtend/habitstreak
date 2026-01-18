@@ -1,487 +1,391 @@
-# Animation Stack Research - HabitStreak UI Refresh
+# Stack Research
 
-**Research Date:** January 16, 2026
-**Target:** React 19 + Next.js 15 + Tailwind CSS + shadcn/ui
-**Goal:** Playful, energetic animations with confetti, particles, and micro-interactions
-
----
-
-## Core Animation Technologies
-
-### 1. Motion (formerly Framer Motion) - PRIMARY RECOMMENDATION
-
-**Package:** `motion`
-**Version:** 12.26.0 (latest stable)
+**Domain:** Next.js Docker Deployment (Self-hosting on Synology NAS)
+**Researched:** 2026-01-18
 **Confidence:** HIGH
 
-Motion is the recommended core animation library for this project. It's the rebranded and evolved version of Framer Motion, now with full React 19 and Next.js 15 support.
+## Summary
 
-**Key Features:**
-- GPU-accelerated animations via Web Animations API (WAAPI)
-- Declarative component-based API (`<motion.div>`)
-- Built-in gesture support (`whileHover`, `whileTap`, `drag`)
-- Layout animations with `layoutId` for shared element transitions
-- Scroll-linked animations
-- AnimatePresence for enter/exit animations
-- Automatic reduced-motion fallbacks (accessibility)
+Docker deployment for Next.js 15 + Prisma + PostgreSQL follows a well-established pattern in 2025/2026: multi-stage builds with standalone output mode, Alpine-based images for small footprint, and docker-compose for service orchestration. The key considerations for Synology NAS are: x86_64 architecture requirement (Intel/AMD CPUs only), Container Manager as the deployment interface, and proper volume mounting for data persistence.
 
-**Installation:**
-```bash
-npm install motion
+**Primary recommendation:** Use `node:22-alpine` for Next.js with standalone output mode, `postgres:16-alpine` for the database (staying with current version for stability), multi-stage Dockerfile, and docker-compose.yml with health checks.
+
+## Recommended Stack
+
+### Docker Base Images
+
+| Image | Version | Purpose | Why Recommended |
+|-------|---------|---------|-----------------|
+| `node:22-alpine` | 22.x LTS | Next.js application | Node 22 is Active LTS (Oct 2024+), Alpine ~153MB, 0 CVEs, optimal for Next.js 15 |
+| `postgres:16-alpine` | 16.x | PostgreSQL database | Matches existing dev setup, proven stable, ~82MB, full ICU locale support |
+
+**Node.js version rationale:**
+- Node 22 entered Active LTS in October 2024, recommended for production
+- Prisma 5.x (current) supports Node 18+; Prisma 6/7 requires Node 20+
+- Alpine variant is ~82% smaller than full Debian image
+- `libc6-compat` package needed for some native modules
+
+**PostgreSQL version rationale:**
+- PostgreSQL 16 matches existing docker-compose.yml (consistency)
+- PostgreSQL 17 available but 16 is more battle-tested
+- Alpine variant significantly smaller than Debian (~90MB vs ~400MB)
+- Full ICU locale support since PostgreSQL 15
+
+### docker-compose Configuration
+
+**Production docker-compose.yml pattern:**
+
+```yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: habitstreak-app
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      - DATABASE_URL=postgresql://habitstreak:${POSTGRES_PASSWORD}@db:5432/habitstreak
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - TZ=Europe/Amsterdam
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - habitstreak-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: habitstreak-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: habitstreak
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: habitstreak
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U habitstreak -d habitstreak']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - habitstreak-network
+
+volumes:
+  postgres_data:
+
+networks:
+  habitstreak-network:
+    driver: bridge
 ```
 
-**Import Pattern (React 19 compatible):**
-```typescript
-import { motion, AnimatePresence } from "motion/react"
+**Key configuration points:**
+1. **Health checks:** PostgreSQL must be healthy before app starts (prevents migration failures)
+2. **Named network:** Enables container-to-container communication via service names
+3. **Named volume:** `postgres_data` persists database across container recreations
+4. **Restart policy:** `unless-stopped` ensures service recovery after NAS reboot
+5. **Environment variables:** Passed at runtime (not baked into image)
+
+### Dockerfile (Multi-Stage Build)
+
+**Production Dockerfile pattern:**
+
+```dockerfile
+# syntax=docker.io/docker/dockerfile:1
+
+FROM node:22-alpine AS base
+
+# ══════════════════════════════════════════════════════════════
+# Dependencies stage - install only production dependencies
+# ══════════════════════════════════════════════════════════════
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# ══════════════════════════════════════════════════════════════
+# Builder stage - build the application
+# ══════════════════════════════════════════════════════════════
+FROM base AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build Next.js with standalone output
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+# ══════════════════════════════════════════════════════════════
+# Runner stage - production image
+# ══════════════════════════════════════════════════════════════
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy built assets
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy Prisma files for migrations
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/prisma ./prisma
+
+USER nextjs
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Run migrations then start server
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
 ```
 
-**Bundle Size:** ~32KB minified + gzipped (full feature set)
+**Critical requirements:**
+1. **`output: 'standalone'`** must be added to `next.config.js`
+2. **Prisma generate** runs during build (generates client for target platform)
+3. **Prisma migrate deploy** runs at container start (not during build)
+4. **Non-root user** for security (UID 1001 is conventional)
+5. **Static files copied separately** (standalone mode doesn't include them)
 
-**Why Motion over alternatives:**
-- Official React 19 support (version 12.x)
-- Built for Next.js App Router (client components)
-- 12+ million monthly npm downloads
-- Active maintenance by Motion Division
-- LazyMotion available for bundle optimization
+### next.config.js Modification
 
-**Sources:**
-- [Motion Official Docs](https://motion.dev/docs/react)
-- [Motion Upgrade Guide](https://motion.dev/docs/react-upgrade-guide)
-- [Framer Community - React 19 Discussion](https://www.framer.community/c/developers/trying-to-install-framer-motion-in-react-19-next-15)
+Add standalone output to existing config:
 
----
-
-### 2. tw-animate-css - CSS Animation Utilities
-
-**Package:** `tw-animate-css`
-**Version:** ~1.x (2.0 upcoming with breaking changes)
-**Confidence:** HIGH
-
-The official replacement for `tailwindcss-animate`, adopted by shadcn/ui for Tailwind v4.
-
-**Key Features:**
-- CSS-first architecture (no JavaScript plugin)
-- Tree-shakable - unused animations excluded from bundle
-- Built-in presets: `accordion-down`, `accordion-up`, `caret-blink`
-- Utility classes: `animate-in`, `animate-out`, `fade-in`, `zoom-in`, `slide-in-from-*`
-- Duration and delay via Tailwind utilities
-
-**Installation:**
-```bash
-npm install -D tw-animate-css
-```
-
-**Usage in globals.css:**
-```css
-@import "tw-animate-css";
-```
-
-**Note:** shadcn/ui deprecated `tailwindcss-animate` in favor of `tw-animate-css` as of March 2025.
-
-**Sources:**
-- [tw-animate-css GitHub](https://github.com/Wombosvideo/tw-animate-css)
-- [shadcn/ui Tailwind v4 Migration](https://ui.shadcn.com/docs/tailwind-v4)
-
----
-
-## Supporting Libraries
-
-### 3. canvas-confetti - Celebration Effects
-
-**Package:** `canvas-confetti`
-**Version:** 1.9.4 (latest)
-**Confidence:** HIGH
-
-Lightweight, performant confetti animation library with no framework dependencies.
-
-**Key Features:**
-- Pure canvas-based rendering (high performance)
-- Multiple effects: confetti bursts, fireworks, side cannons, stars
-- Customizable shapes, colors, physics
-- Framework-agnostic (works anywhere)
-- Small bundle size
-
-**Installation:**
-```bash
-npm install canvas-confetti
-```
-
-**Basic Usage:**
-```typescript
-import confetti from 'canvas-confetti';
-
-// Simple burst
-confetti();
-
-// Fireworks
-confetti({
-  particleCount: 100,
-  spread: 70,
-  origin: { y: 0.6 }
-});
-
-// Stars
-confetti({
-  particleCount: 50,
-  shapes: ['star'],
-  colors: ['FFE400', 'FFBD00', 'E89400']
-});
-```
-
-**Why canvas-confetti over react-confetti:**
-- More customization options
-- Better performance (canvas-based)
-- No React-specific overhead
-- Works with any trigger mechanism
-
-**Sources:**
-- [canvas-confetti GitHub](https://github.com/catdad/canvas-confetti)
-- [Magic UI Confetti Component](https://magicui.design/docs/components/confetti)
-
----
-
-### 4. @tsparticles/react - Particle Effects
-
-**Package:** `@tsparticles/react` + `@tsparticles/slim`
-**Version:** 3.0.0
-**Confidence:** MEDIUM
-
-Feature-rich particle effects library for backgrounds and effects.
-
-**Key Features:**
-- Highly customizable particle systems
-- Built-in presets: stars, snow, confetti, fireworks, bubbles
-- Interactive particles (mouse/touch responsive)
-- Multiple shapes and behaviors
-- Works with React, Vue, Angular, vanilla JS
-
-**Installation:**
-```bash
-npm install @tsparticles/react @tsparticles/slim
-```
-
-**Bundle Options:**
-- `@tsparticles/slim` - Recommended for most use cases (~50KB)
-- `@tsparticles/basic` - Minimal features (~30KB)
-- `@tsparticles/all` - Full feature set (~100KB+)
-
-**React 19 Compatibility:** UNCERTAIN - Package last updated 2+ years ago. May require `--legacy-peer-deps` flag. Test before committing.
-
-**Alternative:** If compatibility issues arise, use canvas-confetti for celebration effects instead.
-
-**Sources:**
-- [tsParticles GitHub](https://github.com/tsparticles/tsparticles)
-- [tsParticles React Component](https://github.com/tsparticles/react)
-
----
-
-### 5. @formkit/auto-animate - Zero-Config Animations
-
-**Package:** `@formkit/auto-animate`
-**Version:** 0.9.0
-**Confidence:** HIGH
-
-Drop-in animation utility for lists, modals, and dynamic content.
-
-**Key Features:**
-- Single line of code to add animations
-- Automatic animations for: add, remove, move operations
-- Works with any parent element
-- Respects `prefers-reduced-motion`
-- Tiny bundle size
-
-**Installation:**
-```bash
-npm install @formkit/auto-animate
-```
-
-**React Usage:**
-```typescript
-import { useAutoAnimate } from '@formkit/auto-animate/react'
-
-function TaskList() {
-  const [parent] = useAutoAnimate()
-  return <ul ref={parent}>{/* items auto-animate */}</ul>
+```javascript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'standalone',  // <-- ADD THIS
+  reactStrictMode: true,
+  // ... rest of existing config
 }
 ```
 
-**Best For:**
-- Task lists (add/remove/reorder)
-- Dynamic forms
-- Accordion content
-- Any list-based UI
+### Environment Variables
 
-**Sources:**
-- [AutoAnimate Official](https://auto-animate.formkit.com/)
-- [AutoAnimate GitHub](https://github.com/formkit/auto-animate)
+**Server-side variables (runtime, via docker-compose):**
 
----
+| Variable | Purpose | Generation |
+|----------|---------|------------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@db:5432/dbname` |
+| `NEXTAUTH_SECRET` | JWT encryption key | `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | Canonical app URL | `http://nas-ip:3000` or custom domain |
+| `TZ` | Timezone | `Europe/Amsterdam` (hardcoded) |
 
-### 6. Sonner - Toast Notifications
+**Production .env file pattern:**
 
-**Package:** `sonner`
-**Version:** Latest (check npm)
-**Confidence:** HIGH
+```bash
+# .env.production (on NAS, not in repo)
+POSTGRES_PASSWORD=<generated-strong-password>
+NEXTAUTH_SECRET=<generated-32-byte-secret>
+NEXTAUTH_URL=http://192.168.1.x:3000
+```
 
-Already included with shadcn/ui. Beautiful animated toast notifications.
+**Security notes:**
+- `NEXTAUTH_SECRET` and `POSTGRES_PASSWORD` are server-side only (safe at runtime)
+- No `NEXT_PUBLIC_` prefixed variables in this app (no client-side secrets)
+- Never commit production secrets to git
+- Synology supports Docker environment files via Container Manager UI
 
-**Key Features:**
-- Stacking animation (signature feature)
-- Multiple toast types (success, error, warning, info)
-- Promise-based toasts
-- CSS transitions (interruptible)
-- Accessible
+### Synology NAS Compatibility
 
-**Note:** Already part of shadcn/ui ecosystem. Use `toast()` API for celebrations.
+**Architecture Requirements:**
+- **Required:** x86_64 (Intel/AMD) CPU
+- **Compatible models:** DS918+, DS920+, DS923+, DS1520+, DS1621+, etc. (Plus series)
+- **NOT compatible:** ARM-based models (DS220j, DS218, DS118) without workarounds
 
-**Sources:**
-- [Sonner GitHub](https://github.com/emilkowalski/sonner)
-- [shadcn/ui Sonner](https://ui.shadcn.com/docs/components/sonner)
+**Container Manager Setup:**
+1. Install "Container Manager" package from Synology Package Center
+2. Upload `docker-compose.yml` as a "Project"
+3. Configure environment variables in Container Manager UI
+4. Mount persistent volume for PostgreSQL data
 
----
+**Volume Mounting on Synology:**
+```yaml
+volumes:
+  - /volume1/docker/habitstreak/postgres:/var/lib/postgresql/data
+```
 
-## Development Tools
+Or use Docker named volumes (recommended for portability):
+```yaml
+volumes:
+  postgres_data:
+```
 
-### Animation Debugging
+**Port Considerations:**
+- Default port 3000 works on most Synology setups
+- If using reverse proxy (Synology's built-in or Traefik), configure accordingly
+- Port 5432 for PostgreSQL should NOT be exposed externally (internal network only)
 
-1. **Chrome DevTools Animation Inspector**
-   - Inspect running animations
-   - Slow down/pause animations
-   - View timing curves
+**Memory/Resource Limits:**
+For NAS with limited RAM (4-8GB), consider adding resource limits:
+```yaml
+services:
+  app:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  db:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+```
 
-2. **Motion DevTools Extension**
-   - Visualize Motion animations
-   - Edit animation values in real-time
+## bcrypt Native Module Handling
 
-3. **Performance Throttling**
-   - Chrome DevTools > Performance > CPU throttling
-   - Test animations on simulated mobile devices
+The project uses `bcrypt` (native module). Alpine requires build tools for native compilation.
 
-### Design Resources
+**Option A: Rebuild in deps stage (recommended)**
+```dockerfile
+FROM base AS deps
+RUN apk add --no-cache libc6-compat make gcc g++ python3
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+RUN npm rebuild bcrypt --build-from-source
+RUN apk del make gcc g++ python3
+```
 
-1. **Motion One Playground** - Test animations before implementing
-2. **cubic-bezier.com** - Custom easing curve generator
-3. **Lottie Files** - Pre-made animations (use sparingly due to bundle size)
-
----
+**Option B: Use pre-built binaries (bcrypt 4.0.1+)**
+bcrypt 4.0.1+ includes pre-built musl binaries for Alpine. The current project uses `bcrypt: ^5.1.1`, which should work out of the box, but rebuilding is safer.
 
 ## Alternatives Considered
 
-### React Spring - NOT RECOMMENDED
-
-**Package:** `react-spring`
-**Version:** 9.7.x / 10.x
-**Confidence:** MEDIUM
-
-**Why Not:**
-- React 19 peer dependency issues (GitHub issue #2341 open)
-- Requires `--legacy-peer-deps` workaround
-- Steeper learning curve than Motion
-- Less documentation for Next.js App Router
-- No built-in gesture support
-
-**When to Consider:**
-- Physics-heavy animations
-- Three.js / React Three Fiber integration
-- If team already has React Spring expertise
-
-**Sources:**
-- [React Spring React 19 Issue](https://github.com/pmndrs/react-spring/issues/2341)
-
----
-
-### GSAP (GreenSock) - OPTIONAL ADVANCED
-
-**Package:** `gsap` + `@gsap/react`
-**Version:** Latest
-**Confidence:** HIGH (for compatibility)
-
-**Why Not Primary:**
-- Overkill for most UI animations
-- Requires "use client" directive everywhere
-- More imperative than declarative
-- ScrollTrigger requires careful cleanup in React
-
-**When to Consider:**
-- Complex timeline sequences
-- Scroll-based storytelling
-- Premium animation requirements
-
-**Sources:**
-- [GSAP React Guide](https://gsap.com/resources/React/)
-- [useGSAP Hook](https://gsap.com/docs/v3/GSAP/gsap.registerPlugin())
-
----
-
-### Lottie - NOT RECOMMENDED FOR PRIMARY
-
-**Package:** `lottie-react`
-**Version:** Latest
-**Confidence:** MEDIUM
-
-**Why Not:**
-- Large bundle impact (~82KB for lottie-web)
-- Animation JSON files can be 1MB+
-- SSR issues with Next.js (`document is not defined`)
-- Performance concerns on mobile (17 FPS vs 60 FPS for Rive)
-
-**When to Consider:**
-- Complex After Effects animations from designers
-- One-off celebration animations
-- Illustrations that need animation
-
-**Alternative:** Use CSS/Motion for micro-interactions, reserve Lottie for rare complex animations.
-
-**Sources:**
-- [Lottie vs Rive Performance](https://www.callstack.com/blog/lottie-vs-rive-optimizing-mobile-app-animation)
-- [lottie-react GitHub](https://github.com/LottieFiles/lottie-react)
-
----
-
-### react-confetti - ALTERNATIVE
-
-**Package:** `react-confetti`
-**Version:** Latest
-**Confidence:** HIGH
-
-**Why canvas-confetti Instead:**
-- canvas-confetti offers more customization
-- Better performance characteristics
-- Framework-agnostic (easier to test)
-
-**When to Consider:**
-- If declarative React props preferred over imperative API
-- Full-screen confetti rain effect specifically
-
----
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| `node:22-alpine` | `node:22-slim` (Debian) | If Alpine causes compatibility issues with native modules |
+| `postgres:16-alpine` | `postgres:17-alpine` | When 17 becomes more battle-tested (mid-2026) |
+| Multi-stage Dockerfile | Single-stage | Only for simpler apps without build step |
+| Prisma migrate deploy | Prisma db push | Never in production (no migration history) |
+| Named Docker volumes | Bind mounts | If you need direct NAS folder access for backups |
 
 ## What NOT to Use
 
-### 1. tailwindcss-animate
-**Reason:** Deprecated by shadcn/ui. Use `tw-animate-css` instead.
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `node:22` (full Debian) | 1GB+ image size, unnecessary packages | `node:22-alpine` (~153MB) |
+| `node:20-alpine` | Not Active LTS, Prisma 6/7 requires Node 20.19.0+ | `node:22-alpine` |
+| `npm start` / `yarn start` in CMD | Doesn't handle SIGTERM properly, prevents graceful shutdown | `node server.js` |
+| `prisma migrate dev` in production | Creates migrations, not for production | `prisma migrate deploy` |
+| Baked-in secrets in Dockerfile | Security risk, secrets in image layers | Runtime environment variables |
+| Running as root | Security vulnerability | Non-root user (nextjs:nodejs) |
+| ARM-based Synology NAS | No official Container Manager support | x86_64 Synology (Plus series) |
+| Exposing PostgreSQL port (5432) externally | Security risk | Internal Docker network only |
+| `POSTGRES_HOST_AUTH_METHOD=trust` | No password authentication | Always use strong passwords |
 
-### 2. framer-motion (old import)
-**Reason:** Use `motion` package with `import from "motion/react"` for React 19 support.
+## Prisma Migration Strategy
 
-### 3. react-particles-js
-**Reason:** Deprecated. Use `@tsparticles/react` instead.
+**Development vs Production:**
 
-### 4. jQuery animations
-**Reason:** Incompatible with React paradigm, performance issues.
+| Environment | Command | When |
+|-------------|---------|------|
+| Development | `npx prisma migrate dev` | Creating new migrations locally |
+| Production | `npx prisma migrate deploy` | Applying migrations at container start |
 
-### 5. Anime.js
-**Reason:** Motion is smaller (1/5th the size) and more React-friendly.
+**Container startup flow:**
+1. Container starts
+2. `prisma migrate deploy` applies pending migrations
+3. `node server.js` starts Next.js
 
-### 6. Heavy Lottie files
-**Reason:** Bundle bloat. Use sparingly or consider dotLottie format for 80% size reduction.
+**Rollback strategy:**
+- Prisma doesn't support automatic rollback
+- Create a "down" migration manually if needed
+- Always backup database before migrations
 
----
+## Startup Script Alternative
 
-## Version Compatibility Matrix
+For more control, use a startup script instead of inline CMD:
 
-| Library | Version | React 19 | Next.js 15 | Tailwind v4 | Confidence |
-|---------|---------|----------|------------|-------------|------------|
-| motion | 12.26.0 | YES | YES | YES | HIGH |
-| tw-animate-css | 1.x | N/A | N/A | YES | HIGH |
-| canvas-confetti | 1.9.4 | N/A | N/A | N/A | HIGH |
-| @tsparticles/react | 3.0.0 | UNCERTAIN | YES | N/A | MEDIUM |
-| @formkit/auto-animate | 0.9.0 | YES | YES | N/A | HIGH |
-| sonner | Latest | YES | YES | N/A | HIGH |
-| @gsap/react | Latest | YES | YES* | N/A | HIGH |
-
-*GSAP requires "use client" directive in Next.js App Router
-
----
-
-## Recommended Stack Summary
-
-### Must Have (Install immediately)
+**docker-entrypoint.sh:**
 ```bash
-npm install motion canvas-confetti @formkit/auto-animate
-npm install -D tw-animate-css
+#!/bin/sh
+set -e
+
+echo "Running database migrations..."
+npx prisma migrate deploy
+
+echo "Starting application..."
+exec node server.js
 ```
 
-### Optional (Add if needed)
-```bash
-npm install @tsparticles/react @tsparticles/slim  # Particle backgrounds
-npm install gsap @gsap/react                       # Advanced scroll/timeline
+**Dockerfile CMD:**
+```dockerfile
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+CMD ["./docker-entrypoint.sh"]
 ```
 
-### Already Included (via shadcn/ui)
-- `sonner` - Toast animations
-- Tailwind CSS transitions/animations
+## Image Size Expectations
 
----
+| Stage | Approximate Size |
+|-------|------------------|
+| Base (node:22-alpine) | ~153MB |
+| Final Next.js image | ~200-250MB |
+| PostgreSQL (16-alpine) | ~82MB |
+| **Total deployment** | ~300-350MB |
 
-## Performance Guidelines
+Compare to non-optimized: 1GB+ with full Debian images.
 
-### GPU-Accelerated Properties
-Only these properties get GPU acceleration:
-- `transform` (translate, scale, rotate, skew)
-- `opacity`
-- `filter`
+## Sources
 
-### Avoid Animating
-- `width`, `height` (causes reflow)
-- `top`, `left`, `right`, `bottom` (causes reflow)
-- `margin`, `padding` (causes reflow)
-- `border-width` (causes repaint)
+### Primary (HIGH confidence)
+- [Next.js Official Deployment Documentation](https://nextjs.org/docs/app/getting-started/deploying) - Docker support, standalone mode
+- [Next.js Official Docker Example](https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile) - Multi-stage Dockerfile pattern
+- [Prisma Docker Guide](https://www.prisma.io/docs/guides/docker) - Migration strategy, base image selection
+- [PostgreSQL Docker Hub](https://hub.docker.com/_/postgres/) - Official image tags, health checks
 
-### Mobile Performance Tips
-1. Use `will-change` sparingly (can blow out GPU memory)
-2. Test with Chrome DevTools CPU throttling (4x slowdown)
-3. Prefer CSS transitions for simple hover states
-4. Use Motion's LazyMotion for code splitting
-5. Limit concurrent animations to 3-5 elements
+### Secondary (MEDIUM confidence)
+- [Marius Hosting - Synology Docker Guides](https://mariushosting.com/synology-best-nas-for-docker/) - Synology NAS compatibility, PUID/PGID
+- [Next.js Standalone Mode Medium Article](https://ketan-chavan.medium.com/next-js-15-self-hosting-with-docker-complete-guide-0826e15236da) - Optimization patterns
+- [Snyk - Node.js Docker Image Guide](https://snyk.io/blog/choosing-the-best-node-js-docker-image/) - Alpine vs Slim comparison
 
-### Bundle Size Budget
-- Motion: ~32KB (acceptable)
-- tsParticles slim: ~50KB (use sparingly)
-- canvas-confetti: ~6KB (excellent)
-- auto-animate: ~2KB (excellent)
-- Lottie: ~82KB + JSON files (avoid unless necessary)
+### Tertiary (LOW confidence - needs validation)
+- Community discussions on bcrypt Alpine compatibility
+- Synology Container Manager ARM workarounds (not recommended for production)
 
----
+## Confidence Assessment
 
-## Implementation Priority
+| Area | Level | Reason |
+|------|-------|--------|
+| Docker base images | HIGH | Official documentation, well-established patterns |
+| Multi-stage build pattern | HIGH | Official Next.js example, widely adopted |
+| Prisma migration strategy | HIGH | Official Prisma documentation |
+| Synology compatibility | MEDIUM | Community sources, not official Synology docs |
+| bcrypt on Alpine | MEDIUM | Known issue, multiple workarounds documented |
+| Resource limits for NAS | LOW | Depends on specific model and other services |
 
-1. **Phase 1 - Foundation**
-   - Install Motion + tw-animate-css
-   - Set up base animation variants
-   - Add micro-interactions to buttons/cards
+## Open Questions
 
-2. **Phase 2 - Celebrations**
-   - Integrate canvas-confetti for task completion
-   - Add streak milestone celebrations
-   - Toast animations for feedback
+1. **Synology reverse proxy integration:** How to configure HTTPS with Synology's built-in reverse proxy or Traefik needs testing on actual hardware.
 
-3. **Phase 3 - Polish**
-   - Auto-animate for task lists
-   - Page transitions with AnimatePresence
-   - Scroll-based animations (if needed)
+2. **Backup automation:** Best approach for automated PostgreSQL backups on Synology (pg_dump schedule, Hyper Backup integration) requires hands-on validation.
 
-4. **Phase 4 - Advanced (Optional)**
-   - Particle backgrounds with tsParticles
-   - Complex sequences with GSAP
+3. **Update strategy:** How to handle Next.js/Node.js version updates with minimal downtime needs operational procedures.
 
----
+## Research Date & Validity
 
-## Sources Summary
+**Researched:** 2026-01-18
+**Valid until:** ~2026-04-18 (3 months for stable Docker/Node ecosystem)
 
-### Official Documentation (HIGH confidence)
-- [Motion Official](https://motion.dev/)
-- [tw-animate-css GitHub](https://github.com/Wombosvideo/tw-animate-css)
-- [canvas-confetti GitHub](https://github.com/catdad/canvas-confetti)
-- [AutoAnimate Official](https://auto-animate.formkit.com/)
-- [shadcn/ui Tailwind v4](https://ui.shadcn.com/docs/tailwind-v4)
-- [GSAP React Docs](https://gsap.com/resources/React/)
-
-### Community/Comparison Articles (MEDIUM confidence)
-- [Animating React UIs in 2025](https://hookedonui.com/animating-react-uis-in-2025-framer-motion-12-vs-react-spring-10/)
-- [Top React Animation Libraries 2025](https://www.dronahq.com/react-animation-libraries/)
-- [Motion vs React Spring Performance](https://reactlibraries.com/blog/framer-motion-vs-motion-one-mobile-animation-performance-in-2025)
-- [Web Animation Performance Tier List](https://motion.dev/blog/web-animation-performance-tier-list)
-
-### Performance/Technical (HIGH confidence)
-- [MDN CSS/JS Animation Performance](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/CSS_JavaScript_animation_performance)
-- [MDN Animation Performance](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Animation_performance_and_frame_rate)
+Node.js and PostgreSQL LTS cycles are predictable. Next.js standalone mode is stable. Re-research needed only if:
+- Next.js 16 introduces breaking Docker changes
+- Node.js 24 becomes LTS (expected Q4 2026)
+- PostgreSQL 18 releases and you want to upgrade

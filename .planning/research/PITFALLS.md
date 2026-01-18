@@ -1,594 +1,511 @@
-# Animation Implementation Pitfalls Research
+# Pitfalls Research
 
-Research conducted: 2026-01-16
-Domain: Frontend animation/design refresh for HabitStreak mobile-first habit tracking app
-Focus: Full-energy animations (particles, confetti, micro-interactions)
+**Domain:** Next.js Docker + Streak Calculation + CSS Animation
+**Researched:** 2026-01-18
+**Confidence:** HIGH (Docker, Animation) / MEDIUM (Streak edge cases)
 
----
+## Executive Summary
 
-## Critical Pitfalls
+This research identifies common mistakes for HabitStreak v1.1's three focus areas: Docker deployment for Synology NAS self-hosting, streak calculation with variable schedules (WORKWEEK/WEEKEND), and CSS animation visibility improvements.
 
-### 1. Animating Layout-Triggering Properties
-**Problem:** Animating `width`, `height`, `margin`, `padding`, `top`, `left`, `right`, `bottom` forces browser layout recalculation every frame, causing severe jank on mobile.
-
-**Impact:** 10-30 FPS on mobile devices instead of target 60 FPS. Users experience stuttering that feels broken.
-
-**Prevention:**
-- Only animate `transform` and `opacity` - these run on the compositor thread
-- Use `translate()` instead of `top`/`left` positioning
-- Use `scale()` instead of animating dimensions
-
-**Warning Signs:**
-- DevTools Performance tab shows purple "Layout" blocks during animation
-- Animation stutters when other JS runs
-
-**Confidence:** HIGH - Multiple authoritative sources (MDN, web.dev, Chrome DevTools team)
-
-Sources:
-- [MDN CSS Performance](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Performance/CSS)
-- [Motion Magazine Performance Tier List](https://motion.dev/blog/web-animation-performance-tier-list)
+Key findings:
+- Docker + Next.js + Prisma has well-documented pitfalls around `prisma generate` timing and standalone output configuration
+- Streak calculation with variable schedules (weekend-only, workday-only tasks) has subtle bugs around "skip day" semantics and timezone boundaries
+- CSS animation visibility issues often stem from low-opacity shadows and `drop-shadow` vs `box-shadow` performance tradeoffs
 
 ---
 
-### 2. Ignoring `prefers-reduced-motion`
-**Problem:** Not respecting user motion preferences causes real harm - vestibular disorders affect 35%+ of adults over 40, causing dizziness, nausea, migraines, and vertigo from animations.
+## Docker Deployment Pitfalls
 
-**Impact:** Accessibility lawsuit risk, users physically harmed, lost users who can't use the app.
+### Pitfall D1: Missing `output: 'standalone'` in next.config.js
 
-**Prevention:**
-```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+**What goes wrong:** Docker image is 1GB+ instead of ~100MB, slow startup, missing files at runtime.
+
+**Why it happens:** Without standalone output, Next.js expects full `node_modules` directory. The current `next.config.js` lacks this setting entirely.
+
+**How to avoid:** Add `output: 'standalone'` to `next.config.js` before creating Dockerfile.
+
+**Warning signs:**
+- Docker image size exceeds 200MB
+- Build works but `npm start` fails with module not found
+- Slow container startup (>10 seconds)
+
+**HabitStreak-specific:** Current `next.config.js` at line 1-42 has no `output` property. Must be added.
+
+---
+
+### Pitfall D2: Prisma Client Not Generated in Docker Build
+
+**What goes wrong:** Runtime error: "@prisma/client did not initialize yet. Please run 'prisma generate'."
+
+**Why it happens:** Prisma Client is generated at build time and must be explicitly included in the Dockerfile. The standalone output doesn't automatically include `.prisma/client` directory.
+
+**How to avoid:**
+1. Run `npx prisma generate` in Dockerfile after copying `prisma/schema.prisma`
+2. Copy both `.prisma/` and `@prisma/` from `node_modules` to final image
+3. Ensure `prisma/schema.prisma` is available at build time
+
+**Warning signs:**
+- `prisma generate` not in Dockerfile
+- Works locally, fails in container
+- Error mentions "outdated Prisma Client"
+
+**HabitStreak-specific:** Current `docker-compose.yml` only defines PostgreSQL. Dockerfile and app service must be added.
+
+---
+
+### Pitfall D3: DATABASE_URL Required at Build Time
+
+**What goes wrong:** Next.js build fails with "DATABASE_URL environment variable not set" even though app runs fine locally.
+
+**Why it happens:** Prisma schema parsing during `next build` requires DATABASE_URL, even for pages marked `force-dynamic`. This is a known Next.js + Prisma issue.
+
+**How to avoid:**
+1. Provide a dummy DATABASE_URL at build time: `ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"`
+2. Or use Prisma's `--schema` flag with explicit path
+3. Real DATABASE_URL is provided at runtime via environment
+
+**Warning signs:**
+- Build fails but no DB connection is actually needed at build time
+- Works with `npm run dev` but not `npm run build`
+- GitHub issue #77436 in vercel/next.js describes this exact problem
+
+**HabitStreak-specific:** The app uses Prisma throughout API routes. Build will fail without this workaround.
+
+---
+
+### Pitfall D4: Container Can't Connect to PostgreSQL
+
+**What goes wrong:** "Can't reach database server at 'localhost:5432'" when running in Docker.
+
+**Why it happens:** `localhost` inside a container refers to the container itself, not the host machine or other containers.
+
+**How to avoid:**
+1. Use Docker service name (e.g., `postgres`) as hostname in DATABASE_URL
+2. Or use `host.docker.internal` for host-machine PostgreSQL
+3. Configure proper Docker networking in `docker-compose.yml`
+
+**Warning signs:**
+- DATABASE_URL contains `localhost`
+- Works outside Docker, fails inside
+- "Connection refused" errors
+
+**HabitStreak-specific:** Current `.env.local` likely uses `localhost`. Production docker-compose needs service name `postgres` (matching existing `docker-compose.yml` service).
+
+---
+
+### Pitfall D5: PostgreSQL Not Ready When App Starts
+
+**What goes wrong:** App container starts before PostgreSQL accepts connections, causing immediate crash.
+
+**Why it happens:** Docker's `depends_on` only waits for container start, not service readiness. PostgreSQL needs several seconds to initialize.
+
+**How to avoid:**
+1. Use `depends_on` with `condition: service_healthy` (already have healthcheck in docker-compose.yml)
+2. Add healthcheck to app container that verifies DB connection
+3. Use restart policy as fallback
+
+**Warning signs:**
+- Intermittent startup failures
+- Works on retry
+- Race condition: sometimes works, sometimes doesn't
+
+**HabitStreak-specific:** The existing `docker-compose.yml` already has PostgreSQL healthcheck. App service must use `depends_on: postgres: condition: service_healthy`.
+
+---
+
+### Pitfall D6: Prisma Migrations Not Applied
+
+**What goes wrong:** Tables don't exist, foreign key errors, schema mismatch between app and database.
+
+**Why it happens:** `prisma migrate deploy` must run before app starts in production, but it's often forgotten.
+
+**How to avoid:**
+1. Run migrations in container entrypoint: `npx prisma migrate deploy && npm start`
+2. Or use init container in docker-compose
+3. Never use `prisma migrate dev` in production (interactive, creates migrations)
+
+**Warning signs:**
+- "Table does not exist" errors
+- Works with fresh DB but not restored backups
+- Schema changes not reflected
+
+**HabitStreak-specific:** Use `prisma migrate deploy` in entrypoint script, not `prisma migrate dev`.
+
+---
+
+### Pitfall D7: Synology NAS Architecture Mismatch
+
+**What goes wrong:** Container crashes or won't start on Synology NAS.
+
+**Why it happens:** Synology NAS devices use various CPU architectures (Intel Atom, ARM). Docker images built on x86_64 may not run on ARM, and vice versa.
+
+**How to avoid:**
+1. Build multi-architecture images or build on target platform
+2. Use `--platform linux/amd64` if Synology has Intel CPU
+3. Check Synology model's CPU architecture before building
+
+**Warning signs:**
+- "exec format error" on container start
+- Image pulls but won't run
+- Works on development machine but not NAS
+
+**HabitStreak-specific:** Verify target Synology model. Most modern Synology NAS (DS920+, DS220+) use Intel Celeron (amd64).
+
+---
+
+### Pitfall D8: Next.js Image Optimization Crashes on Atom CPUs
+
+**What goes wrong:** Docker container stops when using `next/image` component on older Synology NAS with Intel Atom CPU.
+
+**Why it happens:** Next.js image optimization uses Sharp library which can crash on older Intel Atom D2700 processors due to unsupported instructions.
+
+**How to avoid:**
+1. Use `unoptimized: true` in next.config.js for images
+2. Or use external image optimization service
+3. Or disable image optimization entirely for self-hosted deployment
+
+**Warning signs:**
+- Container exits with no error message
+- Crash happens when page with images loads
+- GitHub issue #34198 in vercel/next.js
+
+**HabitStreak-specific:** Current app doesn't heavily use images, but verify target NAS CPU generation.
+
+---
+
+## Streak Calculation Pitfalls
+
+### Pitfall S1: Variable Schedule "Skip Day" Semantics Bug
+
+**What goes wrong:** User has WORKWEEK task (Mon-Fri) and WEEKEND task (Sat-Sun). On Monday, they complete workday task but weekend task wasn't scheduled. Algorithm incorrectly evaluates weekend days.
+
+**Why it happens:** Current streak algorithm in `src/lib/streak.ts` (line 68-76) checks if ANY task was scheduled for a day. If no tasks scheduled, day is skipped. But the bug is: it uses current active tasks to evaluate historical days.
+
+**How to avoid:**
+1. Check scheduledCount against THAT day's expected tasks, not current tasks
+2. A day with 0 scheduled tasks should not break streak, but also shouldn't count as a success
+3. Test edge case: user with only WEEKEND tasks shouldn't have broken streak on Monday
+
+**Warning signs:**
+- Streak breaks unexpectedly between Friday and Monday
+- User with weekend-only habit shows 0 streak on weekdays
+- Streak calculation differs from user expectation
+
+**HabitStreak-specific:** Lines 76-78 in `streak.ts` skip days with no scheduled tasks:
+```typescript
+if (scheduledCount === 0) {
+  continue;
 }
 ```
-
-**Critical:** The value is `reduce`, not "none" - users still want functional feedback, just not excessive motion.
-
-**Warning Signs:**
-- No `@media (prefers-reduced-motion)` queries in CSS
-- No `disableForReducedMotion` option in animation libraries
-- Parallax, zooming, or panning animations without alternatives
-
-**Confidence:** HIGH - W3C WCAG guidelines, MDN documentation
-
-Sources:
-- [MDN prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-reduced-motion)
-- [web.dev Accessibility Motion](https://web.dev/learn/accessibility/motion/)
-- [Manuel Matuzovic Vestibular Disorders](https://www.matuzo.at/blog/reading-recommendations-animation-on-the-web-and-vestibular-disorders/)
+This is correct behavior - the bug may be elsewhere. Need test coverage for variable schedule scenarios.
 
 ---
 
-### 3. Flashing Content Causing Seizures (WCAG 2.3)
-**Problem:** Content flashing >3 times per second can trigger photosensitive epileptic seizures. Red flashes are especially dangerous.
+### Pitfall S2: Task Creation/Deletion Mid-Week Affects History
 
-**Impact:** Medical emergency for users, legal liability, WCAG Level A failure.
+**What goes wrong:** User creates a WORKWEEK task on Wednesday. Algorithm evaluates Monday/Tuesday as "0 tasks scheduled" but user expects current streak to start from Wednesday.
 
-**Prevention:**
-- Never flash content more than 3 times per second
-- Avoid saturated red flashing entirely
-- Test with Photosensitive Epilepsy Analysis Tool (PEAT)
-- Convert flashing GIFs to video format with controls
+**Why it happens:** `calculateCurrentStreak` queries current active tasks and applies them to all historical dates. Historical task state isn't tracked.
 
-**Warning Signs:**
-- Confetti/particle effects with rapid color changes
-- Strobe effects in celebrations
-- Auto-playing animated content without user control
+**How to avoid:**
+1. Use task `createdAt` to determine when task became applicable
+2. Don't count days before task creation in scheduling evaluation
+3. Consider storing task schedule history if requirements expand
 
-**Confidence:** HIGH - W3C WCAG 2.1 Success Criterion 2.3.1
+**Warning signs:**
+- New task shows 0 streak even after completing it
+- Deleting (deactivating) task affects past streak calculation
+- Inconsistent streak after task modifications
 
-Sources:
-- [W3C WCAG Seizures Guidelines](https://www.w3.org/WAI/WCAG21/Understanding/seizures-and-physical-reactions.html)
-- [MDN Seizure Disorders](https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Seizure_disorders)
+**HabitStreak-specific:** Current implementation at line 28-38 gets only `isActive: true` tasks. Need to also check `createdAt` when evaluating historical days.
 
 ---
 
-### 4. iOS Safari-Specific Animation Failures
-**Problem:** iOS has unique animation quirks that break cross-platform animations:
-- Low-power mode throttles all animations and requestAnimationFrame
-- `background-attachment: fixed` is disabled on iOS Safari
-- Safari menu bar toggle causes animation lag
-- CSS scroll-driven animations not supported (as of Dec 2024)
+### Pitfall S3: Timezone Boundary Edge Cases
 
-**Impact:** Animations that work perfectly on desktop/Android fail or stutter on iOS.
+**What goes wrong:** User checks in at 23:55 Amsterdam time, but server processes at 00:05 next day UTC, creating inconsistent day attribution.
 
-**Prevention:**
-- Test on real iOS devices (emulators miss these issues)
-- Use `transform`-based parallax instead of `background-attachment: fixed`
-- Use `position: sticky` for parallax effects on Mobile Safari
-- Provide polyfill for scroll-driven animations
+**Why it happens:** The app uses `Europe/Amsterdam` timezone throughout, but if any part of the chain (server, database, Docker) uses different timezone, dates mismatch.
 
-**Warning Signs:**
-- Only testing in Chrome DevTools mobile emulation
-- Using `background-attachment: fixed` for parallax
-- Scroll-based animations not working on Safari
+**How to avoid:**
+1. Ensure Docker container TZ environment variable is set: `TZ=Europe/Amsterdam`
+2. All date comparisons use `getTodayInAmsterdam()` from `src/lib/dates.ts`
+3. Never use JavaScript's `new Date()` directly for day calculations
 
-**Confidence:** HIGH - Direct iOS Safari documentation and developer reports
+**Warning signs:**
+- Check-ins appearing on wrong day
+- Streak breaks at midnight
+- Different behavior in production vs development
 
-Sources:
-- [Chrome DevTools Performant Parallaxing](https://developer.chrome.com/blog/performant-parallaxing)
-- [Motion Blog Browser Throttling](https://motion.dev/blog/when-browsers-throttle-requestanimationframe)
+**HabitStreak-specific:** The `dates.ts` module correctly uses Amsterdam timezone. Docker container must set `TZ=Europe/Amsterdam` environment variable.
 
 ---
 
-## Technical Debt Patterns
+### Pitfall S4: DST Transition Creates 23/25-Hour Days
 
-### 1. `will-change` Abuse
-**Problem:** Developers add `will-change: transform` everywhere as "optimization," but it actually:
-- Creates compositor layers consuming GPU memory
-- Hurts text rendering
-- Should only be used as last resort for existing problems
+**What goes wrong:** On DST transition days (last Sunday of March/October in Netherlands), streak calculation fails because day length assumptions break.
 
-**Bad Pattern:**
-```css
-/* DON'T DO THIS */
-* { will-change: transform; }
-.card { will-change: transform, opacity; }
-```
+**Why it happens:** Naive date arithmetic (`date + 24 hours = next day`) fails during DST. A day can be 23 or 25 hours long.
 
-**Good Pattern:**
-```javascript
-// Apply only when needed, remove after
-element.addEventListener('mouseenter', () => {
-  element.style.willChange = 'transform';
-});
-element.addEventListener('animationend', () => {
-  element.style.willChange = 'auto';
-});
-```
+**How to avoid:**
+1. Use date-fns-tz functions (already in use) instead of manual arithmetic
+2. `getLastNDays()` at line 50-56 uses `getDaysAgoInAmsterdam()` which should handle this correctly
+3. Test specifically with DST transition dates
 
-**Confidence:** HIGH - MDN explicitly warns against this
+**Warning signs:**
+- Streak breaks on last Sunday of March or October
+- Missing or duplicate days in date range
+- Off-by-one errors near DST boundaries
 
-Sources:
-- [MDN will-change](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/will-change)
-- [LogRocket will-change Guide](https://blog.logrocket.com/when-how-use-css-will-change/)
+**HabitStreak-specific:** The `date-fns-tz` library handles DST correctly. The `getDateRangeArray()` helper at line 192-208 uses `current.setDate(current.getDate() + 1)` which should be safe but could be made more robust.
 
 ---
 
-### 2. Memory Leaks in AnimatePresence (Framer Motion)
-**Problem:** Components that leave/enter DOM mid-animation can leak memory. SSR with Next.js has known memory leak issues with MotionValues.
+### Pitfall S5: Daily Target vs Scheduled Tasks Mismatch
 
-**Prevention:**
-- Manually destroy motion values in cleanup: `motionValue.destroy()`
-- Ensure animations complete before unmounting
-- Monitor memory in DevTools during prolonged use
+**What goes wrong:** User has dailyTarget=3 but only 2 tasks scheduled for weekends. They complete both weekend tasks but day isn't "successful" because 2 < 3.
 
-**Confidence:** MEDIUM - GitHub issues document this, but may be version-specific
+**Why it happens:** Daily target is global setting, but scheduled task count varies by day type.
 
-Sources:
-- [Framer Motion Memory Leak Issue #625](https://github.com/framer/motion/issues/625)
-- [Framer Motion SSR Issue #434](https://github.com/framer/motion/issues/434)
+**How to avoid:**
+1. Document that dailyTarget should be <= minimum scheduled tasks per day
+2. Or change success criteria to `min(completedCount, scheduledCount) >= dailyTarget`
+3. Or make dailyTarget dynamic per day
 
----
+**Warning signs:**
+- User completes all visible tasks but streak doesn't increase
+- "Successful day" definition confuses users
+- Different behavior on weekdays vs weekends
 
-### 3. Confetti/Particle Memory Leaks
-**Problem:** React confetti libraries show "worsening performance after each re-render" - visible on mobile, not desktop. Components not cleaned up properly in unmount.
-
-**Prevention:**
-- Use `useWorker` option when available (offloads to Web Worker)
-- Explicitly cleanup in `componentWillUnmount` or `useEffect` cleanup
-- Limit bursts to finite duration, not infinite loops
-- Test with 5+ minute continuous usage
-
-**Confidence:** HIGH - Documented in react-confetti issues
-
-Sources:
-- [react-confetti Issue #47](https://github.com/alampros/react-confetti/issues/47)
-- [canvas-confetti Performance Guide](https://github.com/catdad/canvas-confetti)
+**HabitStreak-specific:** Lines 81 in `streak.ts`: `const isSuccessful = completedCount >= dailyTarget`. This doesn't account for scheduledCount. May need product decision on expected behavior.
 
 ---
 
-### 4. Importing Full Animation Library Bundles
-**Problem:** Default Framer Motion import is 34kb minified. Full GSAP is 23kb. These add up fast.
+### Pitfall S6: Best Streak Uses ALL Tasks Including Inactive
 
-**Prevention (Framer Motion):**
-```javascript
-// Instead of:
-import { motion } from 'framer-motion';
+**What goes wrong:** User deactivates a task they never completed. Best streak calculation now shows lower number because historical days with that task are evaluated.
 
-// Use LazyMotion:
-import { LazyMotion, domAnimation, m } from 'framer-motion';
-// domAnimation = +15kb, domMax = +25kb
-// Or useAnimate mini at just 2.3kb
-```
+**Why it happens:** `calculateBestStreak()` at line 114-124 queries ALL tasks (including inactive) to evaluate historical completeness. This is intentional but may surprise users.
 
-**Confidence:** HIGH - Official Motion documentation
+**How to avoid:**
+1. Document this behavior clearly
+2. Or only count tasks that were active during the date range being evaluated
+3. Consider task `isActive` history for accurate historical reconstruction
 
-Sources:
-- [Motion Bundle Size Reduction](https://motion.dev/docs/react-reduce-bundle-size)
+**Warning signs:**
+- Best streak drops after deactivating task
+- User complains streak was "stolen"
+- Inconsistency between current and best streak logic
 
----
-
-## Performance Traps
-
-### 1. Infinite Animation Loops
-**Problem:** CSS `animation-iteration-count: infinite` keeps requesting redraws even when not visible, burning CPU and battery.
-
-**Impact:** CPU usage 30-80% vs 2-3% with animation disabled. Devices overheat.
-
-**Prevention:**
-- Use `animation-play-state: paused` when off-screen
-- Use Intersection Observer to pause invisible animations
-- Prefer finite iterations where possible
-- Target max 20% CPU on mobile, 30% on desktop
-
-**Warning Signs:**
-- DevTools shows high CPU during idle
-- Mobile devices get warm
-- Battery drains faster than expected
-
-**Confidence:** HIGH - Multiple developer reports and Mozilla bug reports
-
-Sources:
-- [CSS-Tricks Animation CPU Discussion](https://css-tricks.com/forums/topic/css3-animations-are-burning-my-computer/)
-- [DEV.to Animation Performance](https://dev.to/nasehbadalov/optimizing-performance-in-css-animations-what-to-avoid-and-how-to-improve-it-bfa)
+**HabitStreak-specific:** This is a product decision. Current behavior may be intentional to maintain historical accuracy.
 
 ---
 
-### 2. requestAnimationFrame Polling
-**Problem:** Calling rAF continuously (even when idle) keeps CPU busy, prevents power-saving modes, drains battery.
+## CSS Animation Visibility Pitfalls
 
-**Bad Pattern:**
-```javascript
-function animate() {
-  // Always requesting next frame
-  requestAnimationFrame(animate);
-}
-animate();
-```
+### Pitfall A1: `drop-shadow` Filter Causes Safari Rendering Bugs
 
-**Good Pattern:**
-```javascript
-let animating = false;
-function animate() {
-  if (!animating) return;
-  // Do animation work
-  requestAnimationFrame(animate);
-}
-function startAnimation() {
-  animating = true;
-  animate();
-}
-function stopAnimation() {
-  animating = false;
-}
-```
+**What goes wrong:** Flame glow animation renders incorrectly on first load, flickers during scroll, or shows wrong on iOS Safari.
 
-**Confidence:** HIGH - Documented in Cytoscape.js issue, Motion blog
+**Why it happens:** Safari has known rendering bugs with `filter: drop-shadow()`. The current `animate-flame-glow` uses `filter: drop-shadow()` at lines 506-517 in globals.css.
 
-Sources:
-- [Cytoscape.js Battery Issue #2657](https://github.com/cytoscape/cytoscape.js/issues/2657)
-- [Motion Blog rAF Throttling](https://motion.dev/blog/when-browsers-throttle-requestanimationframe)
+**How to avoid:**
+1. Replace `drop-shadow` with `box-shadow` where possible
+2. Add `isolation: isolate; will-change: filter;` to animated elements
+3. Test on iOS Safari specifically
+4. Consider baking glow into static SVG
+
+**Warning signs:**
+- Animation works in Chrome, glitches in Safari
+- Flickering during scroll
+- First render looks wrong, corrects on interaction
+
+**HabitStreak-specific:** The `animate-flame-glow` at line 515-517 uses `filter: drop-shadow()`. This is a known issue area.
 
 ---
 
-### 3. Too Many Particles on Mobile
-**Problem:** Desktop can handle 200+ particles, but mobile struggles with >50-100.
+### Pitfall A2: Shadow Opacity Too Low for Visibility
 
-**Prevention:**
-- Detect device capability and reduce particle count
-- Desktop: 150 particles, Mobile: 50 particles
-- Use Web Workers for particle calculations
-- Test on throttled CPU (4x slowdown in DevTools)
+**What goes wrong:** Glow animation plays but users can't see it. Appears that "nothing happens."
 
-**Confidence:** HIGH - canvas-confetti documentation
+**Why it happens:** Subtle animations with low-opacity shadows (0.3-0.4 opacity) are barely visible on mobile screens, especially in bright environments.
 
-Sources:
-- [canvas-confetti Performance Guide](https://app.studyraid.com/en/read/15532/540267/testing-confetti-performance-across-devices)
+**How to avoid:**
+1. Increase shadow opacity from 0.3 to 0.5 or higher
+2. Increase blur radius for more visible spread
+3. Use stronger base color (brighter orange for flame)
+4. Test in bright ambient light
 
----
+**Warning signs:**
+- Users report "animation not working" when it is
+- Visible in dark room, invisible in daylight
+- A/B test shows no engagement difference
 
-### 4. Canvas Without GPU Acceleration
-**Problem:** Canvas uses CPU by default. Setting `willReadFrequently: true` disables GPU acceleration and significantly increases CPU usage.
-
-**Prevention:**
-- Set `willReadFrequently: false` for animation canvases
-- Use `will-change: transform` on canvas element CSS
-- Consider WebGL for particle-heavy effects
-
-**Confidence:** MEDIUM - Chrome-specific behavior documented
-
-Sources:
-- [Chrome willReadFrequently](https://www.schiener.io/2024-08-02/canvas-willreadfrequently)
+**HabitStreak-specific:** Current flame glow at line 508 uses `rgba(249, 115, 22, 0.3)` - only 30% opacity. The debug file `.planning/debug/button-hover-glow-not-visible.md` documents this exact issue.
 
 ---
 
-### 5. Scroll Event Handler Animations
-**Problem:** Binding animations directly to scroll events causes jank because scroll events fire faster than frames can render, and main thread work blocks scrolling.
+### Pitfall A3: `box-shadow` Conflicts During Animation
 
-**Prevention:**
-- Use CSS scroll-driven animations (with polyfill for Safari)
-- Use Intersection Observer for scroll-triggered animations
-- If using JS, throttle to every 10ms, use rAF
-- Use passive event listeners: `{ passive: true }`
+**What goes wrong:** Visual "blink" or flash when animation ends, shadow snaps to different state.
 
-**Confidence:** HIGH - Chrome DevTools team guidance
+**Why it happens:** Animation applies one box-shadow value, element has different box-shadow in completed state. When animation class is removed, `transition-all` animates between them creating visible flash.
 
-Sources:
-- [Chrome Scroll Animation Case Study](https://developer.chrome.com/blog/scroll-animation-performance-case-study/)
-- [Parallax Done Right](https://medium.com/@dhg/parallax-done-right-82ced812e61c)
+**How to avoid:**
+1. Match animation end state to element's static shadow state
+2. Don't combine `transition-all` with shadow animations
+3. Use `animation-fill-mode: forwards` to persist end state
+4. Remove conflicting shadow classes during animation
 
----
+**Warning signs:**
+- Flash/blink when animation completes
+- Shadow "pops" instead of smooth transition
+- Works in DevTools slow-mo, ugly at normal speed
 
-## Security/Privacy Mistakes
-
-### 1. Third-Party Animation Library CDN Tracking
-**Problem:** Loading animation libraries from CDNs can expose users to tracking and create security vulnerabilities.
-
-**Prevention:**
-- Self-host animation libraries
-- Use npm packages, not CDN links
-- Audit dependencies for tracking code
-
-**Confidence:** LOW - General web security principle, not animation-specific
+**HabitStreak-specific:** This exact bug is documented in `.planning/debug/animate-glow-blink-on-check.md`. The root cause: `shadow-sm` class conflicts with `animate-glow` animation.
 
 ---
 
-## UX Pitfalls
+### Pitfall A4: Animating Filter Properties Kills Performance
 
-### 1. Animations Too Long
-**Problem:** "They look great the first time but after that it's like watching paint dry."
+**What goes wrong:** Janky 15fps animation, dropped frames, battery drain, phone heats up.
 
-**Impact:** Users get frustrated waiting for animations to complete before they can act.
+**Why it happens:** CSS `filter` properties (blur, drop-shadow) trigger expensive repaints. Unlike `transform` and `opacity`, filters can't be GPU-composited efficiently.
 
-**Prevention:**
-- Micro-interactions: 100-300ms maximum
-- Page transitions: 300-400ms maximum
-- Never block user input during animation
-- Provide instant visual feedback for touch (<100ms)
+**How to avoid:**
+1. Animate only `transform` and `opacity` when possible
+2. For glow effects, animate opacity of a pseudo-element with static shadow
+3. Keep filter animations to single elements, not lists
+4. Test on low-end mobile devices
 
-**Confidence:** HIGH - Nielsen Norman Group, UX in Motion research
+**Warning signs:**
+- Animation stutters on iPhone Safari
+- Smooth on MacBook, janky on phone
+- Battery usage spikes during animation
 
-Sources:
-- [NN/G Microinteractions](https://www.nngroup.com/articles/microinteractions/)
-- [Medium UX in Motion Mistakes](https://medium.com/ux-in-motion/5-mistakes-to-avoid-when-designing-micro-interactions-a6f638ee6a86)
-
----
-
-### 2. Animation Overload (Death by a Thousand Tweens)
-**Problem:** "Cute animations are cool and all but putting them everywhere can be a bad move. Too much animation can damage a company's image."
-
-**Impact:** Cognitive overload, distraction from core tasks, appears unprofessional.
-
-**Prevention:**
-- Animations should support the main task, not compete with it
-- Properly designed micro-interaction is subtle - users shouldn't notice it
-- "Microinteractions are an exercise in restraint"
-- Animation should be invisible when it's working well
-
-**Warning Signs:**
-- Every element has an entrance animation
-- Multiple simultaneous animations competing for attention
-- Users commenting that the app is "busy" or "distracting"
-
-**Confidence:** HIGH - Multiple UX sources agree
-
-Sources:
-- [Interaction Design Foundation Micro-interactions](https://www.interaction-design.org/literature/article/micro-interactions-ux)
+**HabitStreak-specific:** The existing Phase 04 research at `.planning/phases/04-celebrations-and-streaks/04-RESEARCH.md` already identified this: "Using filter: blur() for flame: Causes performance issues on mobile."
 
 ---
 
-### 3. Staggered Animations Creating False Narratives
-**Problem:** Elements landing at different times imply emphasis/hierarchy that may not exist, adding cognitive load.
+### Pitfall A5: Missing `prefers-reduced-motion` for New Animations
 
-**Prevention:**
-- Use staggering intentionally to guide attention
-- Keep stagger delays minimal (20-50ms per item)
-- Group related items to animate together
+**What goes wrong:** Accessibility failure - users with vestibular disorders experience discomfort from animations.
 
-**Confidence:** MEDIUM - UX in Motion principles
+**Why it happens:** Adding new animations without updating the `@media (prefers-reduced-motion)` block in globals.css.
 
----
+**How to avoid:**
+1. For every new `@keyframes` or `.animate-*` class, add to reduced-motion block
+2. Check lines 584-642 in globals.css - this block must include all animation classes
+3. Test with "Reduce motion" enabled in OS settings
 
-### 4. Touch Feedback Delay
-**Problem:** Touch feedback over 100ms feels sluggish. The historical 300ms delay on mobile (for double-tap-to-zoom) makes apps feel broken.
+**Warning signs:**
+- Animations play with OS "Reduce motion" enabled
+- Accessibility audit fails
+- User complaints about motion sickness
 
-**Prevention:**
-- Use `touch-action: manipulation` to remove 300ms delay
-- Provide visual feedback within 100ms of touch
-- Keep total animation duration under 300-500ms
-
-**Confidence:** HIGH - Documented browser behavior
-
-Sources:
-- [Mozilla Touch Delay Bug](https://bugzilla.mozilla.org/show_bug.cgi?id=922896)
+**HabitStreak-specific:** The existing globals.css has comprehensive reduced-motion support. Any new animations must be added to the block at lines 584-642.
 
 ---
 
-### 5. Celebration Fatigue
-**Problem:** Confetti on every task completion becomes annoying after the first few times. What delights initially becomes noise.
+### Pitfall A6: Animation Invisible Due to Overflow Clipping
 
-**Prevention:**
-- Reserve "big" celebrations for significant achievements (streak milestones)
-- Use subtle feedback for routine actions (checkmark animation)
-- Consider reducing celebration intensity over time
-- Allow users to disable celebrations
+**What goes wrong:** Shadow/glow extends outside element bounds but parent has `overflow: hidden`, cutting off the effect.
 
-**Confidence:** MEDIUM - UX principle, limited specific research
+**Why it happens:** Shadows and glows extend beyond element boundaries. If any parent has `overflow: hidden`, the effect is clipped and invisible.
 
----
+**How to avoid:**
+1. Check for `overflow-hidden` on all parent elements
+2. Add padding to parent to accommodate shadow spread
+3. Or move glow to pseudo-element within element bounds
 
-## Accessibility Failures
+**Warning signs:**
+- Shadow works in isolation but not in context
+- DevTools shows shadow but screen doesn't
+- Effect appears when element is repositioned
 
-### 1. No Animation Pause/Stop Controls
-**Problem:** WCAG requires users to be able to pause, stop, or hide any animation that starts automatically and lasts more than 5 seconds.
-
-**Prevention:**
-- Add visible pause/play controls for decorative animations
-- Auto-pause animations after reasonable duration
-- Never auto-play infinite animations without controls
-
-**Confidence:** HIGH - WCAG 2.2 Success Criterion 2.2.2
-
-Sources:
-- [W3C Animation from Interactions](https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions.html)
-
----
-
-### 2. Motion as Only Indicator
-**Problem:** Using animation as the only way to communicate state change excludes users who can't perceive the motion.
-
-**Prevention:**
-- Always pair animation with another indicator (color change, icon change, text)
-- Ensure information is accessible without animation
-- Use ARIA live regions for dynamic content changes
-
-**Confidence:** HIGH - General accessibility principle
-
----
-
-### 3. Parallax Without Alternatives
-**Problem:** Parallax scrolling is a known vestibular trigger causing dizziness, nausea, migraines.
-
-**Prevention:**
-- Detect `prefers-reduced-motion` and disable parallax entirely
-- Provide static alternative backgrounds
-- Avoid parallax on critical content paths
-
-**Confidence:** HIGH - WCAG documentation
-
-Sources:
-- [web.dev prefers-reduced-motion](https://web.dev/articles/prefers-reduced-motion)
+**HabitStreak-specific:** Debug file `.planning/debug/button-hover-glow-not-visible.md` checked for this - no global overflow-hidden found, but worth verifying in specific components.
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-### Animation Implementation
-- [ ] Tested on real iOS device (not just emulator)
-- [ ] Tested on low-end Android device (not just flagship)
-- [ ] Tested with CPU throttling (4x slowdown)
-- [ ] Tested with `prefers-reduced-motion: reduce` enabled
-- [ ] Tested with 5+ minutes continuous use (memory leaks)
-- [ ] Tested with multiple animation triggers in quick succession
-- [ ] Tested with browser tab in background (should pause)
-- [ ] DevTools Performance shows no purple Layout blocks during animation
-- [ ] CPU usage stays under 20% on mobile during animations
+These are items that appear complete but often have hidden issues:
 
-### Accessibility
-- [ ] `@media (prefers-reduced-motion)` styles exist
-- [ ] No content flashes >3 times per second
-- [ ] All auto-playing animations have pause controls
-- [ ] Animation is not the only indicator of state change
-- [ ] Screen reader announces changes that animation visualizes
-
-### Cross-Browser
-- [ ] Tested in Safari desktop
-- [ ] Tested in Safari iOS
-- [ ] Tested in Chrome mobile
-- [ ] Tested in Firefox mobile
-- [ ] Parallax works without `background-attachment: fixed`
-
-### Performance
-- [ ] Animation library tree-shaken / lazy loaded
-- [ ] `will-change` only applied during animation, removed after
-- [ ] Infinite animations pause when off-screen
-- [ ] Particle count reduced on mobile devices
-- [ ] No scroll event handlers (using Intersection Observer or CSS)
-
-### User Experience
-- [ ] Micro-interactions are under 300ms
-- [ ] Users can disable celebration animations
-- [ ] Touch feedback appears within 100ms
-- [ ] Animations don't block user interaction
-- [ ] Repeated animations don't become annoying
-
----
-
-## Recovery Strategies
-
-### When Animations Cause Jank
-1. Open DevTools Performance tab, record during animation
-2. Look for purple "Layout" blocks - indicates layout thrashing
-3. Identify which CSS properties are being animated
-4. Replace with `transform`/`opacity` equivalents
-5. If still janky, reduce number of animated elements
-
-### When Memory Leaks Occur
-1. Use DevTools Memory tab, take heap snapshots before/after
-2. Look for retained objects growing over time
-3. Check animation library cleanup functions are being called
-4. Verify `useEffect` cleanup functions exist for all animations
-5. Consider moving to CSS-only animations for simple effects
-
-### When iOS Safari Breaks
-1. Check if using `background-attachment: fixed` (not supported)
-2. Add `-webkit-` prefixes for transforms
-3. Use `position: sticky` approach for parallax
-4. Test in actual iOS Safari, not Chrome iOS (different engine)
-5. Consider polyfill for scroll-driven animations
-
-### When Users Complain
-1. Immediately add `prefers-reduced-motion` support if missing
-2. Add animation toggle in settings
-3. Audit all animations for duration (reduce to under 300ms)
-4. Remove animations from high-frequency interactions
-5. User test with motion-sensitive individuals
+- [ ] **Docker:** Build succeeds locally but fails in CI (missing build args, arch mismatch)
+- [ ] **Docker:** Container starts but can't connect to database (localhost vs service name)
+- [ ] **Docker:** App works but migrations weren't applied (tables don't exist)
+- [ ] **Docker:** Image runs on dev machine but crashes on Synology (CPU architecture)
+- [ ] **Streaks:** Streak counts correctly for ALL_WEEK but wrong for WORKWEEK/WEEKEND
+- [ ] **Streaks:** Current streak works but best streak calculation differs
+- [ ] **Streaks:** Works in Amsterdam timezone but breaks if server TZ differs
+- [ ] **Streaks:** New users see correct streak but task modifications cause recalculation bugs
+- [ ] **Animations:** Animation visible in DevTools but not on actual screen (opacity too low)
+- [ ] **Animations:** Works in Chrome but glitches in Safari (filter bugs)
+- [ ] **Animations:** Smooth on desktop but janky on mobile (filter performance)
+- [ ] **Animations:** Animation plays but "blinks" at end (shadow state conflicts)
+- [ ] **Animations:** Works with default settings but fails with "Reduce motion" (a11y)
 
 ---
 
 ## Pitfall-to-Phase Mapping
 
-| Pitfall | Prevention Phase | Implementation Notes |
-|---------|-----------------|---------------------|
-| Layout-triggering properties | Phase 1: Foundation | Establish animation utilities that only use transform/opacity |
-| `prefers-reduced-motion` | Phase 1: Foundation | Build into base animation component/hook |
-| Seizure-inducing flashes | Phase 1: Foundation | Establish color/timing constants |
-| iOS Safari issues | Phase 2: Core Animations | Test each animation type on iOS |
-| `will-change` abuse | Phase 1: Foundation | Create utility that manages lifecycle |
-| Memory leaks | Phase 2-3: All animation phases | Add cleanup to every animation hook |
-| Bundle size | Phase 1: Foundation | Configure tree-shaking, lazy loading |
-| Infinite loops | Phase 2: Core Animations | Use Intersection Observer pattern |
-| rAF polling | Phase 2: Core Animations | Create controlled animation loop utility |
-| Particle count | Phase 3: Celebrations | Device detection + reduced counts |
-| Scroll animations | Phase 2: Core Animations | Use CSS scroll-driven or polyfill |
-| Animation duration | Phase 2-3: All | Establish timing constants (100ms, 300ms) |
-| Touch feedback delay | Phase 2: Core Animations | Apply `touch-action: manipulation` globally |
-| Celebration fatigue | Phase 3: Celebrations | Add settings toggle, tier celebrations |
-| Animation controls | Phase 2: Core Animations | Build pause/play into animation wrapper |
-| Visual regression testing | All Phases | Set up Chromatic/Percy from Phase 1 |
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| D1: Missing standalone output | Docker Setup | Image size < 200MB |
+| D2: Prisma not generated | Docker Setup | Container starts without Prisma error |
+| D3: DATABASE_URL at build | Docker Setup | `docker build` succeeds |
+| D4: localhost vs service name | Docker Setup | App connects to DB in container |
+| D5: DB not ready | Docker Setup | Consistent startup without retries |
+| D6: Migrations not applied | Docker Setup | App queries succeed |
+| D7: Architecture mismatch | Docker Setup | Runs on target Synology model |
+| D8: Image optimization crash | Docker Setup | Pages with images load on NAS |
+| S1: Variable schedule bug | Streak Fix | Unit tests for WORKWEEK/WEEKEND edge cases |
+| S2: Task creation affects history | Streak Fix | New task doesn't break existing streak |
+| S3: Timezone boundary | Streak Fix | TZ env var set, midnight tests pass |
+| S4: DST transition | Streak Fix | Tests with DST dates pass |
+| S5: Daily target mismatch | Streak Fix | Product decision documented |
+| S6: Inactive tasks in history | Streak Fix | Product decision documented |
+| A1: drop-shadow Safari bugs | Animation Polish | Manual test on iOS Safari |
+| A2: Shadow opacity too low | Animation Polish | Visible in bright daylight |
+| A3: box-shadow conflicts | Animation Polish | No blink after animation |
+| A4: Filter performance | Animation Polish | 60fps on iPhone |
+| A5: Missing reduced-motion | Animation Polish | Respects OS setting |
+| A6: Overflow clipping | Animation Polish | Shadow visible in context |
 
 ---
 
-## Recommended Tools
+## Sources
 
-### Performance Monitoring
-- Chrome DevTools Performance tab
-- Lighthouse Performance audit
-- WebPageTest for real device testing
+### Docker + Next.js + Prisma
+- [Prisma Docker Guide](https://www.prisma.io/docs/guides/docker) - Official Prisma documentation
+- [Next.js Docker Deployment](https://nextjs.org/docs/app/getting-started/deploying) - Official Next.js docs
+- [Prisma Discussion #24528](https://github.com/prisma/prisma/discussions/24528) - Standalone output issues
+- [Next.js Issue #77436](https://github.com/vercel/next.js/issues/77436) - DATABASE_URL build issue
+- [Next.js Issue #34198](https://github.com/vercel/next.js/issues/34198) - Synology Atom CPU crash
+- [Docker Compose Health Checks](https://docs.docker.com/compose/how-tos/startup-order/) - Official Docker docs
+- [Marius Hosting Synology Docker](https://mariushosting.com/category/synology-docker/) - Synology-specific guides
 
-### Accessibility Testing
-- Photosensitive Epilepsy Analysis Tool (PEAT)
-- axe DevTools extension
-- Manual testing with `prefers-reduced-motion` enabled
+### Streak Calculation
+- [Trophy: How to Build Streaks](https://trophy.so/blog/how-to-build-a-streaks-feature) - Comprehensive guide on streak edge cases
+- [uhabits Discussion #88](https://github.com/iSoron/uhabits/discussions/88) - Skip days in habit tracking
+- Local codebase analysis: `/mnt/c/Sources/habitstreak/src/lib/streak.ts`
 
-### Visual Regression Testing
-- **Chromatic** - Best for Storybook-based projects, handles animation flakiness
-- **Percy (BrowserStack)** - Good CI/CD integration, AI-powered diff
-- Disable animations in test environment or wait for settle
-
-### Animation Libraries (Recommended)
-- **Motion (Framer Motion)** - Best React DX, 2.5-6x faster than GSAP in some cases
-- **GSAP** - Best for complex timeline animations, works everywhere
-- **canvas-confetti** - Lightweight, Web Worker support, handles cleanup
-
-Sources:
-- [Chromatic](https://www.chromatic.com/)
-- [BrowserStack Percy](https://www.browserstack.com/percy/visual-regression-testing)
+### CSS Animation Visibility
+- [MDN Browser Compat Issue #17726](https://github.com/mdn/browser-compat-data/issues/17726) - Safari drop-shadow bugs
+- [Tobias Ahlin: Animate box-shadow](https://tobiasahlin.com/blog/how-to-animate-box-shadow/) - Performance techniques
+- [Josh Comeau: Designing Shadows](https://www.joshwcomeau.com/css/designing-shadows/) - Shadow visibility best practices
+- [CSS-Tricks: Getting Deep Into Shadows](https://css-tricks.com/getting-deep-into-shadows/) - Shadow fundamentals
+- Local codebase analysis: `/mnt/c/Sources/habitstreak/.planning/debug/*.md`
 
 ---
 
-## Summary of Top 5 Must-Avoid Mistakes
+## Metadata
 
-1. **Animating layout properties** - Use only `transform` and `opacity`
-2. **Ignoring `prefers-reduced-motion`** - 35%+ of adults over 40 affected by vestibular disorders
-3. **Not testing on real iOS devices** - iOS has unique behaviors that emulators miss
-4. **Infinite animations without pause** - Drains battery, burns CPU, annoys users
-5. **Animation durations over 300ms** - "Looks great first time, paint drying after that"
+**Confidence breakdown:**
+- Docker pitfalls: HIGH - Well-documented in official Prisma and Next.js docs
+- Streak calculation: MEDIUM - Local code analysis + general patterns, specific edge cases need testing
+- CSS animation: HIGH - Combination of official MDN docs and project-specific debug findings
 
----
-
-*Research compiled from Chrome DevTools team, MDN Web Docs, W3C WCAG, Nielsen Norman Group, Motion Magazine, and developer community discussions.*
+**Research date:** 2026-01-18
+**Valid until:** 2026-03-18 (Docker/CSS patterns stable, streak logic is codebase-specific)

@@ -1,159 +1,175 @@
 # Project Research Summary
 
-**Project:** HabitStreak UI Refresh
-**Domain:** Frontend animation/design for mobile-first habit tracking app
-**Researched:** 2026-01-16
+**Project:** HabitStreak v1.1 Self-Hosting & Polish
+**Domain:** Next.js Docker Deployment + Streak Calculation + CSS Animation
+**Researched:** 2026-01-18
 **Confidence:** HIGH
 
 ## Executive Summary
 
-HabitStreak's UI refresh transforms a functional but dull habit tracking app into a playful, celebratory experience. Research indicates this is a well-understood domain with established best practices—the key differentiator is execution quality, not novel techniques.
+HabitStreak v1.1 targets three distinct areas: Docker deployment for Synology NAS self-hosting, a streak calculation bug fix, and CSS animation visibility improvements. Research reveals all three areas have well-documented patterns and pitfalls.
 
-**Recommended approach:** CSS-first animations with selective use of Motion (formerly Framer Motion) for complex interactions. Use canvas-confetti for celebrations, respect accessibility with `prefers-reduced-motion` support from day one, and keep all micro-interactions under 300ms.
+**Docker deployment** follows established patterns: multi-stage Dockerfile with `output: 'standalone'`, `node:22-alpine` base image, PostgreSQL in docker-compose with health checks, and Prisma migrations at container startup. The stack is mature with high confidence recommendations.
 
-**Key risk:** Performance on mobile devices. Animation-heavy apps commonly fail here through layout-triggering CSS properties, infinite animation loops, and excessive particle counts. Mitigation is straightforward: only animate `transform` and `opacity`, pause off-screen animations, and reduce particle counts on mobile.
+**Streak calculation** bug is identified: when `scheduledCount < dailyTarget` (e.g., weekend with 2 ALL_WEEK tasks but dailyTarget=3), users fail days even after completing all scheduled tasks. The fix is `effectiveTarget = Math.min(dailyTarget, scheduledCount)`. The existing skip logic for zero scheduled days is already correct.
+
+**Flame animation visibility** requires increasing shadow opacity from 30% to 50%+, avoiding `drop-shadow` filter (Safari bugs), and ensuring no `shadow-sm` class conflicts with animation end state (documented blink bug).
 
 ## Key Findings
 
-### Recommended Stack
+### Recommended Stack (Docker)
 
-The modern React animation stack is mature and performant. Motion (Framer Motion rebrand) dominates with 12M+ monthly npm downloads and full React 19/Next.js 15 support.
+Docker deployment is well-established for Next.js + Prisma + PostgreSQL.
 
 **Core technologies:**
-- **Motion v12.26** — Primary animation library, GPU-accelerated, spring physics, gesture support (~32KB)
-- **tw-animate-css** — CSS-first Tailwind animations, replacing deprecated tailwindcss-animate
-- **canvas-confetti v1.9.4** — Lightweight celebrations (~6KB), high-performance canvas rendering
+- `node:22-alpine`: Active LTS since Oct 2024, ~153MB, optimal for Next.js 15
+- `postgres:16-alpine`: Matches existing dev setup, proven stable, ~82MB
+- `output: 'standalone'` in next.config.js: Reduces image from 1GB+ to ~200MB
 
-**Supporting libraries:**
-- **@formkit/auto-animate v0.9** — Zero-config list animations (~2KB), perfect for task lists
-- **sonner** — Already included via shadcn/ui for toast notifications
+**Critical patterns:**
+- Multi-stage Dockerfile (4 stages: base, deps, builder, runner)
+- Run `prisma migrate deploy` at container startup (not build time)
+- Use Docker service name `postgres` in DATABASE_URL (not localhost)
+- Health checks on both services with `depends_on: condition: service_healthy`
 
-### Expected Features
+### Streak Calculation Fix
 
-**Must have (table stakes):**
-- Button press feedback (scale down, color change) — users expect instant response
-- Smooth page transitions — professional polish
-- Loading states with skeleton screens
-- `prefers-reduced-motion` support — accessibility requirement, 70M+ people affected
+**Root cause identified:** Current algorithm evaluates `completedCount >= dailyTarget` without considering when fewer tasks are scheduled than the target.
 
-**Should have (competitive):**
-- Task completion checkmark animation with confetti burst
-- Streak counter animation (number flip, flame icon)
-- Milestone celebrations at 7, 30, 100, 365 days
-- Haptic feedback on mobile (subtle)
+**Scenario that fails:**
+- Saturday with 2 ALL_WEEK tasks (WORKWEEK tasks not scheduled)
+- dailyTarget = 3
+- User completes both tasks
+- Current: `2 >= 3` = FAIL (streak broken)
+- Fixed: `2 >= min(3, 2)` = SUCCESS
 
-**Defer (v2+):**
-- Sound effects (controversial, default OFF)
-- Complex Lottie animations (82KB+ bundle impact)
-- Full particle backgrounds (@tsparticles React 19 compatibility uncertain)
+**The fix (one line change):**
+```typescript
+// Current
+const isSuccessful = completedCount >= dailyTarget
 
-### Architecture Approach
+// Fixed
+const effectiveTarget = Math.min(dailyTarget, scheduledCount)
+const isSuccessful = completedCount >= effectiveTarget
+```
 
-A layered architecture separates concerns while integrating with HabitStreak's existing theme system:
+### Animation Visibility
 
-**Major components:**
-1. **Foundation Layer** — CSS variables, keyframes, Tailwind config (already exists)
-2. **Animation Layer** — Hooks (`useReducedMotion`), wrapper components, variant configs (new)
-3. **Application Layer** — Feature components consuming animations via hooks/classes
+**Current issue:** Flame glow uses `rgba(249, 115, 22, 0.3)` — only 30% opacity, barely visible on mobile in daylight.
 
-**File structure:** Create `src/animations/` with `hooks/`, `components/`, `variants/`, and `config.ts` for centralized animation logic.
+**Recommendations:**
+- Increase opacity to 0.5-0.6
+- Replace `drop-shadow` filter with `box-shadow` (Safari compatibility)
+- Fix documented blink bug: remove `shadow-sm` class during animation
+- Keep all animation changes within existing reduced-motion media query
 
 ### Critical Pitfalls
 
-1. **Animating layout properties** — Using `width`, `height`, `top`, `left` causes 10-30 FPS on mobile. Only animate `transform` and `opacity`.
+Top pitfalls to avoid in implementation:
 
-2. **Ignoring `prefers-reduced-motion`** — 35%+ of adults over 40 have vestibular disorders. Not optional—it's an accessibility and legal requirement.
-
-3. **iOS Safari quirks** — `background-attachment: fixed` disabled, scroll-driven animations unsupported, Low Power Mode throttles everything. Test on real iOS devices.
-
-4. **Celebration fatigue** — Confetti on every task becomes noise. Reserve big celebrations for milestones; use subtle feedback for routine actions.
-
-5. **Bundle bloat** — Full Framer Motion is 34KB. Use LazyMotion (4.6KB) or CSS-first approach where possible.
+1. **Missing `output: 'standalone'`** — Current next.config.js lacks this. Image will be 1GB+ without it.
+2. **DATABASE_URL at build time** — Prisma needs a dummy URL during `next build` to parse schema.
+3. **Container uses localhost** — DATABASE_URL must use service name `postgres`, not `localhost`.
+4. **dailyTarget > scheduledCount** — The main streak bug. Fix with `Math.min()`.
+5. **Shadow opacity too low** — 30% is invisible. Use 50%+ for visibility.
+6. **`shadow-sm` conflicts with animation** — Causes visual blink at animation end.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Animation Foundation
-**Rationale:** Establish performance-safe patterns before building features on them
-**Delivers:** Animation infrastructure that prevents pitfalls by design
-**Addresses:** prefers-reduced-motion support, GPU-accelerated-only utilities, animation timing constants
-**Avoids:** Layout-triggering properties, accessibility failures
+### Phase 1: Docker Deployment
+**Rationale:** Self-contained deliverable, well-documented patterns, prerequisite for self-hosting goal
+**Delivers:** Dockerfile, docker-compose.prod.yml, health endpoint, deployment docs
+**Addresses:** Self-hosting on Synology NAS
+**Avoids:** Pitfalls D1-D8 (standalone output, Prisma generation, migrations, health checks)
 
-### Phase 2: Core Micro-interactions
-**Rationale:** Button feedback and state transitions are table stakes that make the app feel responsive
-**Delivers:** Touch feedback, loading states, page transitions
-**Uses:** CSS animations via tw-animate-css, existing Tailwind setup
-**Implements:** Animation hooks, wrapper components
+**Tasks:**
+1. Add `output: 'standalone'` to next.config.js
+2. Create `/api/health` endpoint
+3. Create `.dockerignore`
+4. Create multi-stage Dockerfile
+5. Create docker-compose.prod.yml with PostgreSQL
+6. Create .env.production.example template
+7. Test locally with docker-compose
+8. Document Synology deployment steps
 
-### Phase 3: Task Completion Celebrations
-**Rationale:** Core UX moment—this is where the "spark of joy" lives
-**Delivers:** Checkmark animations, confetti bursts, daily completion celebration
-**Uses:** canvas-confetti, Motion for complex sequences
-**Avoids:** Celebration fatigue (tiered intensity)
+### Phase 2: Streak Calculation Fix
+**Rationale:** Small, focused bug fix with clear solution from research
+**Delivers:** Fixed streak calculation, unit tests for edge cases
+**Addresses:** Weekend/weekday task mismatch bug
+**Avoids:** Pitfalls S1, S5 (variable schedule semantics, daily target mismatch)
 
-### Phase 4: Streak & Milestone System
-**Rationale:** Retention driver—Duolingo found +1.7% 7-day retention from milestone animations
-**Delivers:** Streak counter animation, flame icon, milestone celebrations (7/30/100/365 days)
-**Implements:** Scaled celebration intensity matching achievement significance
+**Tasks:**
+1. Add unit tests for WORKWEEK/WEEKEND edge cases
+2. Fix `calculateCurrentStreak` with effectiveTarget
+3. Fix `calculateBestStreak` with same pattern
+4. Verify timezone handling (TZ=Europe/Amsterdam)
+5. Test DST edge cases
 
-### Phase 5: Polish & Refinement
-**Rationale:** Final layer of delight after core experience is solid
-**Delivers:** List animations with auto-animate, spring physics refinement, haptic feedback
-**Uses:** @formkit/auto-animate, Motion spring configs
+### Phase 3: Flame Animation Polish
+**Rationale:** Visual improvement, existing debug research available
+**Delivers:** More visible flame animation, fixed blink bug
+**Addresses:** "Flame animation not visible enough" feedback
+**Avoids:** Pitfalls A1-A6 (Safari bugs, opacity, shadow conflicts)
+
+**Tasks:**
+1. Increase flame glow opacity from 30% to 50%
+2. Replace `drop-shadow` with `box-shadow` if needed
+3. Fix animate-glow blink bug (shadow-sm conflict)
+4. Verify prefers-reduced-motion support
+5. Test on iOS Safari
 
 ### Phase Ordering Rationale
 
-- **Foundation first:** Prevents accumulating technical debt from performance-unsafe patterns
-- **Micro-interactions before celebrations:** Table stakes must work before differentiators
-- **Celebrations before milestones:** Task completion is more frequent, validates patterns
-- **Polish last:** Refinement makes sense only after core experience is proven
+- **Docker first:** Enables deployment/testing workflow. No dependencies on other features.
+- **Streak fix second:** Can be developed and tested locally or in Docker. Clear specification from research.
+- **Animation last:** Purely visual polish. Lowest priority, can be tested in any environment.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 4 (Milestones):** May need visual design exploration for celebration screens, badge system design
+Phases that may need deeper research during planning:
+- **Phase 1 (Docker):** Synology-specific reverse proxy configuration if HTTPS needed — not deeply researched
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Foundation):** Well-documented accessibility and performance patterns
-- **Phase 2 (Micro-interactions):** Established CSS animation utilities
-- **Phase 3 (Celebrations):** canvas-confetti has excellent docs and examples
+- **Phase 2 (Streak):** Algorithm is clear, implementation is straightforward
+- **Phase 3 (Animation):** Existing debug files document the issues
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Motion dominates, canvas-confetti proven, React 19 compatibility verified |
-| Features | HIGH | Duolingo/Streaks patterns well-documented, clear industry consensus |
-| Architecture | HIGH | CSS-first approach standard, layered architecture well-established |
-| Pitfalls | HIGH | Post-mortems and MDN/WCAG documentation provide clear guidance |
+| Stack (Docker) | HIGH | Official Next.js and Prisma documentation |
+| Architecture (Docker) | HIGH | Multi-stage pattern is well-established |
+| Features (Streak) | HIGH | Bug identified, fix verified against industry patterns |
+| Pitfalls (Docker) | HIGH | Well-documented in official sources |
+| Pitfalls (Streak) | MEDIUM | Based on code analysis, needs test verification |
+| Pitfalls (Animation) | HIGH | Documented in project debug files + MDN |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Visual design direction:** User wants to see concepts (gradients vs flat vs glassmorphism) before committing. Not covered by technical research—needs design exploration phase.
-- **@tsparticles React 19 compatibility:** Uncertain. Test before committing to particle backgrounds.
-- **Haptic feedback patterns:** Web Vibration API has inconsistent browser support. Test on target devices.
+- **Synology reverse proxy:** HTTPS termination not deeply researched. Handle during implementation if needed.
+- **Target Synology model:** Need to confirm CPU architecture (amd64 assumed for Plus series).
+- **Streak freeze feature:** Schema has `streakFreezes` field but implementation deferred (out of scope for v1.1).
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Motion Official Docs](https://motion.dev/) — Animation library documentation
-- [canvas-confetti GitHub](https://github.com/catdad/canvas-confetti) — Confetti implementation
-- [MDN prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) — Accessibility requirements
-- [W3C WCAG 2.3](https://www.w3.org/WAI/WCAG21/Understanding/seizures-and-physical-reactions.html) — Seizure prevention guidelines
-- [web.dev Animation Performance](https://web.dev/animations-guide) — GPU acceleration guidance
+- [Next.js Official Docker Example](https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile)
+- [Prisma Docker Guide](https://www.prisma.io/docs/guides/docker)
+- [Habitica Wiki - Streaks](https://habitica.fandom.com/wiki/Streaks)
+- [Loop Habit Tracker Source](https://github.com/iSoron/uhabits)
 
 ### Secondary (MEDIUM confidence)
-- [Duolingo Streak Milestone Design](https://blog.duolingo.com/streak-milestone-design-animation/) — Celebration patterns
-- [Nielsen Norman Group Microinteractions](https://www.nngroup.com/articles/microinteractions/) — UX timing guidelines
-- [Josh W. Comeau prefers-reduced-motion](https://www.joshwcomeau.com/react/prefers-reduced-motion/) — React implementation patterns
+- [Marius Hosting - Synology Docker Guides](https://mariushosting.com/category/synology-docker/)
+- [Trophy - How to Build Streaks](https://trophy.so/blog/how-to-build-a-streaks-feature)
+- [Josh Comeau - Designing Shadows](https://www.joshwcomeau.com/css/designing-shadows/)
 
 ### Tertiary (LOW confidence)
-- @tsparticles React 19 compatibility — needs verification
-- Bundle size thresholds — estimates based on project complexity patterns
+- Project debug files: `.planning/debug/*.md` — local analysis, high relevance but untested fixes
 
 ---
-*Research completed: 2026-01-16*
+*Research completed: 2026-01-18*
 *Ready for roadmap: yes*

@@ -1,847 +1,642 @@
-# Animation System Architecture Research
+# Architecture Research
 
-> Research conducted: 2026-01-16
-> Domain: Frontend animation/design refresh for HabitStreak
-> Stack: Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui
+**Domain:** Next.js Docker Deployment Architecture
+**Researched:** 2026-01-18
+**Confidence:** HIGH
 
-## System Overview
+## Summary
 
-```
-+------------------------------------------------------------------+
-|                        APPLICATION LAYER                          |
-|  (Pages, Features - consume animations via hooks/components)      |
-+------------------------------------------------------------------+
-                              |
-                              v
-+------------------------------------------------------------------+
-|                      ANIMATION LAYER                              |
-|  +------------------+  +------------------+  +------------------+ |
-|  | Animation Hooks  |  | Motion Components|  | Animation Config | |
-|  | useAnimation     |  | FadeIn, SlideUp  |  | variants.ts      | |
-|  | useReducedMotion |  | ScaleIn, etc.    |  | durations.ts     | |
-|  +------------------+  +------------------+  +------------------+ |
-+------------------------------------------------------------------+
-                              |
-                              v
-+------------------------------------------------------------------+
-|                      CONTEXT LAYER                                |
-|  +------------------+  +------------------+                       |
-|  | ThemeProvider    |  | AnimationProvider|                       |
-|  | (existing)       |  | (new - optional) |                       |
-|  +------------------+  +------------------+                       |
-+------------------------------------------------------------------+
-                              |
-                              v
-+------------------------------------------------------------------+
-|                      FOUNDATION LAYER                             |
-|  +------------------+  +------------------+  +------------------+ |
-|  | CSS Variables    |  | Tailwind Config  |  | Keyframes        | |
-|  | (globals.css)    |  | (animations)     |  | (globals.css)    | |
-|  +------------------+  +------------------+  +------------------+ |
-+------------------------------------------------------------------+
-```
+This research covers containerization patterns for Next.js 15 applications with Prisma ORM and PostgreSQL, targeting self-hosted deployment on Synology NAS with Container Manager.
 
-**Confidence Level: HIGH** - This layered architecture is well-documented across multiple sources and aligns with React best practices.
+**Primary recommendation:** Use a 4-stage multi-stage Dockerfile with `output: "standalone"` configuration, run Prisma migrations at container startup (not build time), and use named Docker volumes for PostgreSQL data persistence.
 
-## Component Responsibilities
+## Container Architecture
 
-### 1. Foundation Layer (CSS/Tailwind)
-
-**Responsibility:** Define raw animation primitives that are GPU-optimized and theme-aware.
-
-| Component | Purpose | Location |
-|-----------|---------|----------|
-| CSS Variables | Theme colors, timing functions, durations | `globals.css` |
-| Keyframes | Raw @keyframes definitions | `globals.css` |
-| Tailwind Config | Animation utility classes | `tailwind.config.ts` |
-| tailwindcss-animate | Plugin for entrance/exit animations | `tailwind.config.ts` |
-
-**Current State:** HabitStreak already has this layer well-established with:
-- Theme CSS variables (blue/pink, light/dark)
-- Custom keyframes (slideUp, fadeIn, scaleIn, checkmark, celebrate, etc.)
-- tailwindcss-animate plugin installed
-
-### 2. Context Layer (State Management)
-
-**Responsibility:** Provide global animation settings and theme integration.
-
-| Component | Purpose |
-|-----------|---------|
-| ThemeProvider | Manages color scheme and dark mode (existing) |
-| AnimationProvider (optional) | Manages reduced motion, animation speed preferences |
-
-**Recommendation:** Extend the existing `ThemeProvider` or create a lightweight `AnimationProvider` for:
-- Reduced motion preference detection
-- Global animation speed settings
-- Animation enable/disable toggle
-
-**Confidence Level: MEDIUM** - Creating a separate AnimationProvider adds complexity. For HabitStreak's scale, extending ThemeProvider or using hooks directly may be sufficient.
-
-### 3. Animation Layer (Reusable Logic)
-
-**Responsibility:** Encapsulate animation logic for reuse across components.
-
-| Component | Purpose |
-|-----------|---------|
-| Animation Hooks | Reusable animation state and controls |
-| Motion Components | Pre-built animated wrapper components |
-| Animation Config | Centralized variant and timing definitions |
-
-### 4. Application Layer (Features)
-
-**Responsibility:** Consume animations naturally within feature components.
-
-Components in this layer should:
-- Import animation hooks or wrapper components
-- Apply animation classes via Tailwind
-- Not contain raw animation logic
-
-## Recommended Project Structure
+### System Overview
 
 ```
-src/
-├── animations/                    # NEW: Animation system
-│   ├── hooks/
-│   │   ├── index.ts               # Re-exports all hooks
-│   │   ├── use-reduced-motion.ts  # Detects prefers-reduced-motion
-│   │   ├── use-animation.ts       # General animation state hook
-│   │   └── use-stagger.ts         # Staggered list animations
-│   │
-│   ├── components/
-│   │   ├── index.ts               # Re-exports all components
-│   │   ├── fade-in.tsx            # Fade entrance animation
-│   │   ├── slide-up.tsx           # Slide up entrance animation
-│   │   ├── scale-in.tsx           # Scale entrance animation
-│   │   ├── stagger-container.tsx  # Parent for staggered children
-│   │   └── motion-wrapper.tsx     # Generic animation wrapper
-│   │
-│   ├── variants/
-│   │   ├── index.ts               # Re-exports all variants
-│   │   ├── entrance.ts            # Entrance animation variants
-│   │   ├── exit.ts                # Exit animation variants
-│   │   └── gestures.ts            # Hover, tap, focus variants
-│   │
-│   └── config.ts                  # Timing constants, easing curves
-│
-├── components/
-│   ├── ui/                        # shadcn/ui components (existing)
-│   ├── theme/                     # Theme components (existing)
-│   ├── tasks/                     # Task feature components (existing)
-│   ├── insights/                  # Insights components (existing)
-│   └── navigation/                # Navigation components (existing)
-│
-├── contexts/
-│   └── theme-context.tsx          # Existing theme context
-│
-└── app/
-    └── globals.css                # Keyframes, CSS variables (existing)
++------------------+     +------------------+     +------------------+
+|                  |     |                  |     |                  |
+|   habitstreak    |---->|    postgres      |     |  postgres_data   |
+|   (Next.js App)  |     |   (PostgreSQL)   |<----|    (Volume)      |
+|                  |     |                  |     |                  |
++------------------+     +------------------+     +------------------+
+        |                        ^
+        |                        |
+        v                        |
++------------------+             |
+|                  |             |
+|  Startup Script  |-------------+
+|  (migrations)    |
+|                  |
++------------------+
+
+Network: habitstreak-network (bridge)
+
+Data Flow:
+1. postgres container starts, healthcheck passes
+2. habitstreak container starts (depends_on: postgres healthy)
+3. Startup script runs: prisma migrate deploy
+4. Next.js server starts on port 3000
 ```
 
-**Confidence Level: HIGH** - This structure follows the "group by feature" pattern for animations while maintaining colocation with existing code. Sources: [Robin Wieruch](https://www.robinwieruch.de/react-folder-structure/), [Tania Rascia](https://www.taniarascia.com/react-architecture-directory-structure/)
+### Multi-stage Dockerfile Pattern
 
-## Architectural Patterns
+The recommended pattern uses **4 stages** to minimize final image size from ~1.2GB to ~300-450MB.
 
-### Pattern 1: Custom Animation Hooks
+#### Stage 1: Base (shared Alpine image)
 
-**Purpose:** Encapsulate animation state and controls for reuse.
+```dockerfile
+# syntax=docker.io/docker/dockerfile:1
 
-```typescript
-// src/animations/hooks/use-reduced-motion.ts
-import { useState, useEffect } from 'react'
-
-const QUERY = '(prefers-reduced-motion: no-preference)'
-
-export function useReducedMotion(): boolean {
-  // Default to reduced motion on SSR to prevent hydration mismatch
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(true)
-
-  useEffect(() => {
-    const mediaQueryList = window.matchMedia(QUERY)
-    // If query matches, user prefers motion (no-preference)
-    setPrefersReducedMotion(!mediaQueryList.matches)
-
-    const listener = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(!event.matches)
-    }
-
-    mediaQueryList.addEventListener('change', listener)
-    return () => mediaQueryList.removeEventListener('change', listener)
-  }, [])
-
-  return prefersReducedMotion
-}
+FROM node:22-alpine AS base
+# Alpine is minimal (~5MB base), requires libc6-compat for some npm packages
 ```
 
-**Confidence Level: HIGH** - This pattern is documented by [Josh W. Comeau](https://www.joshwcomeau.com/react/prefers-reduced-motion/) and [Motion docs](https://motion.dev/docs/react-accessibility).
+**Why node:22-alpine:**
+- Smallest official Node.js image (~50MB vs ~350MB for full)
+- Node 22 is current LTS with best performance
+- Alpine uses musl libc - add `libc6-compat` for compatibility
 
-### Pattern 2: Animation Wrapper Components
+#### Stage 2: Dependencies (install node_modules)
 
-**Purpose:** Provide consistent animation behavior without Framer Motion dependency (CSS-first approach).
+```dockerfile
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
-```typescript
-// src/animations/components/fade-in.tsx
-'use client'
+# Copy only package files first (better layer caching)
+COPY package.json package-lock.json ./
 
-import { ReactNode } from 'react'
-import { cn } from '@/lib/utils'
-import { useReducedMotion } from '../hooks/use-reduced-motion'
-
-interface FadeInProps {
-  children: ReactNode
-  className?: string
-  delay?: 'none' | 'short' | 'medium' | 'long'
-  duration?: 'fast' | 'normal' | 'slow'
-}
-
-const delayMap = {
-  none: '',
-  short: 'animation-delay-100',
-  medium: 'animation-delay-200',
-  long: 'animation-delay-300',
-}
-
-const durationMap = {
-  fast: 'duration-150',
-  normal: 'duration-300',
-  slow: 'duration-500',
-}
-
-export function FadeIn({
-  children,
-  className,
-  delay = 'none',
-  duration = 'normal',
-}: FadeInProps) {
-  const prefersReducedMotion = useReducedMotion()
-
-  if (prefersReducedMotion) {
-    return <div className={className}>{children}</div>
-  }
-
-  return (
-    <div
-      className={cn(
-        'animate-fade-in',
-        durationMap[duration],
-        delayMap[delay],
-        className
-      )}
-    >
-      {children}
-    </div>
-  )
-}
+# Use npm ci for reproducible builds (respects lockfile exactly)
+RUN npm ci
 ```
 
-**Confidence Level: HIGH** - CSS-first approach is performant and works with existing tailwindcss-animate plugin.
+**Why separate deps stage:**
+- Dependencies change less often than source code
+- Docker caches this layer, skipping reinstall on code changes
+- `npm ci` is faster and more reliable than `npm install`
 
-### Pattern 3: Framer Motion Integration (Optional Enhancement)
+#### Stage 3: Builder (compile Next.js)
 
-**Purpose:** For complex animations that CSS cannot handle (exit animations, gestures, layout animations).
+```dockerfile
+FROM base AS builder
+WORKDIR /app
 
-```typescript
-// src/animations/components/motion-wrapper.tsx (if using Framer Motion)
-'use client'
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
-import { motion, HTMLMotionProps } from 'framer-motion'
-import { forwardRef, ReactNode } from 'react'
-import { cn } from '@/lib/utils'
+# Generate Prisma Client (needed at build time)
+RUN npx prisma generate
 
-interface MotionWrapperProps extends HTMLMotionProps<'div'> {
-  children: ReactNode
-  className?: string
-}
+# Disable telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
 
-export const MotionWrapper = forwardRef<HTMLDivElement, MotionWrapperProps>(
-  ({ children, className, ...motionProps }, ref) => {
-    return (
-      <motion.div
-        ref={ref}
-        className={cn(className)}
-        {...motionProps}
-      >
-        {children}
-      </motion.div>
-    )
-  }
-)
-
-MotionWrapper.displayName = 'MotionWrapper'
+# Build Next.js in standalone mode
+RUN npm run build
 ```
 
-**For shadcn/ui integration:**
+**Critical:** `prisma generate` MUST run before `npm run build` because:
+- Next.js imports Prisma Client during build
+- Build fails if `@prisma/client` is not generated
+- Generated client is architecture-specific (must match final image)
 
-```typescript
-// Converting shadcn Button to motion component
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+#### Stage 4: Runner (production image)
 
-const MotionButton = motion(Button)
+```dockerfile
+FROM base AS runner
+WORKDIR /app
 
-// Usage
-<MotionButton
-  whileTap={{ scale: 0.98 }}
-  whileHover={{ scale: 1.02 }}
-  transition={{ type: 'spring', stiffness: 400, damping: 17 }}
->
-  Click me
-</MotionButton>
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Create non-root user (security best practice)
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy public assets
+COPY --from=builder /app/public ./public
+
+# Copy standalone build (includes server.js and minimal node_modules)
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy Prisma files for migrations
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Run migrations then start server
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
 ```
 
-**Confidence Level: HIGH** - Documented in [shadcn/ui discussions](https://github.com/shadcn-ui/ui/discussions/1636) and [Medium article](https://medium.com/@colorsong.nabi/building-a-modern-ui-kit-with-tailwind-shadcn-and-framer-motion-f162f6695ce5).
+**Key decisions:**
+- Non-root user prevents container escape attacks
+- `--chown` sets ownership during copy (faster than separate chmod)
+- Standalone output excludes dev dependencies (~75% smaller)
+- CMD runs migrations before server start
 
-### Pattern 4: Animation Variants Configuration
+### next.config.js Configuration
 
-**Purpose:** Centralize animation definitions for consistency.
+**Required change for Docker deployment:**
 
-```typescript
-// src/animations/variants/entrance.ts
-export const fadeInVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
+```javascript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // ... existing config ...
+
+  // REQUIRED: Enable standalone output for Docker
+  output: 'standalone',
 }
 
-export const slideUpVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-}
-
-export const scaleInVariants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { opacity: 1, scale: 1 },
-}
-
-// Stagger children
-export const staggerContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-}
+module.exports = nextConfig
 ```
 
-```typescript
-// src/animations/config.ts
-export const ANIMATION_DURATION = {
-  instant: 0,
-  fast: 150,
-  normal: 300,
-  slow: 500,
-  deliberate: 800,
-} as const
+**What standalone does:**
+- Creates `.next/standalone` folder with minimal server
+- Copies only required `node_modules` (~30-60% smaller)
+- Includes `server.js` that can run without full `node_modules`
 
-export const EASING = {
-  // Standard Material Design curves
-  standard: [0.4, 0, 0.2, 1],
-  enter: [0, 0, 0.2, 1],
-  exit: [0.4, 0, 1, 1],
-  // Spring-like bounce
-  bounce: [0.68, -0.55, 0.265, 1.55],
-} as const
+### docker-compose Service Architecture
 
-// CSS timing function strings
-export const CSS_EASING = {
-  standard: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  enter: 'cubic-bezier(0, 0, 0.2, 1)',
-  exit: 'cubic-bezier(0.4, 0, 1, 1)',
-  bounce: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-} as const
+```yaml
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: habitstreak-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-habitstreak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-habitstreak}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-habitstreak} -d ${POSTGRES_DB:-habitstreak}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - habitstreak-network
+
+  # ============================================
+  # Next.js Application
+  # ============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: habitstreak-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-habitstreak}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-habitstreak}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - habitstreak-network
+
+# ============================================
+# Persistent Volumes
+# ============================================
+volumes:
+  postgres_data:
+    name: habitstreak-postgres-data
+
+# ============================================
+# Network
+# ============================================
+networks:
+  habitstreak-network:
+    name: habitstreak-network
+    driver: bridge
 ```
 
-**Confidence Level: HIGH** - Variant pattern is core to Framer Motion and recommended in [Motion docs](https://motion.dev/docs/react-reduce-bundle-size).
-
-### Pattern 5: LazyMotion for Bundle Optimization
-
-**Purpose:** Reduce Framer Motion bundle size from ~34kb to ~4.6kb.
-
-```typescript
-// src/animations/providers/lazy-motion-provider.tsx
-'use client'
-
-import { LazyMotion, domAnimation } from 'framer-motion'
-import { ReactNode } from 'react'
-
-interface LazyMotionProviderProps {
-  children: ReactNode
-}
-
-export function LazyMotionProvider({ children }: LazyMotionProviderProps) {
-  return (
-    <LazyMotion features={domAnimation} strict>
-      {children}
-    </LazyMotion>
-  )
-}
-```
-
-```typescript
-// Use 'm' instead of 'motion' for tree-shaking
-import { m } from 'framer-motion'
-
-// In components
-<m.div animate={{ opacity: 1 }} />
-```
-
-**Confidence Level: HIGH** - Documented in [Motion bundle size guide](https://motion.dev/docs/react-reduce-bundle-size).
+**Key patterns:**
+- `depends_on: condition: service_healthy` - App waits for DB healthcheck
+- `postgres_data` named volume - Persists across container recreates
+- Internal DNS: App connects to `postgres:5432` (service name)
+- Health checks enable orchestrator awareness
 
 ## Data Flow
 
-### Animation Trigger Propagation
+### Prisma Migration Strategy
 
-```
-User Action (click, hover, scroll)
-            |
-            v
-+------------------------+
-| Event Handler          |
-| (onClick, onHover)     |
-+------------------------+
-            |
-            v
-+------------------------+
-| Animation Hook/State   |
-| (useState, useAnimation)|
-+------------------------+
-            |
-            v
-+------------------------+
-| Class Toggle or        |
-| Motion Props Update    |
-+------------------------+
-            |
-            v
-+------------------------+
-| CSS Animation OR       |
-| Framer Motion Engine   |
-+------------------------+
-            |
-            v
-+------------------------+
-| GPU-Accelerated        |
-| Rendering              |
-+------------------------+
+**Recommended: Run migrations at container startup**
+
+```dockerfile
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
 ```
 
-### Theme-Aware Animation Flow
+**Why NOT at build time:**
+1. Build environment lacks DATABASE_URL (no DB connection)
+2. Time gap between build and deploy leaves DB/app out of sync
+3. CI/CD would need production DB access (security risk)
 
+**Why at startup:**
+1. Database is guaranteed available (depends_on healthy)
+2. Migrations apply immediately before app serves requests
+3. Single source of truth - migrations bundled in image
+
+**Alternative for scaled deployments:**
+
+For horizontally scaled apps (multiple replicas), migrations at startup can cause race conditions. Instead:
+
+```yaml
+services:
+  # Run once before app containers start
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npx", "prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://...
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"  # Run once and exit
+
+  app:
+    # ... same as before ...
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 ```
-Theme Change (dark mode toggle)
-            |
-            v
-+------------------------+
-| ThemeProvider          |
-| (updates CSS classes)  |
-+------------------------+
-            |
-            v
-+------------------------+
-| CSS Variables Updated  |
-| (:root, .dark, .pink)  |
-+------------------------+
-            |
-            v
-+------------------------+
-| Animation Components   |
-| (read CSS variables)   |
-+------------------------+
-            |
-            v
-+------------------------+
-| Colors/Shadows Update  |
-| (automatically via CSS)|
-+------------------------+
+
+**For HabitStreak (single instance), startup migration is fine.**
+
+### Volume Persistence
+
+PostgreSQL data volume configuration:
+
+```yaml
+volumes:
+  postgres_data:
+    name: habitstreak-postgres-data
+    # Default driver stores in /var/lib/docker/volumes/ on host
 ```
 
-**Example: Theme-aware glow animation**
+**Synology NAS specifics:**
+- Use `/volume1/docker/habitstreak/postgres` for host bind mount if preferred
+- Named volumes managed by Container Manager are safer
+- Volume survives container stop/remove/recreate
 
-```css
-/* In globals.css */
-@keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
-  }
-  50% {
-    box-shadow: 0 0 20px 5px hsl(var(--primary) / 0.3);
+**Backup strategy (optional future enhancement):**
+
+```yaml
+services:
+  backup:
+    image: prodrigestivill/postgres-backup-local
+    restart: unless-stopped
+    volumes:
+      - /volume1/docker/backups/habitstreak:/backups
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: habitstreak
+      POSTGRES_USER: habitstreak
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+    depends_on:
+      - postgres
+    networks:
+      - habitstreak-network
+```
+
+### Environment Configuration
+
+**Environment variable categories:**
+
+| Variable | Build Time | Runtime | Notes |
+|----------|------------|---------|-------|
+| `DATABASE_URL` | No | Yes | Must be available at container start |
+| `NEXTAUTH_URL` | No | Yes | Can differ per deployment |
+| `NEXTAUTH_SECRET` | No | Yes | Secret, never bake in |
+| `NEXT_PUBLIC_*` | Yes | No | Bundled into client JS at build |
+
+**How to handle:**
+
+1. **Runtime variables (server-side):** Pass via docker-compose environment or `.env` file
+2. **Build-time variables (NEXT_PUBLIC_*):** Use ARG in Dockerfile if needed
+
+```dockerfile
+# If you have NEXT_PUBLIC_ vars that differ per environment:
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+# Build with:
+# docker build --build-arg NEXT_PUBLIC_API_URL=https://api.example.com .
+```
+
+**HabitStreak has no NEXT_PUBLIC_ variables, so this is not needed.**
+
+**.env file for docker-compose:**
+
+```env
+# .env.production (do not commit to git)
+POSTGRES_USER=habitstreak
+POSTGRES_PASSWORD=your-secure-password-here
+POSTGRES_DB=habitstreak
+
+NEXTAUTH_URL=https://habitstreak.yourdomain.com
+NEXTAUTH_SECRET=your-32-character-secret-here
+
+APP_PORT=3000
+```
+
+### Health Check Patterns
+
+**Application health endpoint (create this):**
+
+```typescript
+// src/app/api/health/route.ts
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
+export async function GET() {
+  try {
+    // Verify database connection
+    await prisma.$queryRaw`SELECT 1`
+
+    return NextResponse.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    return NextResponse.json(
+      { status: 'unhealthy', error: 'Database connection failed' },
+      { status: 503 }
+    )
   }
 }
 ```
 
-The `--primary` variable automatically reflects the current theme (blue or pink).
+**Why include DB check:**
+- Process running does not mean app is functional
+- Health endpoint should verify critical dependencies
+- Enables orchestrator to restart unhealthy containers
 
-**Confidence Level: HIGH** - CSS custom properties are reactive; animations using them automatically adapt to theme changes.
+## Build Order
 
-## Scaling Considerations
+1. **Create next.config.js change** - Add `output: 'standalone'`
+2. **Create health endpoint** - `/api/health` route for healthcheck
+3. **Create .dockerignore** - Exclude unnecessary files from build context
+4. **Create Dockerfile** - Multi-stage build as documented
+5. **Create docker-compose.yml** - Service definitions with healthchecks
+6. **Create .env.production.example** - Template for required env vars
+7. **Test locally** - `docker-compose up --build`
+8. **Deploy to Synology** - Upload compose files, configure Container Manager
 
-### Adding New Animations
+**.dockerignore (essential for fast builds):**
 
-1. **Simple animations (entrance, exit):** Add to `globals.css` as keyframes, create utility class
-2. **Complex animations (gestures, layout):** Add to `variants/` and create wrapper component
-3. **Feature-specific animations:** Colocate with feature in component file
-
-### Performance Monitoring Checklist
-
-- [ ] Use Chrome DevTools Performance panel to verify 60fps
-- [ ] Check for layout thrashing (avoid animating width/height/top/left)
-- [ ] Verify animations run on compositor thread (transform/opacity only)
-- [ ] Test on low-end mobile devices
-- [ ] Profile bundle size with `next build && next analyze`
-
-### Bundle Size Strategy
-
-| Animation Count | Recommended Approach |
-|-----------------|---------------------|
-| < 10 simple | CSS-only (tailwindcss-animate) |
-| 10-30 mixed | CSS + selective Framer Motion |
-| 30+ complex | LazyMotion with feature splitting |
-
-**For HabitStreak:** Given the mobile-first focus and need for performance, recommend **CSS-first with selective Framer Motion** for complex interactions (exit animations, gestures).
-
-**Confidence Level: MEDIUM** - Bundle size thresholds are estimates based on project complexity.
+```
+.git
+.gitignore
+.next
+node_modules
+*.md
+.env*
+.planning
+tests
+playwright-report
+playwright.config.ts
+vitest.config.ts
+docker-compose*.yml
+Dockerfile*
+```
 
 ## Anti-Patterns
 
-### 1. Animating Layout Properties
+### Anti-Pattern 1: Running migrations at build time
 
-**Bad:**
-```css
-@keyframes slideIn {
-  from { left: -100px; width: 0; }
-  to { left: 0; width: 100%; }
-}
+**What people do:**
+```dockerfile
+RUN npx prisma migrate deploy  # In builder stage
 ```
 
-**Good:**
-```css
-@keyframes slideIn {
-  from { transform: translateX(-100px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
+**Why it fails:**
+- No DATABASE_URL at build time (or requires exposing prod DB to CI)
+- Migration happens before container starts, creating version mismatch window
+- Build artifacts contain migration state assumptions
+
+**Do this instead:**
+```dockerfile
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
 ```
 
-**Why:** Layout properties (width, height, top, left) trigger expensive reflows. Transform and opacity are GPU-accelerated.
+### Anti-Pattern 2: Using full node image instead of Alpine
 
-**Confidence Level: HIGH** - Documented by [web.dev](https://web.dev/animations-guide) and [MDN](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/CSS_JavaScript_animation_performance).
-
-### 2. Overusing will-change
-
-**Bad:**
-```css
-* {
-  will-change: transform, opacity;
-}
+**What people do:**
+```dockerfile
+FROM node:22  # ~350MB base image
 ```
 
-**Good:**
-```css
-.animate-on-hover:hover {
-  will-change: transform;
-}
+**Why it's bad:**
+- Final image 3-4x larger than necessary
+- Slower to pull, more storage on NAS
+- Larger attack surface
 
-/* Remove after animation */
-.animate-on-hover {
-  will-change: auto;
-}
+**Do this instead:**
+```dockerfile
+FROM node:22-alpine  # ~50MB base image
+RUN apk add --no-cache libc6-compat  # Add compatibility if needed
 ```
 
-**Why:** `will-change` creates new compositor layers, consuming memory. Use sparingly and only when needed.
+### Anti-Pattern 3: Not using standalone output
 
-**Confidence Level: HIGH** - [MDN documentation](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Performance/CSS).
-
-### 3. Ignoring Reduced Motion Preferences
-
-**Bad:**
-```typescript
-function TaskCard() {
-  return (
-    <div className="animate-bounce">
-      {/* Always bounces, even for users with vestibular disorders */}
-    </div>
-  )
-}
+**What people do:**
+```dockerfile
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules  # ALL of them
 ```
 
-**Good:**
-```typescript
-function TaskCard() {
-  const prefersReducedMotion = useReducedMotion()
+**Why it's bad:**
+- Copies all dependencies including devDependencies
+- Image 500MB+ instead of 150-200MB
+- Slower cold starts
 
-  return (
-    <div className={prefersReducedMotion ? '' : 'animate-bounce'}>
-      {/* Respects user preferences */}
-    </div>
-  )
-}
+**Do this instead:**
+```javascript
+// next.config.js
+module.exports = { output: 'standalone' }
+```
+```dockerfile
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 ```
 
-**Or with CSS:**
-```css
-@media (prefers-reduced-motion: reduce) {
-  .animate-bounce {
-    animation: none;
-  }
-}
+### Anti-Pattern 4: Running as root
+
+**What people do:**
+```dockerfile
+# No USER directive = runs as root
+CMD ["node", "server.js"]
 ```
 
-**Why:** ~69 million Americans have vestibular dysfunction. Respecting reduced motion is an accessibility requirement.
+**Why it's bad:**
+- Container escape vulnerability gives attacker root
+- Violates principle of least privilege
 
-**Confidence Level: HIGH** - [Josh W. Comeau](https://www.joshwcomeau.com/react/prefers-reduced-motion/).
-
-### 4. Creating New Layers Unnecessarily in React
-
-**Bad:**
-```typescript
-function AnimatedList({ items }) {
-  return items.map((item, index) => (
-    <motion.div
-      key={index} // Using index as key
-      animate={{ opacity: 1 }}
-    >
-      {item}
-    </motion.div>
-  ))
-}
+**Do this instead:**
+```dockerfile
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
 ```
 
-**Good:**
-```typescript
-function AnimatedList({ items }) {
-  return items.map((item) => (
-    <motion.div
-      key={item.id} // Stable key
-      animate={{ opacity: 1 }}
-    >
-      {item}
-    </motion.div>
-  ))
-}
+### Anti-Pattern 5: Missing healthcheck
+
+**What people do:**
+```yaml
+services:
+  app:
+    # No healthcheck defined
+    depends_on:
+      - postgres  # Just waits for container to exist, not be ready
 ```
 
-**Why:** Using array indices as keys causes React to remount components, breaking animation continuity.
+**Why it's bad:**
+- App starts before DB is accepting connections
+- Orchestrator cannot detect app failures
+- No automatic recovery
 
-**Confidence Level: HIGH** - [React anti-patterns](https://www.perssondennis.com/articles/react-anti-patterns-and-best-practices-dos-and-donts).
-
-### 5. Mixing Animation Logic with Rendering
-
-**Bad:**
-```typescript
-function TaskCard({ task }) {
-  const [isAnimating, setIsAnimating] = useState(false)
-  const animationRef = useRef<number>()
-
-  const animate = () => {
-    // 50 lines of requestAnimationFrame logic...
-  }
-
-  return <div onClick={animate}>{task.name}</div>
-}
+**Do this instead:**
+```yaml
+services:
+  postgres:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habitstreak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  app:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 ```
 
-**Good:**
-```typescript
-// Hook handles animation logic
-function TaskCard({ task }) {
-  const { trigger, className } = useCheckAnimation()
+### Anti-Pattern 6: Forgetting Prisma files in final image
 
-  return (
-    <div onClick={trigger} className={className}>
-      {task.name}
-    </div>
-  )
-}
+**What people do:**
+```dockerfile
+# Only copy standalone output
+COPY --from=builder /app/.next/standalone ./
+# Forgot prisma directory!
 ```
 
-**Why:** Separation of concerns keeps components focused on rendering.
+**Why it fails:**
+- `prisma migrate deploy` cannot find migration files
+- Container crashes at startup
 
-**Confidence Level: HIGH** - [freeCodeCamp](https://www.freecodecamp.org/news/animating-visibility-with-css-an-example-of-react-hooks/).
-
-### 6. Loading Full Framer Motion When Unnecessary
-
-**Bad:**
-```typescript
-import { motion, AnimatePresence, useAnimation } from 'framer-motion'
-
-// Only using simple fade animation
-<motion.div animate={{ opacity: 1 }} />
+**Do this instead:**
+```dockerfile
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 ```
 
-**Good:**
-```typescript
-// For simple animations, use CSS
-<div className="animate-fade-in" />
+## Synology NAS Specifics
 
-// OR use LazyMotion for complex cases
-import { LazyMotion, domAnimation, m } from 'framer-motion'
+### Container Manager (DSM 7.2+)
 
-<LazyMotion features={domAnimation}>
-  <m.div animate={{ opacity: 1 }} />
-</LazyMotion>
+**Deployment via GUI:**
+1. Open Container Manager > Project
+2. Create new project: "habitstreak"
+3. Set path: `/volume1/docker/habitstreak`
+4. Upload `docker-compose.yml`
+5. Create `.env` file in same directory with secrets
+6. Build and start
+
+**Deployment via SSH:**
+```bash
+cd /volume1/docker/habitstreak
+sudo docker compose up -d --build
 ```
 
-**Why:** Full `motion` component is ~34kb. LazyMotion with `m` reduces to ~4.6kb.
+**Important Synology paths:**
+- Use `/volume1/...` not relative paths in compose files
+- Named volumes go to `/volume1/@docker/volumes/`
 
-**Confidence Level: HIGH** - [Motion bundle docs](https://motion.dev/docs/react-lazy-motion).
+### Port Configuration
 
-## Integration Points
+If running multiple services, configure unique ports:
 
-### Existing Theme System Integration
-
-HabitStreak's current theme system provides excellent hooks for animation integration:
-
-```typescript
-// Current: src/contexts/theme-context.tsx
-// Animations can read theme state via useTheme()
-
-// Example: Theme-aware animation speed
-function useThemeAnimation() {
-  const { darkMode } = useTheme()
-  const prefersReducedMotion = useReducedMotion()
-
-  return {
-    // Slightly slower animations in dark mode for less jarring transitions
-    duration: prefersReducedMotion ? 0 : (darkMode ? 400 : 300),
-    enabled: !prefersReducedMotion,
-  }
-}
+```yaml
+ports:
+  - "3001:3000"  # Map to different external port
 ```
 
-### CSS Variable Integration
-
-Existing CSS variables can power animations:
-
-```css
-/* Already in globals.css - use in animations */
-.animate-glow-themed {
-  animation: glowThemed 0.8s ease-out;
-}
-
-@keyframes glowThemed {
-  0%, 100% {
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
-  }
-  50% {
-    box-shadow: 0 0 20px 5px hsl(var(--primary) / 0.3);
-  }
-}
-```
-
-### shadcn/ui Component Enhancement
-
-Two approaches for adding animations to existing shadcn/ui components:
-
-**Approach 1: Wrapper Component (Non-invasive)**
-```typescript
-// src/animations/components/animated-button.tsx
-import { Button, ButtonProps } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-
-export function AnimatedButton({ className, ...props }: ButtonProps) {
-  return (
-    <Button
-      className={cn(
-        'transition-all duration-200',
-        'hover:scale-[1.02] active:scale-[0.98]',
-        className
-      )}
-      {...props}
-    />
-  )
-}
-```
-
-**Approach 2: Motion Component (For complex animations)**
-```typescript
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-
-const MotionButton = motion(Button)
-
-export function AnimatedButton(props: ButtonProps) {
-  return (
-    <MotionButton
-      whileTap={{ scale: 0.98 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-      {...props}
-    />
-  )
-}
-```
-
-**Confidence Level: HIGH** - Both approaches documented in shadcn/ui discussions.
-
-### Tailwind Config Extension
-
-Add animation utilities to existing config:
-
-```typescript
-// tailwind.config.ts (extend existing)
-const config: Config = {
-  // ... existing config
-  theme: {
-    extend: {
-      // ... existing extensions
-      animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'scale-in': 'scaleIn 0.2s ease-out',
-        // Add delays via animation-delay plugin or custom utilities
-      },
-      transitionDuration: {
-        '400': '400ms',
-      },
-      transitionTimingFunction: {
-        'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-      },
-    },
-  },
-}
-```
-
-**Note:** HabitStreak already has `tailwindcss-animate` plugin installed, which provides:
-- `animate-in`, `animate-out`
-- `fade-in`, `fade-out`
-- `slide-in-from-*`, `slide-out-to-*`
-- `zoom-in`, `zoom-out`
-- Duration and delay utilities
+Or use Synology reverse proxy for subdomain routing.
 
 ## Sources
 
-### High Confidence Sources
-- [Motion (Framer Motion) Accessibility Guide](https://motion.dev/docs/react-accessibility)
-- [Motion Performance Documentation](https://motion.dev/docs/performance)
-- [Motion LazyMotion Bundle Optimization](https://motion.dev/docs/react-lazy-motion)
-- [Josh W. Comeau - Prefers Reduced Motion](https://www.joshwcomeau.com/react/prefers-reduced-motion/)
-- [MDN - CSS and JavaScript Animation Performance](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/CSS_JavaScript_animation_performance)
-- [web.dev - High-Performance CSS Animations](https://web.dev/animations-guide)
-- [shadcn/ui Discussion - Framer Motion Integration](https://github.com/shadcn-ui/ui/discussions/1636)
-- [Robin Wieruch - React Folder Structure](https://www.robinwieruch.de/react-folder-structure/)
-- [Tailwind CSS Animation Documentation](https://tailwindcss.com/docs/animation)
-- [tailwindcss-animate Plugin](https://github.com/jamiebuilds/tailwindcss-animate)
+### Primary (HIGH confidence)
+- [Next.js Official Deployment Docs](https://nextjs.org/docs/app/getting-started/deploying) - Docker support confirmation
+- [Prisma Docker Guide](https://www.prisma.io/docs/guides/docker) - Migration strategy, compose examples
+- [Next.js Docker Example (GitHub)](https://github.com/vercel/next.js/tree/canary/examples/with-docker) - Official standalone Dockerfile
+- [Prisma Development and Production Workflows](https://www.prisma.io/docs/orm/prisma-migrate/workflows/development-and-production) - migrate deploy vs migrate dev
 
-### Medium Confidence Sources
-- [freeCodeCamp - React Hooks Animation Components](https://www.freecodecamp.org/news/animating-visibility-with-css-an-example-of-react-hooks/)
-- [Medium - Building Custom Animation Hooks](https://medium.com/@ignatovich.dm/building-custom-animation-hooks-in-react-3f37e3f7f3ed)
-- [Medium - Modern UI Kit with Tailwind, ShadCN, Framer Motion](https://medium.com/@colorsong.nabi/building-a-modern-ui-kit-with-tailwind-shadcn-and-framer-motion-f162f6695ce5)
-- [LogRocket - Advanced Page Transitions Next.js](https://blog.logrocket.com/advanced-page-transitions-next-js-framer-motion/)
+### Secondary (MEDIUM confidence)
+- [DEV.to: Multi-Stage Approach](https://dev.to/simplr_sh/hosting-your-nextjs-app-with-docker-a-multi-stage-approach-52ne) - Complete 4-stage Dockerfile
+- [DEV.to: Dockerize Next.js 2025](https://dev.to/codeparrot/nextjs-deployment-with-docker-complete-guide-for-2025-3oe8) - Current best practices
+- [notiz.dev: Prisma Migrate Deploy](https://notiz.dev/blog/prisma-migrate-deploy-with-docker/) - Startup migration pattern
+- [Medium: Docker Healthchecks](https://patrickleet.medium.com/effective-docker-healthchecks-for-node-js-b11577c3e595) - Health endpoint patterns
+- [Synology Knowledge Center: Container Manager](https://kb.synology.com/en-sg/DSM/help/ContainerManager/docker_project?version=7) - Project deployment
 
-### Low Confidence (Unverified/Estimated)
-- Bundle size thresholds (< 10, 10-30, 30+ animations) are estimates based on general project complexity patterns
-- Animation delay CSS utility class names (animation-delay-100, etc.) assume custom Tailwind plugin or configuration
-- Exact memory impact of will-change varies by browser and device
+### Tertiary (LOW confidence - cross-verified)
+- [TheLinuxCode: Next.js Docker Images 2026](https://thelinuxcode.com/nextjs-docker-images-how-i-build-predictable-fast-deployments-in-2026/) - Image size benchmarks
+- [WunderTech: Container Manager Guide](https://www.wundertech.net/container-manager-on-a-synology-nas/) - Synology-specific workflows
 
-## Recommended Next Steps for HabitStreak
+## Metadata
 
-1. **Phase 1 (CSS-First):** Create `src/animations/` folder structure with hooks and config
-2. **Phase 2 (Hooks):** Implement `useReducedMotion` hook for accessibility
-3. **Phase 3 (Components):** Create wrapper components (FadeIn, SlideUp, etc.)
-4. **Phase 4 (Integration):** Add animations to existing task and insights components
-5. **Phase 5 (Enhancement):** Add Framer Motion for complex interactions if needed
+**Confidence breakdown:**
+- Multi-stage Dockerfile: HIGH - Official Next.js example + multiple verified sources
+- Prisma migration: HIGH - Official Prisma docs explicit about deploy vs dev
+- Volume persistence: HIGH - Standard Docker pattern, widely documented
+- Health checks: MEDIUM - Patterns vary, synthesized from multiple sources
+- Synology specifics: MEDIUM - Community guides, not official Synology docs
 
-Given HabitStreak's mobile-first focus, prioritize:
-- Performance (CSS-first, GPU-accelerated properties)
-- Accessibility (reduced motion support)
-- Theme integration (CSS variables)
-- Bundle size (avoid Framer Motion if CSS suffices)
+**Research date:** 2026-01-18
+**Valid until:** 2026-04-18 (3 months - Docker patterns stable)
+
+## Implementation Checklist
+
+- [ ] Add `output: 'standalone'` to next.config.js
+- [ ] Create `/api/health` endpoint
+- [ ] Create `.dockerignore` file
+- [ ] Create multi-stage `Dockerfile`
+- [ ] Create `docker-compose.yml` with services
+- [ ] Create `.env.production.example` template
+- [ ] Test build: `docker-compose build`
+- [ ] Test run: `docker-compose up`
+- [ ] Verify health endpoints work
+- [ ] Deploy to Synology NAS
