@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-16)
 ## Current Position
 
 Phase: 5 of 5 (Polish and Consistency) - IN PROGRESS
-Plan: 1 of 1 in phase - COMPLETE
-Status: Phase 5 plan 1 complete
-Last activity: 2026-01-18 - Completed 05-01-PLAN.md (animated backgrounds)
+Plan: 3 of 3 in phase - COMPLETE
+Status: Phase 5 plan 3 complete (gap closure)
+Last activity: 2026-01-18 - Completed 05-03-PLAN.md (background visibility fix)
 
-Progress: ██████████ 100% (12/12 plans)
+Progress: ██████████ 100% (14/14 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: ~12 minutes
-- Total execution time: ~2.6 hours
+- Total plans completed: 14
+- Average duration: ~11 minutes
+- Total execution time: ~2.7 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: ██████████ 100% (12/12 plans)
 | 2 | 3/3 | ~60min | ~20min |
 | 3 | 5/5 | ~76min | ~15min |
 | 4 | 2/2 | ~19min | ~10min |
-| 5 | 1/1 | ~10min | ~10min |
+| 5 | 3/3 | ~20min | ~7min |
 
 **Recent Trend:**
-- Last 5 plans: 03-05 (~5min), 04-01 (~9min), 04-02 (~10min), 05-01 (~10min)
-- Trend: Maintaining ~10min avg execution time across Phases 4-5
+- Last 5 plans: 04-01 (~9min), 04-02 (~10min), 05-01 (~10min), 05-02 (~5min), 05-03 (~5min)
+- Trend: Gap closure plans execute quickly (~5min) due to focused scope
 
 ## Accumulated Context
 
@@ -69,6 +69,7 @@ Recent decisions affecting current work:
 | Three-tier float timing | 05-01 | 25s/18s/12s cycles prevent synchronized orb movement for organic feel |
 | Dark mode opacity adjustment | 05-01 | Lower opacity (15-25%) in dark mode vs light (20-30%) prevents washing out |
 | Fixed background positioning | 05-01 | -z-10 fixed positioning for backgrounds, relative z-10 for content stacking |
+| Inline HSL for dynamic colors | 05-03 | Use inline HSL styles instead of Tailwind classes for runtime color selection (avoids JIT purging) |
 
 ### Phase 2 Deliverables
 
@@ -118,9 +119,9 @@ Celebrations and streaks - 2/2 plans complete:
 | Number rolling | CSS translateY-based digit animation, 500ms ease-out, per-digit control |
 | Streak visualization | Current streak flickers when active, best streak shows static trophy |
 
-### Phase 5 Deliverables (IN PROGRESS)
+### Phase 5 Deliverables (COMPLETE)
 
-Polish and consistency - 1/1 plans complete:
+Polish and consistency - 3/3 plans complete:
 
 | Feature | Usage |
 |---------|-------|
@@ -129,6 +130,7 @@ Polish and consistency - 1/1 plans complete:
 | Background positioning | `fixed inset-0 -z-10` - Fixed positioning pattern for backgrounds |
 | Dark mode opacity | Dynamic opacity based on darkMode (15-25% dark, 20-30% light) |
 | GPU acceleration | Transform-only animations (translate + scale) for 60fps performance |
+| Inline HSL colors | `style={{ backgroundColor: 'hsl(...)' }}` - Runtime color selection for themes |
 
 ### Pending Todos
 
@@ -147,22 +149,22 @@ None. All blocking issues resolved.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 05-01-PLAN.md (animated backgrounds)
+Stopped at: Completed 05-03-PLAN.md (background visibility gap closure)
 Resume file: None
 
 ## Next Steps
 
-Phase 5 IN PROGRESS! Plan 05-01 complete.
-- Plan 05-01: ✓ Complete - Animated backgrounds
+Phase 5 COMPLETE! All 3 plans executed.
+- Plan 05-01: Complete - Animated backgrounds
+- Plan 05-02: Complete - Visual consistency
+- Plan 05-03: Complete - Background visibility gap closure (fixed Tailwind JIT purging)
 
-Phase 5 Plan 1 delivered theme-aware animated backgrounds:
-- Three floating gradient orbs with different animation speeds (25s/18s/12s)
-- Theme-aware colors (blue/pink schemes) with dark mode support
-- Dynamic opacity adjustment for dark mode (15-25% vs 20-30% light)
-- Pure CSS animations with GPU acceleration for 60fps
-- Full prefers-reduced-motion accessibility support
-- Fixed positioning with -z-10 for proper content stacking
+Phase 5 delivered:
+- Theme-aware animated background orbs with inline HSL styles
+- Fixed Tailwind JIT purging issue (dynamic class names replaced with inline styles)
+- Visual consistency across all screens
+- Float animations with three-tier timing for organic feel
 
-Phase 5 continues with polish and consistency improvements. Pending todos:
+Pending todos for future work:
 - Streak calculation fix for weekend/weekday task mismatch
 - Flame animation visibility enhancement
