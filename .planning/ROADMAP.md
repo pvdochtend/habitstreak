@@ -98,8 +98,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 05-01: Implement dynamic backgrounds
-- [ ] 05-02: Audit and unify visual personality across screens
+- [ ] 05-01: Implement animated background component (CSS floating orbs)
+- [ ] 05-02: Visual consistency audit and targeted fixes + verification
 
 ## Progress
 
