@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Animation Foundation
 
-- [ ] **ANIM-01**: User sees immediate visual feedback (scale + color) when pressing buttons
-- [ ] **ANIM-02**: User sees skeleton loading states while content loads
-- [ ] **ANIM-03**: User experiences smooth transitions between pages (fade/slide)
-- [ ] **ANIM-04**: User with motion sensitivity sees reduced/no animations (prefers-reduced-motion)
+- [x] **ANIM-01**: User sees immediate visual feedback (scale + color) when pressing buttons
+- [x] **ANIM-02**: User sees skeleton loading states while content loads
+- [x] **ANIM-03**: User experiences smooth transitions between pages (fade/slide)
+- [x] **ANIM-04**: User with motion sensitivity sees reduced/no animations (prefers-reduced-motion)
 
 ### Task Completion
 
@@ -33,7 +33,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Visual Identity
 
-- [ ] **VISUAL-01**: User experiences bold, vibrant color palette (enhanced blue/pink)
+- [x] **VISUAL-01**: User experiences bold, vibrant color palette (enhanced blue/pink)
 - [ ] **VISUAL-02**: User sees dynamic animated backgrounds
 - [ ] **VISUAL-03**: User experiences consistent playful personality across all screens
 - [x] **VISUAL-04**: User reviews visual style concepts before final implementation (gradients vs flat vs glass)
