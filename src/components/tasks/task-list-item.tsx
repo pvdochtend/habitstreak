@@ -48,7 +48,7 @@ export function TaskListItem({
 
   return (
     <Card className={cn(
-      'transition-all duration-200 hover:shadow-md animate-slide-up',
+      'glass transition-all duration-200 hover:shadow-md animate-slide-up',
       !task.isActive && 'opacity-60'
     )}>
       <CardContent className="pt-6">

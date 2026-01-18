@@ -32,7 +32,7 @@ export function WeeklyChart({ days, dailyTarget }: WeeklyChartProps) {
   })
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <CardTitle>Afgelopen 7 dagen</CardTitle>
       </CardHeader>

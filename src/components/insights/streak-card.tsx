@@ -15,7 +15,7 @@ export function StreakCard({ type, value }: StreakCardProps) {
   const prevValue = usePrevious(value)
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
+    <Card className="glass hover:shadow-md transition-shadow duration-200">
       <CardContent className="pt-6">
         <div className="flex flex-col gap-3">
           <div
