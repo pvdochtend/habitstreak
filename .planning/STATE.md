@@ -116,7 +116,9 @@ Celebrations and streaks - 2/2 plans complete:
 
 ### Pending Todos
 
-None.
+1. **Streak calculation wrong for weekend with weekday tasks** (2026-01-18)
+   - Area: ui
+   - File: `.planning/todos/pending/2026-01-18-streak-calculation-weekend-weekday-mismatch.md`
 
 ### Blockers/Concerns
 
