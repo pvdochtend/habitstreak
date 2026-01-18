@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-18)
 ## Current Position
 
 Phase: 6 of 8 (Docker Deployment)
-Plan: 1 of 3 (Docker Preparation)
+Plan: 2 of 3 (Docker Deployment Files)
 Status: In progress
-Last activity: 2026-01-18 — Completed 06-01-PLAN.md (Docker Preparation)
+Last activity: 2026-01-18 — Completed 06-02-PLAN.md (Docker Deployment Files)
 
-Progress: █████░░░░░ 64% (16/25 plans complete)
+Progress: ██████░░░░ 68% (17/25 plans complete)
 
 ## Milestone History
 
@@ -29,8 +29,8 @@ Progress: █████░░░░░ 64% (16/25 plans complete)
 - Average duration: ~10 minutes per plan
 
 **v1.1 In Progress:**
-- Plans completed: 1
-- Last plan duration: 34 minutes
+- Plans completed: 2
+- Last plan duration: 4 minutes
 
 ## Accumulated Context
 
@@ -43,6 +43,10 @@ All v1.0 decisions marked with outcomes.
 - **Docker standalone output** (06-01): Use Next.js standalone build to reduce image from 1GB+ to ~200MB
 - **Health endpoint design** (06-01): Public endpoint without DB checks for fast orchestration polling
 - **Health endpoint version** (06-01): Hardcode version 1.1.0 rather than reading from package.json
+- **Alpine openssl requirement** (06-02): Include openssl package in Alpine images for Prisma compatibility
+- **Selective Prisma copying** (06-02): Copy only Prisma packages from deps stage (not entire node_modules)
+- **Builder stage dependencies** (06-02): Builder needs all deps including devDependencies for Next.js build
+- **Image size target** (06-02): 351MB realistic for Next.js + Prisma (300MB target was optimistic)
 
 ### Pending Todos
 
@@ -63,8 +67,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Completed 06-01-PLAN.md (Docker Preparation)
+Stopped at: Completed 06-02-PLAN.md (Docker Deployment Files)
 Resume file: None
 
 ---
-*Last updated: 2026-01-18 after completing 06-01-PLAN.md*
+*Last updated: 2026-01-18 after completing 06-02-PLAN.md*
