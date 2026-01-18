@@ -34,10 +34,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Prisma migrations run automatically at container startup
   5. User can deploy on Synology NAS following documented steps
 **Research**: Unlikely (research already completed, patterns documented in SUMMARY.md)
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01: Foundation (standalone config, health endpoint, .dockerignore) — Wave 1
+- [ ] 06-02: Docker Files (Dockerfile, docker-compose, env template) — Wave 2
+- [ ] 06-03: Verification & Docs (local test, Synology docs) — Wave 3 [checkpoint]
 
 ### Phase 7: Streak Calculation Fix
 **Goal**: Streaks calculate correctly when scheduledCount < dailyTarget
@@ -75,7 +77,7 @@ Phases execute in numeric order: 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. Docker Deployment | 0/TBD | Not started | - |
+| 6. Docker Deployment | 0/3 | Not started | - |
 | 7. Streak Calculation Fix | 0/TBD | Not started | - |
 | 8. Animation Polish | 0/TBD | Not started | - |
 
