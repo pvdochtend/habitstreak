@@ -1,0 +1,37 @@
+# Dependencies (will be installed in container)
+node_modules
+
+# Build artifacts (will be generated in container)
+.next
+out
+
+# Git
+.git
+.gitignore
+
+# Environment (secrets - must not be in image)
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# Testing
+coverage
+playwright-report
+test-results
+
+# Development
+.planning
+tests
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker
