@@ -93,4 +93,5 @@ USER nextjs
 
 # Run migrations and start server
 # Note: Migrations run as nextjs user, ensure database permissions allow this
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+# Use direct path to prisma CLI since standalone build doesn't have .bin directory
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
