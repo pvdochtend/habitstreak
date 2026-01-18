@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-16)
 
 ## Current Position
 
-Phase: 4 of 5 (Celebrations and Streaks) - COMPLETE
-Plan: 2 of 2 in phase - COMPLETE
-Status: Phase 4 complete, ready for Phase 5
-Last activity: 2026-01-17 - Completed 04-02-PLAN.md (animated streak counter)
+Phase: 5 of 5 (Polish and Consistency) - IN PROGRESS
+Plan: 1 of 1 in phase - COMPLETE
+Status: Phase 5 plan 1 complete
+Last activity: 2026-01-18 - Completed 05-01-PLAN.md (animated backgrounds)
 
-Progress: ██████████ 100% (11/11 plans)
+Progress: ██████████ 100% (12/12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: ~13 minutes
-- Total execution time: ~2.4 hours
+- Total plans completed: 12
+- Average duration: ~12 minutes
+- Total execution time: ~2.6 hours
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: ██████████ 100% (11/11 plans)
 | 2 | 3/3 | ~60min | ~20min |
 | 3 | 5/5 | ~76min | ~15min |
 | 4 | 2/2 | ~19min | ~10min |
+| 5 | 1/1 | ~10min | ~10min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (~8min), 03-05 (~5min), 04-01 (~9min), 04-02 (~10min)
-- Trend: Phase 4 completed efficiently (~10min avg) building on Phase 3 infrastructure
+- Last 5 plans: 03-05 (~5min), 04-01 (~9min), 04-02 (~10min), 05-01 (~10min)
+- Trend: Maintaining ~10min avg execution time across Phases 4-5
 
 ## Accumulated Context
 
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 | Flame animation approach | 04-02 | Scale + rotate + opacity (no blur) - GPU-accelerated, 60fps on mobile |
 | Staggered animation timing | 04-02 | Flicker 1.5s, glow 2s - non-synchronized cycles create organic feel |
 | Per-digit rolling | 04-02 | Independent tens/ones digit animation for smoother visual when only ones changes |
+| Three-tier float timing | 05-01 | 25s/18s/12s cycles prevent synchronized orb movement for organic feel |
+| Dark mode opacity adjustment | 05-01 | Lower opacity (15-25%) in dark mode vs light (20-30%) prevents washing out |
+| Fixed background positioning | 05-01 | -z-10 fixed positioning for backgrounds, relative z-10 for content stacking |
 
 ### Phase 2 Deliverables
 
@@ -114,6 +118,18 @@ Celebrations and streaks - 2/2 plans complete:
 | Number rolling | CSS translateY-based digit animation, 500ms ease-out, per-digit control |
 | Streak visualization | Current streak flickers when active, best streak shows static trophy |
 
+### Phase 5 Deliverables (IN PROGRESS)
+
+Polish and consistency - 1/1 plans complete:
+
+| Feature | Usage |
+|---------|-------|
+| AnimatedBackground | `<AnimatedBackground />` - Theme-aware floating gradient orbs |
+| Float animations | `animate-float-slow/medium/fast` - Three-tier animation timing (25s/18s/12s) |
+| Background positioning | `fixed inset-0 -z-10` - Fixed positioning pattern for backgrounds |
+| Dark mode opacity | Dynamic opacity based on darkMode (15-25% dark, 20-30% light) |
+| GPU acceleration | Transform-only animations (translate + scale) for 60fps performance |
+
 ### Pending Todos
 
 1. **Streak calculation wrong for weekend with weekday tasks** (2026-01-18)
@@ -130,22 +146,23 @@ None. All blocking issues resolved.
 
 ## Session Continuity
 
-Last session: 2026-01-17
-Stopped at: Completed 04-02-PLAN.md (animated streak counter)
+Last session: 2026-01-18
+Stopped at: Completed 05-01-PLAN.md (animated backgrounds)
 Resume file: None
 
 ## Next Steps
 
-Phase 4 COMPLETE! All 11 plans across 4 phases delivered.
-- Plan 04-01: ✓ Complete - All tasks done celebration
-- Plan 04-02: ✓ Complete - Animated streak counter
+Phase 5 IN PROGRESS! Plan 05-01 complete.
+- Plan 05-01: ✓ Complete - Animated backgrounds
 
-Phase 4 delivered complete celebration and streak visualization system:
-- Daily goal celebration with large confetti burst
-- Animated streak counter with number rolling (0-99 range)
-- Flickering flame icon for active streaks
-- Pure CSS animations (zero library additions)
-- Full accessibility support (prefers-reduced-motion)
-- GPU-accelerated for 60fps performance
+Phase 5 Plan 1 delivered theme-aware animated backgrounds:
+- Three floating gradient orbs with different animation speeds (25s/18s/12s)
+- Theme-aware colors (blue/pink schemes) with dark mode support
+- Dynamic opacity adjustment for dark mode (15-25% vs 20-30% light)
+- Pure CSS animations with GPU acceleration for 60fps
+- Full prefers-reduced-motion accessibility support
+- Fixed positioning with -z-10 for proper content stacking
 
-All planned features for HabitStreak MVP now complete. Ready for user testing and potential Phase 5 polish/enhancements.
+Phase 5 continues with polish and consistency improvements. Pending todos:
+- Streak calculation fix for weekend/weekday task mismatch
+- Flame animation visibility enhancement
