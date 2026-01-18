@@ -1,4 +1,13 @@
-# HabitStreak UI Refresh
+# HabitStreak
+
+## Current Milestone: v1.1 Self-Hosting & Polish
+
+**Goal:** Enable self-hosting via Docker while fixing outstanding v1.0 issues
+
+**Target features:**
+- Docker deployment — Full docker-compose setup with Dockerfile and PostgreSQL, enabling self-hosting on Synology NAS
+- Streak calculation fix — Address the bug where weekends with weekday tasks causes incorrect streak calculation
+- Flame animation visibility — Make the flickering flame icon more visible/bold
 
 ## What This Is
 
@@ -37,9 +46,11 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ### Active
 
-<!-- Next milestone scope — to be defined -->
+<!-- v1.1 Self-Hosting & Polish -->
 
-(None yet — run `/gsd:define-requirements` to scope next milestone)
+- [ ] Docker deployment — Dockerfile + docker-compose with PostgreSQL for Synology NAS self-hosting
+- [ ] Streak calculation fix — Correct weekend/weekday task mismatch edge case
+- [ ] Flame animation visibility — Make flickering flame icon more visible/bold
 
 ### Out of Scope
 
@@ -86,4 +97,4 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | Inline HSL for dynamic colors | Avoids Tailwind JIT purging dynamic classes | ✓ Good — fixes background visibility |
 
 ---
-*Last updated: 2026-01-18 after v1.0 milestone*
+*Last updated: 2026-01-18 after starting v1.1 milestone*

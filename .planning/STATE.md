@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-18)
 
 **Core value:** Make every interaction feel rewarding. When users complete a task, build a streak, or open the app, they should feel a spark of joy.
-**Current focus:** Planning next milestone
+**Current focus:** v1.1 Self-Hosting & Polish
 
 ## Current Position
 
-Phase: v1.0 complete
-Plan: Not started
-Status: Ready to plan next milestone
-Last activity: 2026-01-18 — v1.0 milestone complete
+Phase: Not started
+Plan: —
+Status: Defining requirements
+Last activity: 2026-01-18 — Milestone v1.1 started
 
-Progress: v1.0 SHIPPED (16/16 plans)
+Progress: v1.1 (0/0 plans — roadmap not yet created)
 
 ## Milestone History
 
@@ -52,19 +52,16 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: v1.0 milestone complete
+Stopped at: Milestone v1.1 started
 Resume file: None
 
 ## Next Steps
 
-**v1.0 SHIPPED!**
+**Milestone v1.1 initialized.**
 
-Next milestone flow:
-1. `/gsd:discuss-milestone` — thinking partner, creates context file
-2. `/gsd:new-milestone` — update PROJECT.md with new goals
-3. `/gsd:research-project` — (optional) research ecosystem
-4. `/gsd:define-requirements` — scope what to build
-5. `/gsd:create-roadmap` — plan how to build it
+Next steps:
+1. `/gsd:define-requirements` — scope what to build
+2. `/gsd:create-roadmap` — plan how to build it
 
 ---
-*Last updated: 2026-01-18 after v1.0 milestone completion*
+*Last updated: 2026-01-18 after starting milestone v1.1*
