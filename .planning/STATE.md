@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-18)
 
 **Core value:** Make every interaction feel rewarding. When users complete a task, build a streak, or open the app, they should feel a spark of joy.
-**Current focus:** v1.1 Self-Hosting & Polish
+**Current focus:** Phase 6 — Docker Deployment
 
 ## Current Position
 
-Phase: Not started
-Plan: —
-Status: Defining requirements
-Last activity: 2026-01-18 — Milestone v1.1 started
+Phase: 6 of 8 (Docker Deployment)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-01-18 — v1.1 roadmap created
 
-Progress: v1.1 (0/0 plans — roadmap not yet created)
+Progress: █████░░░░░ 62% (5/8 phases complete)
 
 ## Milestone History
 
@@ -40,10 +40,12 @@ All v1.0 decisions marked with outcomes.
 1. **Streak calculation wrong for weekend with weekday tasks** (2026-01-18)
    - Area: ui
    - File: `.planning/todos/pending/2026-01-18-streak-calculation-weekend-weekday-mismatch.md`
+   - **Addressed by:** Phase 7 (STREAK-01 through STREAK-04)
 
 2. **Make flame animation more visible/bolder** (2026-01-18)
    - Area: ui
    - File: `.planning/todos/pending/2026-01-18-flame-animation-too-subtle.md`
+   - **Addressed by:** Phase 8 (ANIM-01 through ANIM-03)
 
 ### Blockers/Concerns
 
@@ -52,16 +54,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-18
-Stopped at: Milestone v1.1 started
+Stopped at: v1.1 roadmap created (3 phases, 13 requirements)
 Resume file: None
 
-## Next Steps
-
-**Milestone v1.1 initialized.**
-
-Next steps:
-1. `/gsd:define-requirements` — scope what to build
-2. `/gsd:create-roadmap` — plan how to build it
-
 ---
-*Last updated: 2026-01-18 after starting milestone v1.1*
+*Last updated: 2026-01-18 after creating v1.1 roadmap*

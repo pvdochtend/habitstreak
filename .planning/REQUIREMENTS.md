@@ -59,24 +59,24 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOCKER-01 | Pending | Pending |
-| DOCKER-02 | Pending | Pending |
-| DOCKER-03 | Pending | Pending |
-| DOCKER-04 | Pending | Pending |
-| DOCKER-05 | Pending | Pending |
-| DOCKER-06 | Pending | Pending |
-| STREAK-01 | Pending | Pending |
-| STREAK-02 | Pending | Pending |
-| STREAK-03 | Pending | Pending |
-| STREAK-04 | Pending | Pending |
-| ANIM-01 | Pending | Pending |
-| ANIM-02 | Pending | Pending |
-| ANIM-03 | Pending | Pending |
+| DOCKER-01 | Phase 6 | Pending |
+| DOCKER-02 | Phase 6 | Pending |
+| DOCKER-03 | Phase 6 | Pending |
+| DOCKER-04 | Phase 6 | Pending |
+| DOCKER-05 | Phase 6 | Pending |
+| DOCKER-06 | Phase 6 | Pending |
+| STREAK-01 | Phase 7 | Pending |
+| STREAK-02 | Phase 7 | Pending |
+| STREAK-03 | Phase 7 | Pending |
+| STREAK-04 | Phase 7 | Pending |
+| ANIM-01 | Phase 8 | Pending |
+| ANIM-02 | Phase 8 | Pending |
+| ANIM-03 | Phase 8 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-18*
