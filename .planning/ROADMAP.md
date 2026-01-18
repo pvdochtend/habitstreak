@@ -98,8 +98,10 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 05-01: Implement animated background component (CSS floating orbs)
-- [ ] 05-02: Visual consistency audit and targeted fixes + verification
+- [x] 05-01: Implement animated background component (CSS floating orbs)
+- [x] 05-02: Visual consistency audit and targeted fixes + verification
+- [x] 05-03: Fix background visibility (inline HSL styles)
+- [x] 05-04: Glass styling gap closure (StreakCard, WeeklyChart, TaskListItem)
 
 ## Progress
 
@@ -112,4 +114,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Animation Foundation | 3/3 | Complete | 2026-01-16 |
 | 3. Task Completion Experience | 5/5 | Complete | 2026-01-17 |
 | 4. Celebrations & Streaks | 2/2 | Complete | 2026-01-17 |
-| 5. Polish & Consistency | 0/2 | Not started | - |
+| 5. Polish & Consistency | 4/4 | Complete | 2026-01-18 |

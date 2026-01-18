@@ -82,10 +82,10 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ANIM-01 | Phase 2 | Pending |
-| ANIM-02 | Phase 2 | Pending |
-| ANIM-03 | Phase 2 | Pending |
-| ANIM-04 | Phase 2 | Pending |
+| ANIM-01 | Phase 2 | Complete |
+| ANIM-02 | Phase 2 | Complete |
+| ANIM-03 | Phase 2 | Complete |
+| ANIM-04 | Phase 2 | Complete |
 | TASK-01 | Phase 3 | Complete |
 | TASK-02 | Phase 3 | Complete |
 | TASK-03 | Phase 3 | Complete |
@@ -94,9 +94,9 @@ Which phases cover which requirements. Updated by create-roadmap.
 | CELEB-02 | Phase 4 | Complete |
 | STREAK-01 | Phase 4 | Complete |
 | STREAK-02 | Phase 4 | Complete |
-| VISUAL-01 | Phase 2 | Pending |
-| VISUAL-02 | Phase 5 | Pending |
-| VISUAL-03 | Phase 5 | Pending |
+| VISUAL-01 | Phase 2 | Complete |
+| VISUAL-02 | Phase 5 | Complete |
+| VISUAL-03 | Phase 5 | Complete |
 | VISUAL-04 | Phase 1 | Complete |
 
 **Coverage:**
@@ -106,4 +106,4 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 ---
 *Requirements defined: 2026-01-16*
-*Last updated: 2026-01-17 after Phase 4 completion*
+*Last updated: 2026-01-18 after Phase 5 completion*
