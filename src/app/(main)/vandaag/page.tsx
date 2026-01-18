@@ -95,16 +95,16 @@ export default function VandaagPage() {
     return (
       <div className="p-4 space-y-6 animate-fade-in">
         <div>
-          <div className="h-9 w-32 bg-muted rounded animate-pulse mb-2" />
-          <div className="h-2 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-32 bg-muted rounded animate-shimmer mb-2" />
+          <div className="h-2 bg-muted rounded animate-shimmer" />
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="p-4 rounded-lg border bg-card">
               <div className="flex items-center gap-4">
-                <div className="h-6 w-6 rounded-full bg-muted animate-pulse" />
+                <div className="h-6 w-6 rounded-full bg-muted animate-shimmer" />
                 <div className="flex-1">
-                  <div className="h-5 w-3/4 bg-muted rounded animate-pulse" />
+                  <div className="h-5 w-3/4 bg-muted rounded animate-shimmer" />
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function VandaagPage() {
 
       {/* Daily Target Card */}
       {data.totalCount > 0 && (
-        <Card className="animate-slide-up">
+        <Card className="glass animate-slide-up">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -178,7 +178,7 @@ export default function VandaagPage() {
 
       {/* Task List */}
       {data.tasks.length === 0 ? (
-        <Card>
+        <Card className="glass">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">
               Geen taken gepland voor vandaag.

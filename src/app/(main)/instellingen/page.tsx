@@ -137,7 +137,7 @@ export default function InstellingenPage() {
       <h1 className="text-3xl font-bold animate-slide-up">Instellingen</h1>
 
       {/* Theme Settings */}
-      <Card className="animate-slide-up hover-lift shadow-sm">
+      <Card className="glass animate-slide-up hover-lift shadow-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Palette className="h-5 w-5 text-primary" />
@@ -268,7 +268,7 @@ export default function InstellingenPage() {
       </Card>
 
       {/* Account Info */}
-      <Card className="animate-slide-up hover-lift shadow-sm">
+      <Card className="glass animate-slide-up hover-lift shadow-sm">
         <CardHeader>
           <CardTitle>Account</CardTitle>
         </CardHeader>
@@ -293,7 +293,7 @@ export default function InstellingenPage() {
       </Card>
 
       {/* Daily Target Settings */}
-      <Card className="animate-slide-up hover-lift shadow-sm">
+      <Card className="glass animate-slide-up hover-lift shadow-sm">
         <CardHeader>
           <CardTitle>Dagelijks doel</CardTitle>
           <CardDescription>
@@ -354,7 +354,7 @@ export default function InstellingenPage() {
       </Card>
 
       {/* Logout */}
-      <Card className="animate-slide-up hover-lift shadow-sm">
+      <Card className="glass animate-slide-up hover-lift shadow-sm">
         <CardContent className="pt-6">
           <Button
             variant="destructive"
