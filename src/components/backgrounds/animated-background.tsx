@@ -13,17 +13,18 @@ import { useTheme } from '@/contexts/theme-context'
 export function AnimatedBackground() {
   const { colorScheme, darkMode } = useTheme()
 
-  // Define orb colors based on theme
+  // Define orb colors based on theme using HSL values
+  // HSL values avoid Tailwind JIT purging (can't detect dynamic class access)
   const orbColors = {
     blue: {
-      orb1: 'bg-blue-400',
-      orb2: 'bg-indigo-400',
-      orb3: 'bg-cyan-400',
+      orb1: 'hsl(217, 91%, 60%)',   // blue-400
+      orb2: 'hsl(239, 84%, 67%)',   // indigo-400
+      orb3: 'hsl(188, 95%, 43%)',   // cyan-400
     },
     pink: {
-      orb1: 'bg-pink-400',
-      orb2: 'bg-fuchsia-400',
-      orb3: 'bg-rose-400',
+      orb1: 'hsl(330, 81%, 60%)',   // pink-400
+      orb2: 'hsl(292, 91%, 73%)',   // fuchsia-400
+      orb3: 'hsl(350, 89%, 60%)',   // rose-400
     },
   }
 
@@ -42,20 +43,20 @@ export function AnimatedBackground() {
     >
       {/* Large orb - top right */}
       <div
-        className={`absolute -top-20 -right-20 h-80 w-80 rounded-full ${colors.orb1} blur-3xl animate-float-slow`}
-        style={{ opacity: baseOpacity }}
+        className="absolute -top-20 -right-20 h-80 w-80 rounded-full blur-3xl animate-float-slow"
+        style={{ backgroundColor: colors.orb1, opacity: baseOpacity }}
       />
 
       {/* Medium orb - left center */}
       <div
-        className={`absolute top-1/2 -left-16 h-64 w-64 rounded-full ${colors.orb2} blur-3xl animate-float-medium`}
-        style={{ opacity: secondaryOpacity }}
+        className="absolute top-1/2 -left-16 h-64 w-64 rounded-full blur-3xl animate-float-medium"
+        style={{ backgroundColor: colors.orb2, opacity: secondaryOpacity }}
       />
 
       {/* Small orb - bottom right */}
       <div
-        className={`absolute -bottom-16 right-1/4 h-48 w-48 rounded-full ${colors.orb3} blur-2xl animate-float-fast`}
-        style={{ opacity: tertiaryOpacity }}
+        className="absolute -bottom-16 right-1/4 h-48 w-48 rounded-full blur-2xl animate-float-fast"
+        style={{ backgroundColor: colors.orb3, opacity: tertiaryOpacity }}
       />
     </div>
   )
