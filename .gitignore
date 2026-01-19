@@ -25,6 +25,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.production
 
 # vercel
 .vercel
@@ -43,3 +44,6 @@ next-env.d.ts
 
 # application logs
 /logs/
+
+# deployment backups
+/backups/

@@ -124,10 +124,50 @@ Visit http://your-server-ip:3000 to access the app.
 
 ## Updating
 
-### Pull latest changes and rebuild:
+### Automated Deployment Script (Recommended)
+
+The repository includes a deployment script that automates the entire update process:
 
 ```bash
+# Deploy latest version from current branch
+./deploy.sh
+
+# Deploy specific version tag
+./deploy.sh v1.2
+
+# Deploy without creating backup
+./deploy.sh v1.2 --skip-backup
+
+# Create backup only (no deployment)
+./deploy.sh --backup-only
+
+# Check container status
+./deploy.sh --status
+
+# View recent logs
+./deploy.sh --logs
+```
+
+The script automatically:
+- Creates database backup (stored in `backups/`, keeps last 5)
+- Pulls latest code from git
+- Rebuilds Docker images
+- Restarts containers
+- Runs health checks
+- Shows deployment status
+
+### Manual Update
+
+If you prefer manual control:
+
+```bash
+# Create backup first (recommended)
+docker exec habitstreak-db pg_dump -U habitstreak habitstreak > backup_$(date +%Y%m%d).sql
+
+# Pull latest code
 git pull
+
+# Rebuild and restart
 docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
