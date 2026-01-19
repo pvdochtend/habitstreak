@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-19)
 ## Current Position
 
 Phase: 9 of 9 (Auth.js v5 Migration)
-Plan: 0/2 complete
-Status: Ready to execute
-Last activity: 2026-01-19 — Phase 9 planned (2 plans in 2 waves)
+Plan: 1/2 complete
+Status: In progress
+Last activity: 2026-01-19 — Completed 09-01-PLAN.md
 
-Progress: ░░░░░░░░░░ 0% (v1.2)
+Progress: █░░░░░░░░░ 10% (v1.2)
 
 ## Milestone History
 
@@ -24,12 +24,12 @@ Progress: ░░░░░░░░░░ 0% (v1.2)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21 (across v1.0 + v1.1)
-- Average duration: ~10 min/plan
-- Total execution time: ~3.5 hours
+- Total plans completed: 22 (across v1.0 + v1.1 + v1.2)
+- Average duration: ~9 min/plan
+- Total execution time: ~3.7 hours
 
 **Recent Trend:**
-- v1.1: 5 plans in single session
+- v1.2 (in progress): 1 plan in current session
 - Trend: Stable
 
 ## Accumulated Context
@@ -40,6 +40,9 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting current work:
 - Accept one-time user re-login after Auth.js v5 migration (simpler than cookie migration)
+- Use trustHost: true for dynamic URL detection (eliminates need for NEXTAUTH_URL)
+- Split configuration: auth.config.ts (edge) + auth.ts (full with DB)
+- Preserve all existing rate limiting logic during migration
 
 ### Pending Todos
 
@@ -52,8 +55,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Phase 9 planned
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-01-19 after phase 9 planning*
+*Last updated: 2026-01-19 after completing 09-01*
