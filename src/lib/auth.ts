@@ -14,7 +14,43 @@ import {
   DUTCH_ERRORS,
 } from './rate-limit'
 
+// Use different cookie names for dev vs prod to avoid session conflicts
+// when running both on the same machine (cookies are scoped by domain, not port)
+const cookiePrefix = process.env.NODE_ENV === 'production' ? 'prod' : 'dev'
+
+// Only use secure cookies if NEXTAUTH_URL starts with https://
+// This allows HTTP access for self-hosted instances without SSL
+const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://') ?? false
+
 export const authOptions: NextAuthOptions = {
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}.next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}.next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    csrfToken: {
+      name: `${cookiePrefix}.next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+  },
   providers: [
     CredentialsProvider({
       name: 'credentials',

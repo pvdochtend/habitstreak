@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  // Allow dev server access from local network devices
+  allowedDevOrigins: ['192.168.0.*'],
   typescript: {
     // Strict type checking
     ignoreBuildErrors: false,
