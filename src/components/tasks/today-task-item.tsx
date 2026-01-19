@@ -89,7 +89,7 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
         'transition-[background-color,border-color,transform,opacity] duration-500',
         isAnimating && 'animate-glow',
         localIsCompleted
-          ? 'bg-primary/5 border-primary shadow-sm'
+          ? 'bg-primary/5 border-primary'
           : 'bg-card border-border'
       )}
       aria-label={`${task.title} - ${localIsCompleted ? 'Voltooid' : 'Niet voltooid'}`}
