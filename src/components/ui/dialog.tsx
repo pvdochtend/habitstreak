@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -11,9 +12,15 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
-  if (!open) return null
+  const [mounted, setMounted] = React.useState(false)
 
-  return (
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!open || !mounted) return null
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -21,10 +28,13 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
         onClick={() => onOpenChange(false)}
       />
       {/* Dialog */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="relative animate-scale-in">{children}</div>
+      <div className="fixed inset-0 z-50 overflow-y-auto py-4 px-4">
+        <div className="flex min-h-full items-start sm:items-center justify-center">
+          <div className="relative animate-scale-in w-full max-w-lg">{children}</div>
+        </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 }
 
@@ -37,7 +47,7 @@ export function DialogContent({
   return (
     <div
       className={cn(
-        'relative bg-background rounded-lg shadow-lg border w-full max-w-lg max-h-[90vh] overflow-y-auto',
+        'relative bg-background rounded-lg shadow-lg border w-full',
         className
       )}
       onClick={(e) => e.stopPropagation()}
