@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from './auth'
+import { auth } from './auth'
 import { AuthUser } from '@/types'
 
 /**
@@ -8,7 +7,7 @@ import { AuthUser } from '@/types'
  * Use this in Server Components and API routes
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   if (!session?.user?.id) {
     return null
