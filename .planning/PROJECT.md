@@ -1,13 +1,10 @@
 # HabitStreak
 
-## Current Milestone: v1.1 Self-Hosting & Polish
+## Current Milestone: v1.2 (To Be Defined)
 
-**Goal:** Enable self-hosting via Docker while fixing outstanding v1.0 issues
+**Goal:** To be determined in next milestone planning
 
-**Target features:**
-- Docker deployment — Full docker-compose setup with Dockerfile and PostgreSQL, enabling self-hosting on Synology NAS
-- Streak calculation fix — Address the bug where weekends with weekday tasks causes incorrect streak calculation
-- Flame animation visibility — Make the flickering flame icon more visible/bold
+**Status:** Ready to define requirements and create roadmap
 
 ## What This Is
 
@@ -44,13 +41,17 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 - ✓ Consistent playful personality — unified glassmorphism across all screens — v1.0
 - ✓ Visual concept exploration — glassmorphism chosen from three mockups — v1.0
 
+<!-- v1.1 Self-Hosting & Polish — shipped 2026-01-19 -->
+
+- ✓ Docker deployment — Full containerization (351MB image) with PostgreSQL orchestration and Synology NAS documentation — v1.1
+- ✓ Streak calculation fix — effectiveTarget formula corrects weekend/weekday task mismatch edge case — v1.1
+- ✓ Flame animation visibility — Enhanced glow (50-80% opacity) and eliminated visual blink on completion — v1.1
+
 ### Active
 
-<!-- v1.1 Self-Hosting & Polish -->
+<!-- To be defined for v1.2 -->
 
-- [ ] Docker deployment — Dockerfile + docker-compose with PostgreSQL for Synology NAS self-hosting
-- [ ] Streak calculation fix — Correct weekend/weekday task mismatch edge case
-- [ ] Flame animation visibility — Make flickering flame icon more visible/bold
+(No active requirements - use `/gsd:define-requirements` for next milestone)
 
 ### Out of Scope
 
@@ -63,15 +64,16 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ## Context
 
-**Current state:** HabitStreak v1.0 ships with complete UI refresh. 5,600 lines of TypeScript/TSX, glassmorphism design system, canvas-confetti integration (~3KB), comprehensive prefers-reduced-motion support.
+**Current state:** HabitStreak v1.1 ships with Docker self-hosting, streak fix, and animation polish. 5,692 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), comprehensive unit tests for streak logic.
 
-**Tech stack:** Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui, Prisma, PostgreSQL.
+**Tech stack:** Next.js 15 (standalone output), React 19, TypeScript, Tailwind CSS, shadcn/ui, Prisma, PostgreSQL, Docker.
 
-**v1.0 delivered:** Glassmorphism visual identity, full animation foundation, joyful task completion experience, animated streak displays, dynamic backgrounds, consistent glass styling across all screens.
+**v1.0 delivered (2026-01-18):** Glassmorphism visual identity, full animation foundation, joyful task completion experience, animated streak displays, dynamic backgrounds, consistent glass styling across all screens.
 
-**Pending observations from v1.0:**
-- Streak calculation has edge case with weekend/weekday task mismatches (captured as todo)
-- Flame animation could be more visible/bold (captured as todo)
+**v1.1 delivered (2026-01-19):** Docker containerization with multi-stage builds, PostgreSQL orchestration, Synology NAS deployment guide (both GUI/CLI paths), fixed streak calculation with isDaySuccessful() pure function, enhanced flame visibility, eliminated animation blink bug.
+
+**Known issues:**
+- iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) - deferred to v1.2
 
 ## Constraints
 
@@ -95,6 +97,11 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | Per-digit number rolling | Independent tens/ones animation for smoother visuals | ✓ Good — professional polish |
 | Three-tier float timing (25s/18s/12s) | Prevents synchronized orb movement | ✓ Good — organic background feel |
 | Inline HSL for dynamic colors | Avoids Tailwind JIT purging dynamic classes | ✓ Good — fixes background visibility |
+| Next.js standalone output for Docker | Reduces image from 1GB+ to 351MB | ✓ Good — enables practical self-hosting |
+| isDaySuccessful() pure function | Single source of truth for streak logic | ✓ Good — testable and consistent |
+| effectiveTarget formula | min(dailyTarget, scheduledCount) allows success on low-scheduled days | ✓ Good — fixes critical streak bug |
+| Portal-based dialog rendering | Bypasses PageTransition transform constraints | ✓ Good — fixes positioning issues |
+| Animation-only-on-mount pattern | hasMounted ref prevents re-trigger on data refresh | ✓ Good — eliminates visual blink |
 
 ---
-*Last updated: 2026-01-18 after starting v1.1 milestone*
+*Last updated: 2026-01-19 after v1.1 milestone completion*
