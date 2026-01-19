@@ -1,10 +1,16 @@
 # HabitStreak
 
-## Current Milestone: v1.2 (To Be Defined)
+## Current Milestone: v1.2 Auth.js v5 Migration
 
-**Goal:** To be determined in next milestone planning
+**Goal:** Migrate from NextAuth v4 to Auth.js v5 to enable dynamic URL detection and future-proof the authentication stack.
 
-**Status:** Ready to define requirements and create roadmap
+**Target features:**
+- Auth.js v5 migration with `trustHost` support
+- Dynamic URL detection (localhost, IP, domain, reverse proxy — no config changes needed)
+- Maintained existing auth functionality (credentials provider, JWT sessions)
+- E2E test coverage for multi-URL authentication
+
+**Status:** Ready to define requirements
 
 ## What This Is
 
@@ -49,9 +55,13 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ### Active
 
-<!-- To be defined for v1.2 -->
+<!-- v1.2 Auth.js v5 Migration -->
 
-(No active requirements - use `/gsd:define-requirements` for next milestone)
+- [ ] Migrate NextAuth v4 → Auth.js v5
+- [ ] Enable `trustHost` for dynamic URL detection
+- [ ] Login works on localhost, IP address, domain, and reverse proxy without config changes
+- [ ] Existing auth functionality preserved (credentials provider, JWT sessions, user scoping)
+- [ ] E2E tests verify multi-URL authentication
 
 ### Out of Scope
 
@@ -61,6 +71,9 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 - Custom Lottie animations — 82KB+ bundle impact; CSS/Motion sufficient
 - @tsparticles backgrounds — React 19 compatibility uncertain; CSS approach used instead
 - Share cards — social features deferred
+- iOS scroll-to-top fix — deferred to v1.3; tracked in debug session
+- Test configuration fixes — deferred to v1.3; low priority (Prisma mock + Playwright config)
+- Domain/reverse proxy setup — v1.2 enables capability only; actual setup is deployment task
 
 ## Context
 
@@ -73,7 +86,14 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 **v1.1 delivered (2026-01-19):** Docker containerization with multi-stage builds, PostgreSQL orchestration, Synology NAS deployment guide (both GUI/CLI paths), fixed streak calculation with isDaySuccessful() pure function, enhanced flame visibility, eliminated animation blink bug.
 
 **Known issues:**
-- iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) - deferred to v1.2
+- iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) — deferred to v1.3
+- Login IP address issue — resolved; solution is Auth.js v5 migration (this milestone)
+
+**v1.2 context:**
+- NextAuth v4.24.11 chosen in initial commit (Jan 6, 2026) before formal planning
+- v4 lacks `trustHost` feature (Auth.js v5 only), preventing dynamic URL detection
+- Current workaround: set NEXTAUTH_URL manually to match access method
+- Migration will enable login on localhost/IP/domain/reverse proxy without config changes
 
 ## Constraints
 
@@ -104,4 +124,4 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | Animation-only-on-mount pattern | hasMounted ref prevents re-trigger on data refresh | ✓ Good — eliminates visual blink |
 
 ---
-*Last updated: 2026-01-19 after v1.1 milestone completion*
+*Last updated: 2026-01-19 after starting v1.2 milestone*

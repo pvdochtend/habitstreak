@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-19)
 
 **Core value:** Make every interaction feel rewarding. When users complete a task, build a streak, or open the app, they should feel a spark of joy.
-**Current focus:** Ready to plan v1.2 milestone
+**Current focus:** v1.2 Auth.js v5 Migration — defining requirements
 
 ## Current Position
 
-Phase: None (milestone complete)
-Plan: Not started
-Status: Ready to plan next milestone
-Last activity: 2026-01-19 — v1.1 milestone archived
+Phase: Not started (run /gsd:create-roadmap after requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-01-19 — Milestone v1.2 started
 
 Progress: v1.0 + v1.1 complete (21 plans total)
 
@@ -58,9 +58,9 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: v1.1 milestone archived
+Stopped at: v1.2 milestone started
 Resume file: None
-Next: `/gsd:discuss-milestone` for v1.2 planning
+Next: `/gsd:research-project` or `/gsd:define-requirements`
 
 ---
-*Last updated: 2026-01-19 after completing v1.1 milestone*
+*Last updated: 2026-01-19 after starting v1.2 milestone*
