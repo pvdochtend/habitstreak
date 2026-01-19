@@ -1,19 +1,10 @@
-import { withAuth } from 'next-auth/middleware'
-import { NextResponse } from 'next/server'
+import NextAuth from 'next-auth'
+import authConfig from '@/lib/auth.config'
 
-export default withAuth(
-  function middleware(req) {
-    return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
-    pages: {
-      signIn: '/login',
-    },
-  }
-)
+// Use edge-compatible config (no database adapter)
+const { auth } = NextAuth(authConfig)
+
+export default auth
 
 // Protect all routes except auth pages and API routes
 export const config = {
@@ -21,7 +12,7 @@ export const config = {
     /*
      * Match all request paths except:
      * - /login, /signup (auth pages)
-     * - /api (API routes)
+     * - /api (API routes handle their own auth)
      * - /_next (Next.js internals)
      * - /favicon.ico, /manifest.json, etc. (static files)
      */
