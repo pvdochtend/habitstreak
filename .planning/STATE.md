@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-18)
 
 **Core value:** Make every interaction feel rewarding. When users complete a task, build a streak, or open the app, they should feel a spark of joy.
-**Current focus:** Phase 7 — Streak Calculation Fix
+**Current focus:** Milestone v1.1 complete
 
 ## Current Position
 
-Phase: 7 of 8 (Streak Calculation Fix)
-Plan: 1 of 1 (isDaySuccessful with effectiveTarget logic)
-Status: Phase complete
-Last activity: 2026-01-19 — Completed 07-01-PLAN.md (Streak Calculation Fix)
+Phase: 8 of 8 (Animation Polish)
+Plan: 1 of 1 (Animation Polish)
+Status: Milestone complete
+Last activity: 2026-01-19 — Completed 08-01-PLAN.md (Animation Polish)
 
-Progress: ███████░░░ 76% (19/25 plans complete)
+Progress: ██████████ 100% (20/20 plans complete)
 
 ## Milestone History
 
@@ -28,11 +28,11 @@ Progress: ███████░░░ 76% (19/25 plans complete)
 - Total execution time: ~2.9 hours
 - Average duration: ~10 minutes per plan
 
-**v1.1 In Progress:**
-- Plans completed: 4
-- Last plan duration: 10 minutes
+**v1.1 Complete:**
+- Plans completed: 5
 - Phase 6 (Docker Deployment): Complete
 - Phase 7 (Streak Calculation Fix): Complete
+- Phase 8 (Animation Polish): Complete
 
 ## Accumulated Context
 
@@ -55,6 +55,8 @@ All v1.0 decisions marked with outcomes.
 - **Pure function extraction** (07-01): Extract isDaySuccessful as pure function rather than inline formula for testability
 - **effectiveTarget formula** (07-01): Use min(dailyTarget, scheduledCount) to allow success on low-scheduled days
 - **Zero-scheduled handling** (07-01): Return false for scheduledCount === 0, caller skips with continue
+- **Dialog portal rendering** (08-01): Use createPortal to bypass PageTransition transform constraints
+- **Animation-only-on-mount** (08-01): Use hasMounted ref to prevent slide-up re-triggering on data refresh
 
 ### Pending Todos
 
@@ -66,7 +68,7 @@ All v1.0 decisions marked with outcomes.
 2. **Make flame animation more visible/bolder** (2026-01-18)
    - Area: ui
    - File: `.planning/todos/pending/2026-01-18-flame-animation-too-subtle.md`
-   - **Addressed by:** Phase 8 (ANIM-01 through ANIM-03)
+   - **Status:** ✅ RESOLVED in Phase 8 Plan 01 (08-01-SUMMARY.md)
 
 ### Blockers/Concerns
 
@@ -75,9 +77,9 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Completed 07-01-PLAN.md (Streak Calculation Fix)
+Stopped at: Completed 08-01-PLAN.md (Animation Polish)
 Resume file: None
-Next: Phase 8 (UI Animation Improvements)
+Next: Milestone audit or v1.2 planning
 
 ---
-*Last updated: 2026-01-19 after completing 07-01-PLAN.md*
+*Last updated: 2026-01-19 after completing 08-01-PLAN.md — Milestone v1.1 complete*

@@ -7,7 +7,7 @@ HabitStreak v1.1 delivers self-hosting capability via Docker, fixes the streak c
 ## Milestones
 
 - ✅ **v1.0 MVP** - Phases 1-5 (shipped 2026-01-18)
-- 🚧 **v1.1 Self-Hosting & Polish** - Phases 6-8 (in progress)
+- ✅ **v1.1 Self-Hosting & Polish** - Phases 6-8 (shipped 2026-01-19)
 
 ## Phases
 
@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 6: Docker Deployment** - Full containerization for Synology NAS self-hosting
 - [x] **Phase 7: Streak Calculation Fix** - Correct weekend/weekday task mismatch bug
-- [ ] **Phase 8: Animation Polish** - Improve flame visibility and fix blink bug
+- [x] **Phase 8: Animation Polish** - Improve flame visibility and fix blink bug
 
 ## Phase Details
 
@@ -65,10 +65,10 @@ Plans:
   2. Animation completes without visual blink/glitch
   3. Users with prefers-reduced-motion see static flame (no animation)
 **Research**: Unlikely (existing debug files document issues)
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 08-01: TBD
+- [x] 08-01: Animation Polish (flame visibility, blink fix) — Wave 1 [checkpoint]
 
 ## Progress
 
@@ -79,8 +79,8 @@ Phases execute in numeric order: 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 6. Docker Deployment | 3/3 | Complete | 2026-01-19 |
 | 7. Streak Calculation Fix | 1/1 | Complete | 2026-01-19 |
-| 8. Animation Polish | 0/TBD | Not started | - |
+| 8. Animation Polish | 1/1 | Complete | 2026-01-19 |
 
 ---
 *Roadmap created: 2026-01-18*
-*v1.1 milestone: 3 phases, 13 requirements*
+*v1.1 milestone: 3 phases, 13 requirements — COMPLETE 2026-01-19*
