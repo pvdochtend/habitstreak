@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-18)
 ## Current Position
 
 Phase: 6 of 8 (Docker Deployment)
-Plan: 2 of 3 (Docker Deployment Files)
-Status: In progress
-Last activity: 2026-01-18 — Completed 06-02-PLAN.md (Docker Deployment Files)
+Plan: 3 of 3 (Deployment Testing & Documentation)
+Status: Phase complete
+Last activity: 2026-01-19 — Completed 06-03-PLAN.md (Deployment Testing & Documentation)
 
-Progress: ██████░░░░ 68% (17/25 plans complete)
+Progress: ███████░░░ 72% (18/25 plans complete)
 
 ## Milestone History
 
@@ -29,8 +29,9 @@ Progress: ██████░░░░ 68% (17/25 plans complete)
 - Average duration: ~10 minutes per plan
 
 **v1.1 In Progress:**
-- Plans completed: 2
-- Last plan duration: 4 minutes
+- Plans completed: 3
+- Last plan duration: 28 minutes
+- Phase 6 (Docker Deployment): Complete
 
 ## Accumulated Context
 
@@ -47,6 +48,9 @@ All v1.0 decisions marked with outcomes.
 - **Selective Prisma copying** (06-02): Copy only Prisma packages from deps stage (not entire node_modules)
 - **Builder stage dependencies** (06-02): Builder needs all deps including devDependencies for Next.js build
 - **Image size target** (06-02): 351MB realistic for Next.js + Prisma (300MB target was optimistic)
+- **Prisma CLI path in standalone** (06-03): Use node_modules/prisma/build/index.js for migrations in standalone build
+- **Health check IP address** (06-03): Use 127.0.0.1 instead of localhost for Alpine wget IPv6 compatibility
+- **Synology deployment options** (06-03): Document both Container Manager (GUI) and SSH (CLI) paths for different skill levels
 
 ### Pending Todos
 
@@ -66,9 +70,10 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-18
-Stopped at: Completed 06-02-PLAN.md (Docker Deployment Files)
+Last session: 2026-01-19
+Stopped at: Completed 06-03-PLAN.md (Deployment Testing & Documentation)
 Resume file: None
+Next: Phase 7 (Streak Logic Fixes)
 
 ---
-*Last updated: 2026-01-18 after completing 06-02-PLAN.md*
+*Last updated: 2026-01-19 after completing 06-03-PLAN.md*
