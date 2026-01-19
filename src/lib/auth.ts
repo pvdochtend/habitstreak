@@ -29,7 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error('Email en wachtwoord zijn verplicht')
         }
 
-        const email = credentials.email.toLowerCase()
+        const email = (credentials.email as string).toLowerCase()
         const clientIp = getClientIp(request as any)
         const userAgent = request?.headers?.get('user-agent') ?? undefined
 
@@ -98,7 +98,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           // Verify password
           const isValidPassword = await bcrypt.compare(
-            credentials.password,
+            credentials.password as string,
             user.passwordHash
           )
 
