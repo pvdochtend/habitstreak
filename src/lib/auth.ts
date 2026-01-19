@@ -18,11 +18,17 @@ import {
 // when running both on the same machine (cookies are scoped by domain, not port)
 const cookiePrefix = process.env.NODE_ENV === 'production' ? 'prod' : 'dev'
 
-// Only use secure cookies if NEXTAUTH_URL starts with https://
+// Only use secure cookies if NEXTAUTH_URL explicitly sets https://
+// If NEXTAUTH_URL is not set, trustHost will auto-detect and cookies default to insecure
 // This allows HTTP access for self-hosted instances without SSL
 const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://') ?? false
 
 export const authOptions: NextAuthOptions = {
+  // Trust the Host header to auto-detect NEXTAUTH_URL
+  // This allows access via localhost, IP address, or domain without hardcoding
+  // Safe for self-hosted apps behind reverse proxies
+  trustHost: true,
+
   cookies: {
     sessionToken: {
       name: `${cookiePrefix}.next-auth.session-token`,
