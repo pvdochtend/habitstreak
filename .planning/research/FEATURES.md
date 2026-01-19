@@ -1,327 +1,381 @@
-# Feature Research: Streak Calculation
+# Features Research: Auth.js v5 Dynamic URL Detection
 
-**Domain:** Habit Tracking - Streak Calculation with Variable Schedules
-**Researched:** 2026-01-18
-**Confidence:** HIGH
+**Researched:** 2026-01-19
+**Domain:** Authentication / NextAuth.js to Auth.js v5 Migration
+**Confidence:** HIGH (verified with official Auth.js documentation)
 
-## Executive Summary
+## Summary
 
-Streak calculation in habit tracking apps follows two main paradigms: **hard streaks** (consecutive completions, reset on miss) and **soft scores** (weighted algorithms, gradual decay). For HabitStreak's bug (weekends with weekday-only tasks incorrectly affecting streaks), the industry-standard solution is clear: **days with no scheduled tasks should be transparent to streak calculation** - they neither break nor extend the streak.
+Auth.js v5 introduces automatic host detection that eliminates the strict `NEXTAUTH_URL` requirement from v4. The key feature is `trustHost`, which tells Auth.js to read the incoming request's `Host` header (or `X-Forwarded-Host` behind proxies) to determine the application URL dynamically. This means users can access the app via localhost:3000, 192.168.1.x:3000, or a custom domain without changing any configuration. The only required environment variable is `AUTH_SECRET` - the URL is inferred from each request.
 
-The current HabitStreak implementation already attempts this (lines 76-78 in `streak.ts` use `continue` for days with `scheduledCount === 0`), but there may be edge cases or a bug in how the algorithm handles the dailyTarget comparison when no tasks are scheduled.
+**Primary recommendation:** Migrate to Auth.js v5 with `trustHost: true` in config and `AUTH_TRUST_HOST=true` in environment. Remove `NEXTAUTH_URL` entirely to enable dynamic URL detection.
 
-**Primary recommendation:** Days with zero scheduled tasks should be skipped entirely in streak calculation. A day is only evaluated for streak purposes if `scheduledCount > 0`.
+## Core Feature: trustHost
 
-## Streak Calculation Best Practices
+### What It Does
 
-### Core Algorithm Patterns
+The `trustHost` configuration option tells Auth.js to derive the application URL from the incoming HTTP request headers instead of requiring a static environment variable. When enabled:
 
-Leading habit apps use one of two approaches:
+1. Auth.js reads the `Host` header from each incoming request
+2. Behind proxies, it reads `X-Forwarded-Host` and `X-Forwarded-Proto` headers
+3. It constructs callback URLs, redirect URLs, and session URLs dynamically
+4. No hardcoded URL configuration is needed
 
-| Approach | How It Works | Apps Using It | Pros | Cons |
-|----------|--------------|---------------|------|------|
-| **Hard Streak** | Count consecutive successful days; any miss resets to 0 | Duolingo, Habitica, Streaks (iOS) | Simple to understand, strong motivation | Punishing, can demoralize after long streaks |
-| **Soft Score** | Exponential smoothing; misses reduce score gradually | Loop Habit Tracker | Forgiving, psychologically healthier | Less intuitive, harder to gamify |
+This is the exact feature that solves HabitStreak's multi-URL access problem.
 
-**For HabitStreak's use case** (dailyTarget-based success), the hard streak approach is appropriate but must correctly handle schedule variations.
+### How It Works
 
-### Industry Standard: Skip Non-Scheduled Days
-
-According to Habitica documentation (HIGH confidence):
-> "If a Daily is not scheduled on a particular day...then you do _not_ lose the streak."
-
-According to HabitBoard (MEDIUM confidence):
-> "Skipping days don't break the streak" - automatic skip days for habits not planned daily.
-
-**Consensus:** Non-scheduled days are transparent to streak calculation. They do not:
-- Break an existing streak
-- Extend an existing streak
-- Count toward or against daily targets
-
-### The "Successful Day" Definition
-
-For apps with daily targets (like HabitStreak):
-
+**Request Flow (Direct Access):**
 ```
-isSuccessful(date) =
-  IF scheduledCount(date) == 0:
-    SKIP (do not evaluate this day)
-  ELSE:
-    completedCount(date) >= dailyTarget
+User accesses: http://192.168.1.100:3000/login
+                    |
+                    v
+            Request arrives with:
+            Host: 192.168.1.100:3000
+                    |
+                    v
+            Auth.js (trustHost: true)
+            Reads Host header -> "192.168.1.100:3000"
+                    |
+                    v
+            Constructs URLs:
+            - Callback: http://192.168.1.100:3000/api/auth/callback/credentials
+            - Session: http://192.168.1.100:3000/api/auth/session
+            - Redirect: http://192.168.1.100:3000/vandaag
 ```
 
-**Critical insight:** The condition `scheduledCount === 0` means "this day is not relevant to habit tracking" - it should be completely ignored when walking through dates.
+**Request Flow (Behind Reverse Proxy):**
+```
+User accesses: https://habits.example.com/login
+                    |
+                    v
+            Reverse Proxy (nginx/traefik)
+            Forwards with headers:
+            - Host: habits.example.com
+            - X-Forwarded-Host: habits.example.com
+            - X-Forwarded-Proto: https
+                    |
+                    v
+            Auth.js (trustHost: true)
+            Reads X-Forwarded-* headers
+                    |
+                    v
+            Constructs URLs with https://habits.example.com
+```
 
-## Handling Variable Schedules
+### Configuration
 
-| Schedule Type | Streak Behavior | Implementation |
-|---------------|-----------------|----------------|
-| **ALL_WEEK** | Every day evaluated | Standard streak logic |
-| **WORKWEEK** | Mon-Fri evaluated, Sat-Sun skipped | Skip days where no tasks scheduled |
-| **WEEKEND** | Sat-Sun evaluated, Mon-Fri skipped | Skip days where no tasks scheduled |
-| **CUSTOM** | Only selected days evaluated | Skip days not in daysOfWeek array |
-| **Mixed** (multiple tasks, different schedules) | Days with ANY scheduled task are evaluated | `scheduledCount > 0` determines evaluation |
+**Option 1: In auth.ts configuration (recommended)**
+```typescript
+// src/auth.ts (Auth.js v5 format)
+import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
 
-### Algorithm Pseudocode (Correct Implementation)
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [Credentials({ /* ... */ })],
+  trustHost: true,  // Enable dynamic URL detection
+  // ... rest of config
+})
+```
+
+**Option 2: Environment variable**
+```bash
+# .env or .env.production
+AUTH_TRUST_HOST=true
+```
+
+**Option 3: Both (belt and suspenders)**
+```typescript
+// auth.ts
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
+  // ...
+})
+```
+```bash
+# .env.production
+AUTH_TRUST_HOST=true
+```
+
+**Note:** Auth.js automatically sets `trustHost: true` when it detects Vercel (`VERCEL` env var) or Cloudflare Pages (`CF_PAGES` env var). For self-hosted deployments like Docker, you must set it explicitly.
+
+## URL Detection Behavior
+
+### Without trustHost (v4 behavior)
+
+In NextAuth v4, the URL handling is rigid:
+
+| Aspect | v4 Behavior |
+|--------|-------------|
+| **URL Source** | Reads from `NEXTAUTH_URL` environment variable only |
+| **If Not Set** | Falls back to `http://localhost:3000` or throws warnings |
+| **If Mismatched** | Authentication may fail, cookies may not work, redirects break |
+| **Multi-URL** | Not supported - must change `NEXTAUTH_URL` for each access method |
+
+**Current HabitStreak Problem:**
+- `NEXTAUTH_URL=http://localhost:3000` set
+- User accesses via `http://192.168.1.100:3000`
+- Callback URLs generated for `localhost:3000`
+- Session cookie scoped to `localhost`
+- Result: Login appears to work but session not maintained
+
+### With trustHost (v5 behavior)
+
+| Aspect | v5 Behavior with trustHost |
+|--------|---------------------------|
+| **URL Source** | Reads from `Host` header of each request |
+| **If AUTH_URL Not Set** | Works correctly - URL inferred from request |
+| **Proxy Support** | Reads `X-Forwarded-Host` and `X-Forwarded-Proto` |
+| **Multi-URL** | Fully supported - each request gets correct URL |
+
+**Expected HabitStreak Behavior After Migration:**
+- `AUTH_TRUST_HOST=true` set, no `AUTH_URL` needed
+- User accesses via `http://192.168.1.100:3000`
+- Host header: `192.168.1.100:3000`
+- Callback URLs generated for `192.168.1.100:3000`
+- Session cookie scoped to `192.168.1.100`
+- Result: Login works correctly on any access URL
+
+## Multi-URL Scenarios
+
+| Scenario | v4 Behavior | v5 with trustHost |
+|----------|-------------|-------------------|
+| **localhost:3000** | Works only if `NEXTAUTH_URL=http://localhost:3000` | Works automatically |
+| **127.0.0.1:3000** | Fails if NEXTAUTH_URL is localhost | Works automatically |
+| **IP address (LAN)** | Fails unless NEXTAUTH_URL matches exactly | Works automatically |
+| **Custom domain** | Fails unless NEXTAUTH_URL matches | Works automatically |
+| **Reverse proxy (HTTP)** | Fails - URL mismatch | Works with `AUTH_TRUST_HOST=true` |
+| **Reverse proxy (HTTPS)** | Fails - URL and protocol mismatch | Works - reads X-Forwarded-Proto |
+| **Multiple domains** | Not supported | Works - each request uses its own Host |
+
+### Detailed Scenario Analysis
+
+**Scenario 1: Development on localhost**
+```
+Access URL: http://localhost:3000
+Host header: localhost:3000
+Auth.js constructs: http://localhost:3000/api/auth/*
+Cookie domain: localhost
+Result: Works
+```
+
+**Scenario 2: Access from another device on LAN**
+```
+Access URL: http://192.168.1.100:3000
+Host header: 192.168.1.100:3000
+Auth.js constructs: http://192.168.1.100:3000/api/auth/*
+Cookie domain: 192.168.1.100
+Result: Works
+```
+
+**Scenario 3: Custom local domain (via /etc/hosts)**
+```
+Access URL: http://habitstreak.local:3000
+Host header: habitstreak.local:3000
+Auth.js constructs: http://habitstreak.local:3000/api/auth/*
+Cookie domain: habitstreak.local
+Result: Works
+```
+
+**Scenario 4: Behind nginx reverse proxy with HTTPS**
+```
+External URL: https://habits.example.com
+nginx config:
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+
+Headers received by app:
+  Host: habits.example.com
+  X-Forwarded-Host: habits.example.com
+  X-Forwarded-Proto: https
+
+Auth.js constructs: https://habits.example.com/api/auth/*
+Cookie: Secure, domain habits.example.com
+Result: Works with secure cookies
+```
+
+**Scenario 5: Docker with internal networking**
+```
+Container internal: http://habitstreak:3000
+External access: http://192.168.1.100:3000
+
+With proper Docker networking (host mode or port mapping):
+Host header: 192.168.1.100:3000
+Auth.js constructs: http://192.168.1.100:3000/api/auth/*
+Result: Works
+```
+
+## Other Relevant v5 Features
+
+### 1. Simplified Environment Variables
+
+| v4 Variable | v5 Variable | Required? |
+|-------------|-------------|-----------|
+| `NEXTAUTH_SECRET` | `AUTH_SECRET` | Yes (only required var) |
+| `NEXTAUTH_URL` | `AUTH_URL` | No (auto-detected) |
+| N/A | `AUTH_TRUST_HOST` | Yes for self-hosted |
+
+**Migration:**
+```bash
+# Remove or comment out:
+# NEXTAUTH_URL=http://localhost:3000
+
+# Rename:
+NEXTAUTH_SECRET -> AUTH_SECRET
+
+# Add:
+AUTH_TRUST_HOST=true
+```
+
+Note: v5 still supports `NEXTAUTH_SECRET` and `NEXTAUTH_URL` as aliases for backward compatibility.
+
+### 2. Automatic Cookie Security
+
+Auth.js v5 automatically configures cookie security based on the detected protocol:
+
+| Detected Protocol | Cookie Behavior |
+|-------------------|-----------------|
+| `http://` | Non-secure cookies (SameSite=Lax) |
+| `https://` | Secure cookies (SameSite=Lax, Secure flag) |
+
+This means:
+- Local development via HTTP works without configuration
+- Production behind HTTPS automatically gets secure cookies
+- No need for `useSecureCookies` toggle
+
+### 3. New Configuration Structure
+
+Auth.js v5 uses a different export pattern:
 
 ```typescript
-function calculateCurrentStreak(userId: string): number {
-  const dailyTarget = user.dailyTarget
-  const tasks = getActiveTasks(userId)
+// v4 (current HabitStreak)
+import NextAuth from "next-auth"
+export const authOptions: NextAuthOptions = { ... }
+export default NextAuth(authOptions)
 
-  let streak = 0
+// v5 (target)
+import NextAuth from "next-auth"
+export const { handlers, signIn, signOut, auth } = NextAuth({ ... })
+```
 
-  // Walk backwards from today
-  for (const date of datesFromTodayBackwards) {
-    const scheduledCount = countScheduledTasks(tasks, date)
-    const completedCount = countCompletedTasks(userId, date)
+The `auth` function replaces `getServerSession(authOptions)` for server-side auth checks.
 
-    // KEY: Skip days with no scheduled tasks entirely
-    if (scheduledCount === 0) {
-      continue  // This day doesn't exist for streak purposes
-    }
+### 4. Route Handler Migration
 
-    // Evaluate success against daily target
-    if (completedCount >= dailyTarget) {
-      streak++
-    } else {
-      break  // Streak broken
-    }
-  }
+```typescript
+// v4: src/pages/api/auth/[...nextauth].ts or src/app/api/auth/[...nextauth]/route.ts
+import NextAuth from "next-auth"
+import { authOptions } from "@/lib/auth"
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
 
-  return streak
+// v5: src/app/api/auth/[...nextauth]/route.ts
+import { handlers } from "@/auth"
+export const { GET, POST } = handlers
+```
+
+### 5. Middleware Changes
+
+```typescript
+// v4
+export { default } from "next-auth/middleware"
+
+// v5
+import { auth } from "@/auth"
+export default auth
+```
+
+## Configuration Needed for Each Scenario
+
+### Minimal Self-Hosted (Docker/VPS)
+
+```typescript
+// src/auth.ts
+import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [Credentials({ /* existing logic */ })],
+  trustHost: true,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+  callbacks: {
+    /* existing callbacks */
+  },
+})
+```
+
+```bash
+# .env.production
+AUTH_SECRET=your-32-char-secret-here
+AUTH_TRUST_HOST=true
+# No AUTH_URL needed!
+```
+
+### Behind Reverse Proxy (nginx example)
+
+Same auth.ts as above, plus nginx config:
+
+```nginx
+location / {
+    proxy_pass http://localhost:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
 
-### Edge Case: dailyTarget vs scheduledCount
+### Force Specific URL (if needed)
 
-**Potential bug identified:** If `dailyTarget = 3` but only 2 tasks are scheduled on a WORKWEEK Saturday (which has 0 scheduled tasks), what happens?
+If you ever need to force a specific URL (not recommended for HabitStreak's use case):
 
-Current logic: `completedCount >= dailyTarget` is evaluated after checking `scheduledCount === 0`.
-
-**But consider:** What if user has:
-- 5 tasks total (3 WORKWEEK, 2 ALL_WEEK)
-- dailyTarget = 3
-- It's Saturday
-
-Saturday has 2 scheduled tasks (the ALL_WEEK ones). User completes both. Is Saturday successful?
-- `scheduledCount = 2` (not 0, so day is evaluated)
-- `completedCount = 2`
-- `dailyTarget = 3`
-- `2 >= 3` is FALSE -> streak broken!
-
-**This may be the bug.** User completed all scheduled tasks but still failed because dailyTarget exceeds scheduledCount.
-
-## Edge Cases
-
-| Edge Case | Recommended Behavior | Rationale |
-|-----------|---------------------|-----------|
-| **No scheduled tasks today** | Skip day entirely | Day is irrelevant to habit tracking; neither helps nor hurts |
-| **scheduledCount < dailyTarget** | SUCCESS if completedCount == scheduledCount | User completed everything available; shouldn't be penalized |
-| **Schedule changes mid-streak** | Use current schedule going forward, historical data uses historical schedule | Prevents retroactive streak breaks |
-| **Task deleted mid-streak** | Historical check-ins remain valid | Completed work should count |
-| **Task added mid-streak** | Only affects future days | No retroactive requirements |
-| **Timezone: user travels** | Use configured timezone (Europe/Amsterdam for HabitStreak) | Consistency over accuracy |
-| **Midnight boundary** | Optional: grace period (3-6 hours) | Prevents losing streaks from being minutes late |
-| **DST transitions** | Use timezone-aware date library | 23/25 hour days can break naive date math |
-
-### Schedule Changes Mid-Streak
-
-**Recommended approach:** Calculate streak using task schedules as they were when completions occurred.
-
-However, this requires storing historical schedule data, which adds complexity. A simpler approach:
-- Use current task schedules for all calculations
-- Accept that changing a task from WORKWEEK to ALL_WEEK might retroactively add "missed" days
-- Document this behavior to users
-
-**Habitica's approach:** Users can manually adjust streaks to account for schedule changes.
-
-### dailyTarget Edge Case: Recommended Fix
-
-```typescript
-// Current (potentially buggy)
-const isSuccessful = completedCount >= dailyTarget
-
-// Recommended fix
-const effectiveTarget = Math.min(dailyTarget, scheduledCount)
-const isSuccessful = completedCount >= effectiveTarget
+```bash
+# .env.production
+AUTH_SECRET=your-secret
+AUTH_URL=https://specific-domain.com
+AUTH_TRUST_HOST=true
 ```
 
-This ensures users aren't penalized when fewer tasks are scheduled than their daily target.
+## Migration Checklist for HabitStreak
 
-## Competitor Analysis
-
-| App | Streak Approach | Schedule Handling | Notable Feature |
-|-----|-----------------|-------------------|-----------------|
-| **Habitica** | Hard streak per task | Non-scheduled days preserve streak | Manual streak adjustment, freeze skills |
-| **Streaks (iOS)** | Hard streak, flexible frequency | "X times per week" - doesn't require specific days | Apple Health integration |
-| **Loop Habit Tracker** | Soft score (exponential smoothing) | Frequency-based (3x/week) | Score doesn't crash from occasional misses |
-| **Duolingo** | Hard streak, daily only | No variable schedules | Streak freeze (proactive protection) |
-| **HabitBoard** | Hard streak with skip feature | Automatic skip days for non-daily habits | Manual skip preserves streak |
-
-### Key Insights from Competitors
-
-1. **Habitica (HIGH confidence):** "A Daily that is not due can be completed to earn the usual rewards, but if it is not completed, it does not cause damage and does not lose its streak."
-
-2. **Loop Habit Tracker (HIGH confidence):** Uses exponential smoothing formula `pow(0.5, frequency / 13.0)` - but this is for habit "strength" not traditional streaks. Non-daily habits are evaluated against their prescribed frequency.
-
-3. **Duolingo (MEDIUM confidence):** Simple daily streak with streak freeze items. No variable schedules - every day requires completion.
-
-4. **HabitBoard (MEDIUM confidence):** Allows manual skip via long-press, which preserves streak. Also supports automatic skip days for habits with weekly goals.
-
-## Algorithm Recommendation for HabitStreak
-
-### Recommended Changes
-
-1. **Fix the dailyTarget edge case:**
-   ```typescript
-   // In calculateCurrentStreak and calculateBestStreak
-   const effectiveTarget = Math.min(dailyTarget, scheduledCount)
-   const isSuccessful = completedCount >= effectiveTarget
-   ```
-
-2. **Keep the skip logic for zero scheduled tasks:**
-   ```typescript
-   if (scheduledCount === 0) {
-     continue  // Already correct
-   }
-   ```
-
-3. **Consider adding streak freeze feature (future):**
-   - Schema already has `streakFreezes` field
-   - Proactive (must be purchased/earned before miss)
-   - Automatically consumed on first eligible miss
-
-### Full Corrected Algorithm
-
-```typescript
-export async function calculateCurrentStreak(userId: string): Promise<number> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { dailyTarget: true },
-  })
-  if (!user) return 0
-
-  const dailyTarget = user.dailyTarget
-  const today = getTodayInAmsterdam()
-
-  const tasks = await prisma.task.findMany({
-    where: { userId, isActive: true },
-    select: { id: true, schedulePreset: true, daysOfWeek: true },
-  })
-
-  const last365Days = getLastNDays(365)
-  const checkIns = await prisma.checkIn.findMany({
-    where: { userId, date: { in: last365Days } },
-    select: { date: true, taskId: true },
-  })
-
-  const completedByDate = new Map<string, number>()
-  for (const checkIn of checkIns) {
-    completedByDate.set(checkIn.date, (completedByDate.get(checkIn.date) || 0) + 1)
-  }
-
-  let streak = 0
-  for (let i = 0; i < last365Days.length; i++) {
-    const date = last365Days[last365Days.length - 1 - i]
-
-    const scheduledCount = tasks.filter((task) =>
-      isTaskScheduledForDate(task.schedulePreset, task.daysOfWeek, date)
-    ).length
-
-    // Skip days with no scheduled tasks
-    if (scheduledCount === 0) {
-      continue
-    }
-
-    const completedCount = completedByDate.get(date) || 0
-
-    // FIX: Use effective target (can't require more than scheduled)
-    const effectiveTarget = Math.min(dailyTarget, scheduledCount)
-    const isSuccessful = completedCount >= effectiveTarget
-
-    if (isSuccessful) {
-      streak++
-    } else {
-      break
-    }
-  }
-
-  return streak
-}
-```
-
-### Why This Fix Works
-
-| Scenario | Before Fix | After Fix |
-|----------|------------|-----------|
-| Saturday, 2 ALL_WEEK tasks, dailyTarget=3, completed=2 | FAIL (2 < 3) | SUCCESS (2 >= min(3,2)=2) |
-| Saturday, 0 tasks scheduled, dailyTarget=3 | SKIP | SKIP (unchanged) |
-| Monday, 5 tasks scheduled, dailyTarget=3, completed=3 | SUCCESS | SUCCESS (unchanged) |
-| Monday, 5 tasks scheduled, dailyTarget=3, completed=2 | FAIL | FAIL (unchanged) |
-
-## Alternative Approaches Considered
-
-### 1. Soft Score (Loop-style)
-
-**Pros:** More forgiving, psychologically healthier
-**Cons:** Harder to understand, different user mental model
-
-**Not recommended** because HabitStreak's existing UI and user expectations are built around traditional streaks.
-
-### 2. Per-Task Streaks (Habitica-style)
-
-**Pros:** More granular tracking
-**Cons:** Major architecture change, different product concept
-
-**Not recommended** for this bug fix; could be future feature.
-
-### 3. Percentage-Based Success
-
-Instead of `completedCount >= target`, use `completedCount / scheduledCount >= percentage`.
-
-**Not recommended** because it changes the meaning of dailyTarget and existing user expectations.
-
-## Open Questions
-
-1. **Historical schedule changes:** Should we store task schedule history to accurately calculate streaks when schedules change?
-   - Current recommendation: Use current schedules; document behavior.
-   - Higher-effort alternative: Store schedule snapshots.
-
-2. **Streak freeze implementation:** When should streak freezes be consumed?
-   - Duolingo: Automatically at end of day
-   - Habitica: Via character skills
-   - Recommendation: Automatic consumption, document in settings
-
-3. **Grace period:** Should completions shortly after midnight count for previous day?
-   - Industry practice: 3-6 hour grace period is common
-   - Current HabitStreak: Strict midnight cutoff
-   - Recommendation: Keep strict for simplicity; consider as future enhancement
+- [ ] Update `next-auth` package to v5 (`npm install next-auth@5`)
+- [ ] Rename `src/lib/auth.ts` exports to v5 pattern
+- [ ] Add `trustHost: true` to auth config
+- [ ] Update environment variables:
+  - [ ] `NEXTAUTH_SECRET` -> `AUTH_SECRET` (or keep both for compatibility)
+  - [ ] Remove `NEXTAUTH_URL` entirely
+  - [ ] Add `AUTH_TRUST_HOST=true`
+- [ ] Update route handler in `src/app/api/auth/[...nextauth]/route.ts`
+- [ ] Update middleware in `src/middleware.ts`
+- [ ] Update auth helpers (`getCurrentUser`, `requireAuth`) to use new `auth()` function
+- [ ] Test login from multiple URLs:
+  - [ ] localhost:3000
+  - [ ] 127.0.0.1:3000
+  - [ ] LAN IP address
+  - [ ] Custom domain (if configured)
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Habitica Wiki - Streaks](https://habitica.fandom.com/wiki/Streaks) - Detailed streak mechanics
-- [Habitica Wiki - Dailies](https://habitica.fandom.com/wiki/Dailies) - Schedule handling rules
-- [Loop Habit Tracker GitHub](https://github.com/iSoron/uhabits) - Algorithm source code
-- [Loop Habit Tracker FAQ](https://github.com/iSoron/uhabits/discussions/689) - Score calculation details
+- [Auth.js Migration Guide](https://authjs.dev/getting-started/migrating-to-v5) - Official v4 to v5 migration documentation
+- [Auth.js Deployment Guide](https://authjs.dev/getting-started/deployment) - Official deployment and AUTH_TRUST_HOST documentation
+- [Auth.js Next.js Reference](https://authjs.dev/reference/nextjs) - Official Next.js integration reference
+- [Auth.js Upgrade Guide](https://authjs.dev/guides/upgrade-to-v5) - Official upgrade guide with environment variable details
 
 ### Secondary (MEDIUM confidence)
-- [Trophy - How to Build a Streaks Feature](https://trophy.so/blog/how-to-build-a-streaks-feature) - Implementation guide
-- [HabitBoard - Streaks and Personal Agency](https://habitboard.app/streaks/) - Skip day philosophy
-- [Duolingo Wiki - Streak](https://duolingo.fandom.com/wiki/Streak) - Freeze mechanics
-- [Zapier - Best Habit Tracker Apps 2025](https://zapier.com/blog/best-habit-tracker-app/) - Industry overview
+- [NextAuth.js v5 Guide - DEV Community](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad) - Community migration examples
+- [GitHub Issue #11452](https://github.com/nextauthjs/next-auth/issues/11452) - AUTH_TRUST_HOST implementation details
+- [GitHub Issue #8281](https://github.com/nextauthjs/next-auth/issues/8281) - NEXTAUTH_URL handling in v5
 
-### Tertiary (LOW confidence)
-- Various app store descriptions and marketing pages
-
-## Metadata
-
-**Confidence breakdown:**
-- Skip non-scheduled days: HIGH - Verified across multiple authoritative sources (Habitica docs, Loop implementation)
-- dailyTarget edge case fix: HIGH - Logical analysis of code + industry patterns
-- Streak freeze patterns: MEDIUM - Based on Duolingo/Habitica but implementation varies
-- Schedule change handling: LOW - Limited authoritative sources; recommendations based on general principles
-
-**Research date:** 2026-01-18
-**Valid until:** ~60 days (streak calculation patterns are stable; no major paradigm shifts expected)
+### Tertiary (LOW confidence - for known issues)
+- [GitHub Discussion #8449](https://github.com/nextauthjs/next-auth/discussions/8449) - Docker internal IP issues and workarounds
+- [GitHub Issue #10928](https://github.com/nextauthjs/next-auth/issues/10928) - Redirect URL issues (edge cases)

@@ -1,175 +1,172 @@
 # Project Research Summary
 
-**Project:** HabitStreak v1.1 Self-Hosting & Polish
-**Domain:** Next.js Docker Deployment + Streak Calculation + CSS Animation
-**Researched:** 2026-01-18
+**Project:** HabitStreak v1.2 Auth.js v5 Migration
+**Domain:** NextAuth v4 → Auth.js v5 Migration
+**Researched:** 2026-01-19
 **Confidence:** HIGH
 
 ## Executive Summary
 
-HabitStreak v1.1 targets three distinct areas: Docker deployment for Synology NAS self-hosting, a streak calculation bug fix, and CSS animation visibility improvements. Research reveals all three areas have well-documented patterns and pitfalls.
+The Auth.js v5 migration is well-documented with clear upgrade paths. The key benefit for HabitStreak is **`trustHost` support** — enabling dynamic URL detection so login works on localhost, LAN IPs, and custom domains without changing `NEXTAUTH_URL`. The migration involves updating the package (`next-auth@beta`), restructuring the auth configuration, and updating all session access patterns from `getServerSession(authOptions)` to `auth()`.
 
-**Docker deployment** follows established patterns: multi-stage Dockerfile with `output: 'standalone'`, `node:22-alpine` base image, PostgreSQL in docker-compose with health checks, and Prisma migrations at container startup. The stack is mature with high confidence recommendations.
+**Critical decision point:** Cookie name changes (`next-auth.*` → `authjs.*`) and JWT encoding changes will log out all existing users. For a small-user-base self-hosted app, accepting one-time re-login is simpler than implementing cookie migration middleware.
 
-**Streak calculation** bug is identified: when `scheduledCount < dailyTarget` (e.g., weekend with 2 ALL_WEEK tasks but dailyTarget=3), users fail days even after completing all scheduled tasks. The fix is `effectiveTarget = Math.min(dailyTarget, scheduledCount)`. The existing skip logic for zero scheduled days is already correct.
-
-**Flame animation visibility** requires increasing shadow opacity from 30% to 50%+, avoiding `drop-shadow` filter (Safari bugs), and ensuring no `shadow-sm` class conflicts with animation end state (documented blink bug).
+**Migration complexity:** MEDIUM — substantial file changes but patterns are well-documented. No data migration needed (user accounts stay intact, only sessions reset).
 
 ## Key Findings
 
-### Recommended Stack (Docker)
+### Recommended Stack (from STACK.md)
 
-Docker deployment is well-established for Next.js + Prisma + PostgreSQL.
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `next-auth` | `@beta` (5.0.0-beta.x) | Core authentication library |
+| `@auth/prisma-adapter` | Latest | Prisma ORM adapter (if needed) |
 
-**Core technologies:**
-- `node:22-alpine`: Active LTS since Oct 2024, ~153MB, optimal for Next.js 15
-- `postgres:16-alpine`: Matches existing dev setup, proven stable, ~82MB
-- `output: 'standalone'` in next.config.js: Reduces image from 1GB+ to ~200MB
+**Installation:** `npm install next-auth@beta`
 
-**Critical patterns:**
-- Multi-stage Dockerfile (4 stages: base, deps, builder, runner)
-- Run `prisma migrate deploy` at container startup (not build time)
-- Use Docker service name `postgres` in DATABASE_URL (not localhost)
-- Health checks on both services with `depends_on: condition: service_healthy`
+**Environment Variables:**
+- `AUTH_SECRET` — Required (replaces `NEXTAUTH_SECRET`, both work)
+- `AUTH_TRUST_HOST=true` — Required for self-hosted deployments
+- `AUTH_URL` — Not needed (auto-detected from request headers)
 
-### Streak Calculation Fix
+### Core Features (from FEATURES.md)
 
-**Root cause identified:** Current algorithm evaluates `completedCount >= dailyTarget` without considering when fewer tasks are scheduled than the target.
+**trustHost — The Primary Benefit:**
+- Auth.js v5 reads `Host` header from each request to construct URLs dynamically
+- Behind proxies, reads `X-Forwarded-Host` and `X-Forwarded-Proto`
+- Eliminates the hardcoded `NEXTAUTH_URL` requirement
+- Works with localhost, LAN IPs, custom domains simultaneously
 
-**Scenario that fails:**
-- Saturday with 2 ALL_WEEK tasks (WORKWEEK tasks not scheduled)
-- dailyTarget = 3
-- User completes both tasks
-- Current: `2 >= 3` = FAIL (streak broken)
-- Fixed: `2 >= min(3, 2)` = SUCCESS
+**Multi-URL Behavior:**
+| Scenario | v4 (Current) | v5 with trustHost |
+|----------|--------------|-------------------|
+| localhost:3000 | Works if URL matches | Works automatically |
+| 192.168.1.x:3000 | Fails | Works automatically |
+| Custom domain | Fails unless configured | Works automatically |
+| Reverse proxy (HTTPS) | Fails | Works (reads X-Forwarded-Proto) |
 
-**The fix (one line change):**
+### Architecture (from ARCHITECTURE.md)
+
+**File Structure Changes:**
+
+| Current Location | New Location | Change |
+|------------------|--------------|--------|
+| `src/lib/auth.ts` | `src/lib/auth.ts` | Complete rewrite — new export pattern |
+| `src/lib/auth-helpers.ts` | `src/lib/auth-helpers.ts` | Update imports — `auth()` replaces `getServerSession` |
+| `src/app/api/auth/[...nextauth]/route.ts` | Same | Simplify to 2-line re-export |
+| `src/middleware.ts` | Same | Rewrite — use `auth` export |
+| N/A | `src/lib/auth.config.ts` | NEW — Edge-compatible config for middleware |
+
+**Key Pattern Changes:**
+
 ```typescript
-// Current
-const isSuccessful = completedCount >= dailyTarget
+// BEFORE (v4)
+import { getServerSession } from 'next-auth'
+import { authOptions } from './auth'
+const session = await getServerSession(authOptions)
 
-// Fixed
-const effectiveTarget = Math.min(dailyTarget, scheduledCount)
-const isSuccessful = completedCount >= effectiveTarget
+// AFTER (v5)
+import { auth } from './auth'
+const session = await auth()
 ```
 
-### Animation Visibility
+### Critical Pitfalls (from PITFALLS.md)
 
-**Current issue:** Flame glow uses `rgba(249, 115, 22, 0.3)` — only 30% opacity, barely visible on mobile in daylight.
+| Pitfall | Risk | Mitigation |
+|---------|------|------------|
+| **P1: Cookie name change** | HIGH — All users logged out | Accept re-login or implement migration |
+| **P2: JWT encoding change** | HIGH — Old tokens invalid | Accept re-login (simpler for small user base) |
+| **P3: `withAuth` removed** | BUILD FAIL | Rewrite middleware |
+| **P4: `getServerSession` removed** | BUILD FAIL | Replace with `auth()` |
+| **P6: `req` parameter change** | MEDIUM — Rate limiting affected | Investigate alternative approach |
 
-**Recommendations:**
-- Increase opacity to 0.5-0.6
-- Replace `drop-shadow` filter with `box-shadow` (Safari compatibility)
-- Fix documented blink bug: remove `shadow-sm` class during animation
-- Keep all animation changes within existing reduced-motion media query
-
-### Critical Pitfalls
-
-Top pitfalls to avoid in implementation:
-
-1. **Missing `output: 'standalone'`** — Current next.config.js lacks this. Image will be 1GB+ without it.
-2. **DATABASE_URL at build time** — Prisma needs a dummy URL during `next build` to parse schema.
-3. **Container uses localhost** — DATABASE_URL must use service name `postgres`, not `localhost`.
-4. **dailyTarget > scheduledCount** — The main streak bug. Fix with `Math.min()`.
-5. **Shadow opacity too low** — 30% is invisible. Use 50%+ for visibility.
-6. **`shadow-sm` conflicts with animation** — Causes visual blink at animation end.
+**Recommended approach for HabitStreak:** Accept one-time re-login after migration. The user base is small (self-hosted), and cookie migration adds significant complexity for minimal benefit.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Docker Deployment
-**Rationale:** Self-contained deliverable, well-documented patterns, prerequisite for self-hosting goal
-**Delivers:** Dockerfile, docker-compose.prod.yml, health endpoint, deployment docs
-**Addresses:** Self-hosting on Synology NAS
-**Avoids:** Pitfalls D1-D8 (standalone output, Prisma generation, migrations, health checks)
+### Phase 1: Auth.js v5 Migration
 
-**Tasks:**
-1. Add `output: 'standalone'` to next.config.js
-2. Create `/api/health` endpoint
-3. Create `.dockerignore`
-4. Create multi-stage Dockerfile
-5. Create docker-compose.prod.yml with PostgreSQL
-6. Create .env.production.example template
-7. Test locally with docker-compose
-8. Document Synology deployment steps
+**Rationale:** Single cohesive migration — splitting would leave auth in broken state between phases.
 
-### Phase 2: Streak Calculation Fix
-**Rationale:** Small, focused bug fix with clear solution from research
-**Delivers:** Fixed streak calculation, unit tests for edge cases
-**Addresses:** Weekend/weekday task mismatch bug
-**Avoids:** Pitfalls S1, S5 (variable schedule semantics, daily target mismatch)
+**Delivers:**
+- Auth.js v5 with `trustHost` support
+- Login works on any URL without config changes
+- Existing auth functionality preserved
+- Updated middleware and helpers
 
-**Tasks:**
-1. Add unit tests for WORKWEEK/WEEKEND edge cases
-2. Fix `calculateCurrentStreak` with effectiveTarget
-3. Fix `calculateBestStreak` with same pattern
-4. Verify timezone handling (TZ=Europe/Amsterdam)
-5. Test DST edge cases
+**Tasks (suggested order):**
+1. Install `next-auth@beta` package
+2. Create `auth.config.ts` (edge-compatible config)
+3. Rewrite `auth.ts` with new export pattern
+4. Update API route handler
+5. Update middleware
+6. Update `auth-helpers.ts`
+7. Update environment variables
+8. Update type declarations
+9. Test all auth flows
 
-### Phase 3: Flame Animation Polish
-**Rationale:** Visual improvement, existing debug research available
-**Delivers:** More visible flame animation, fixed blink bug
-**Addresses:** "Flame animation not visible enough" feedback
-**Avoids:** Pitfalls A1-A6 (Safari bugs, opacity, shadow conflicts)
+**Addresses:**
+- Multi-URL login issue (v1.2 core goal)
+- Future-proofs auth stack
 
-**Tasks:**
-1. Increase flame glow opacity from 30% to 50%
-2. Replace `drop-shadow` with `box-shadow` if needed
-3. Fix animate-glow blink bug (shadow-sm conflict)
-4. Verify prefers-reduced-motion support
-5. Test on iOS Safari
+**Avoids:**
+- P1/P2: Accepts re-login (simpler than cookie migration)
+- P3: Middleware rewrite included
+- P4: getServerSession replacement included
 
 ### Phase Ordering Rationale
 
-- **Docker first:** Enables deployment/testing workflow. No dependencies on other features.
-- **Streak fix second:** Can be developed and tested locally or in Docker. Clear specification from research.
-- **Animation last:** Purely visual polish. Lowest priority, can be tested in any environment.
+**Single phase recommended:** Auth migration is atomic — cannot be split without breaking auth. All file changes depend on each other.
+
+**Why not split:**
+- Package upgrade breaks existing imports immediately
+- Middleware can't work without new config
+- API route depends on new exports
+- Helpers depend on new `auth()` function
 
 ### Research Flags
 
-Phases that may need deeper research during planning:
-- **Phase 1 (Docker):** Synology-specific reverse proxy configuration if HTTPS needed — not deeply researched
+| Phase | Flag | Reason |
+|-------|------|--------|
+| Auth Migration | SKIP RESEARCH | Research complete — patterns clear |
+| Auth Migration | SPIKE NEEDED | `req` parameter for rate limiting — verify actual v5 behavior |
 
-Phases with standard patterns (skip research-phase):
-- **Phase 2 (Streak):** Algorithm is clear, implementation is straightforward
-- **Phase 3 (Animation):** Existing debug files document the issues
+**Spike details:** Current `authorize` callback uses `req` parameter to extract client IP for rate limiting. v5 changed this pattern. During implementation, verify how to access request headers and update `ip-utils.ts` accordingly.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack (Docker) | HIGH | Official Next.js and Prisma documentation |
-| Architecture (Docker) | HIGH | Multi-stage pattern is well-established |
-| Features (Streak) | HIGH | Bug identified, fix verified against industry patterns |
-| Pitfalls (Docker) | HIGH | Well-documented in official sources |
-| Pitfalls (Streak) | MEDIUM | Based on code analysis, needs test verification |
-| Pitfalls (Animation) | HIGH | Documented in project debug files + MDN |
+| Stack (packages, versions) | HIGH | Official Auth.js documentation |
+| Features (trustHost) | HIGH | Official deployment docs + GitHub issues |
+| Architecture (file structure) | HIGH | Official migration guide + examples |
+| Pitfalls (breaking changes) | HIGH | Official docs + community verification |
+| Rate limiting in v5 | MEDIUM | Needs hands-on verification |
 
 **Overall confidence:** HIGH
 
-### Gaps to Address
+### Gaps to Address During Implementation
 
-- **Synology reverse proxy:** HTTPS termination not deeply researched. Handle during implementation if needed.
-- **Target Synology model:** Need to confirm CPU architecture (amd64 assumed for Plus series).
-- **Streak freeze feature:** Schema has `streakFreezes` field but implementation deferred (out of scope for v1.1).
+1. **Rate limiting request access:** Verify how `authorize` callback accesses request headers in v5
+2. **Split config necessity:** May not need `auth.config.ts` if not using database adapter
+3. **Error message handling:** Dutch error messages may need adjustment for v5 error flow
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Next.js Official Docker Example](https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile)
-- [Prisma Docker Guide](https://www.prisma.io/docs/guides/docker)
-- [Habitica Wiki - Streaks](https://habitica.fandom.com/wiki/Streaks)
-- [Loop Habit Tracker Source](https://github.com/iSoron/uhabits)
+- [Auth.js Migration Guide](https://authjs.dev/getting-started/migrating-to-v5)
+- [Auth.js Upgrade Guide](https://authjs.dev/guides/upgrade-to-v5)
+- [Auth.js Edge Compatibility](https://authjs.dev/guides/edge-compatibility)
+- [Auth.js Credentials Provider](https://authjs.dev/getting-started/authentication/credentials)
+- [Auth.js Next.js Reference](https://authjs.dev/reference/nextjs)
 
 ### Secondary (MEDIUM confidence)
-- [Marius Hosting - Synology Docker Guides](https://mariushosting.com/category/synology-docker/)
-- [Trophy - How to Build Streaks](https://trophy.so/blog/how-to-build-a-streaks-feature)
-- [Josh Comeau - Designing Shadows](https://www.joshwcomeau.com/css/designing-shadows/)
-
-### Tertiary (LOW confidence)
-- Project debug files: `.planning/debug/*.md` — local analysis, high relevance but untested fixes
+- [DEV.to Migration Guide](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad)
+- [Medium: Migration Without Logout](https://medium.com/@sajvanleeuwen/migrating-from-nextauth-v4-to-auth-js-v5-without-logging-out-users-c7ac6bbb0e51)
+- [CodeVoweb Next.js 15 + NextAuth v5](https://codevoweb.com/how-to-set-up-next-js-15-with-nextauth-v5/)
 
 ---
-*Research completed: 2026-01-18*
+*Research completed: 2026-01-19*
 *Ready for roadmap: yes*

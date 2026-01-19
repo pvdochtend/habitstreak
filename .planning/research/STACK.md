@@ -1,391 +1,294 @@
-# Stack Research
+# Stack Research: Auth.js v5 Migration
 
-**Domain:** Next.js Docker Deployment (Self-hosting on Synology NAS)
-**Researched:** 2026-01-18
-**Confidence:** HIGH
+**Researched:** 2026-01-19
+**Domain:** Authentication - NextAuth v4 to Auth.js v5 Migration
+**Confidence:** HIGH (verified via official Auth.js documentation)
 
 ## Summary
 
-Docker deployment for Next.js 15 + Prisma + PostgreSQL follows a well-established pattern in 2025/2026: multi-stage builds with standalone output mode, Alpine-based images for small footprint, and docker-compose for service orchestration. The key considerations for Synology NAS are: x86_64 architecture requirement (Intel/AMD CPUs only), Container Manager as the deployment interface, and proper volume mounting for data persistence.
+Auth.js v5 (formerly NextAuth.js v5) is the next major version of the authentication library. The package name remains `next-auth` but is installed with the `@beta` tag. The key benefit for HabitStreak is native `trustHost` support via the `AUTH_TRUST_HOST` environment variable, enabling automatic host detection behind reverse proxies without hardcoding `NEXTAUTH_URL`. The migration is straightforward for Credentials+JWT setups: move configuration to a root `auth.ts` file, update imports from `getServerSession(authOptions)` to the unified `auth()` function, and replace the Prisma adapter package.
 
-**Primary recommendation:** Use `node:22-alpine` for Next.js with standalone output mode, `postgres:16-alpine` for the database (staying with current version for stability), multi-stage Dockerfile, and docker-compose.yml with health checks.
+**Primary recommendation:** Install `next-auth@beta` and `@auth/prisma-adapter`. The migration requires updating import paths and configuration structure but preserves existing business logic.
 
-## Recommended Stack
+## Recommended Packages
 
-### Docker Base Images
+### Core
 
-| Image | Version | Purpose | Why Recommended |
-|-------|---------|---------|-----------------|
-| `node:22-alpine` | 22.x LTS | Next.js application | Node 22 is Active LTS (Oct 2024+), Alpine ~153MB, 0 CVEs, optimal for Next.js 15 |
-| `postgres:16-alpine` | 16.x | PostgreSQL database | Matches existing dev setup, proven stable, ~82MB, full ICU locale support |
+| Package | Version | Purpose | Confidence |
+|---------|---------|---------|------------|
+| `next-auth` | `@beta` (5.0.0-beta.x) | Core authentication library for Next.js | HIGH - Official docs specify `npm install next-auth@beta` |
+| `@auth/prisma-adapter` | Latest | Database adapter for Prisma ORM | HIGH - Replaces deprecated `@next-auth/prisma-adapter` |
 
-**Node.js version rationale:**
-- Node 22 entered Active LTS in October 2024, recommended for production
-- Prisma 5.x (current) supports Node 18+; Prisma 6/7 requires Node 20+
-- Alpine variant is ~82% smaller than full Debian image
-- `libc6-compat` package needed for some native modules
+### Installation Command
 
-**PostgreSQL version rationale:**
-- PostgreSQL 16 matches existing docker-compose.yml (consistency)
-- PostgreSQL 17 available but 16 is more battle-tested
-- Alpine variant significantly smaller than Debian (~90MB vs ~400MB)
-- Full ICU locale support since PostgreSQL 15
-
-### docker-compose Configuration
-
-**Production docker-compose.yml pattern:**
-
-```yaml
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: habitstreak-app
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    environment:
-      - DATABASE_URL=postgresql://habitstreak:${POSTGRES_PASSWORD}@db:5432/habitstreak
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - TZ=Europe/Amsterdam
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - habitstreak-network
-
-  db:
-    image: postgres:16-alpine
-    container_name: habitstreak-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: habitstreak
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: habitstreak
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U habitstreak -d habitstreak']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - habitstreak-network
-
-volumes:
-  postgres_data:
-
-networks:
-  habitstreak-network:
-    driver: bridge
+```bash
+npm install next-auth@beta @auth/prisma-adapter
+npm uninstall @next-auth/prisma-adapter  # If previously installed (HabitStreak does not have this)
 ```
 
-**Key configuration points:**
-1. **Health checks:** PostgreSQL must be healthy before app starts (prevents migration failures)
-2. **Named network:** Enables container-to-container communication via service names
-3. **Named volume:** `postgres_data` persists database across container recreations
-4. **Restart policy:** `unless-stopped` ensures service recovery after NAS reboot
-5. **Environment variables:** Passed at runtime (not baked into image)
+### What NOT to Install
 
-### Dockerfile (Multi-Stage Build)
+| Package | Status | Reason |
+|---------|--------|--------|
+| `@auth/core` | DO NOT INSTALL | Internal dependency; users should never interact with it directly |
+| `@next-auth/prisma-adapter` | DEPRECATED | Old scope; replaced by `@auth/prisma-adapter` |
 
-**Production Dockerfile pattern:**
+### Version Status Notes
 
-```dockerfile
-# syntax=docker.io/docker/dockerfile:1
+- **Stable v5 not yet released:** As of January 2026, Auth.js v5 remains in beta (v5.0.0-beta.x series)
+- **Production-ready:** Despite beta tag, widely used in production; December 2025 articles confirm stability
+- **HabitStreak's current stack:** `next-auth@4.24.11` with no separate adapter package (Credentials-only)
 
-FROM node:22-alpine AS base
+## Migration Notes
 
-# ══════════════════════════════════════════════════════════════
-# Dependencies stage - install only production dependencies
-# ══════════════════════════════════════════════════════════════
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+### Package Changes
 
-COPY package.json package-lock.json ./
-RUN npm ci
+| v4 Package | v5 Package | Notes |
+|------------|------------|-------|
+| `next-auth` | `next-auth@beta` | Same package, beta tag for v5 |
+| `@next-auth/prisma-adapter` | `@auth/prisma-adapter` | New scope (HabitStreak doesn't use adapters currently) |
 
-# ══════════════════════════════════════════════════════════════
-# Builder stage - build the application
-# ══════════════════════════════════════════════════════════════
-FROM base AS builder
-WORKDIR /app
+### Import Path Changes
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+| Context | v4 (Current HabitStreak) | v5 (After Migration) |
+|---------|--------------------------|----------------------|
+| Config type | `import { NextAuthOptions } from 'next-auth'` | `import { NextAuthConfig } from 'next-auth'` |
+| Get session (Server Components) | `import { getServerSession } from 'next-auth'` + `getServerSession(authOptions)` | `import { auth } from '@/auth'` + `auth()` |
+| Credentials provider | `import CredentialsProvider from 'next-auth/providers/credentials'` | `import Credentials from 'next-auth/providers/credentials'` |
+| Client-side signIn/signOut | `import { signIn, signOut } from 'next-auth/react'` | Same (unchanged) |
+| Middleware | `import { withAuth } from 'next-auth/middleware'` | `import { auth } from '@/auth'` (use `auth` as middleware) |
 
-# Generate Prisma client
-RUN npx prisma generate
+### Type Declaration Changes
 
-# Build Next.js with standalone output
-ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+| v4 | v5 |
+|----|-----|
+| `declare module 'next-auth'` | Same |
+| `declare module 'next-auth/jwt'` | Same |
+| `NextAuthOptions` | `NextAuthConfig` |
 
-# ══════════════════════════════════════════════════════════════
-# Runner stage - production image
-# ══════════════════════════════════════════════════════════════
-FROM base AS runner
-WORKDIR /app
+### Files That Change
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+| Current File | Migration Action |
+|--------------|------------------|
+| `src/lib/auth.ts` | Move to `auth.ts` (project root), change export pattern |
+| `src/app/api/auth/[...nextauth]/route.ts` | Simplify to `export { handlers as GET, handlers as POST }` |
+| `src/lib/auth-helpers.ts` | Update imports: `auth()` replaces `getServerSession(authOptions)` |
+| `src/types/next-auth.d.ts` | Keep, but verify type names still valid |
+| `src/middleware.ts` | Update to use `auth` export from `@/auth` |
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy built assets
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy Prisma files for migrations
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/prisma ./prisma
-
-USER nextjs
-
-EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Run migrations then start server
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
-```
-
-**Critical requirements:**
-1. **`output: 'standalone'`** must be added to `next.config.js`
-2. **Prisma generate** runs during build (generates client for target platform)
-3. **Prisma migrate deploy** runs at container start (not during build)
-4. **Non-root user** for security (UID 1001 is conventional)
-5. **Static files copied separately** (standalone mode doesn't include them)
-
-### next.config.js Modification
-
-Add standalone output to existing config:
-
-```javascript
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'standalone',  // <-- ADD THIS
-  reactStrictMode: true,
-  // ... rest of existing config
-}
-```
+## Configuration Requirements
 
 ### Environment Variables
 
-**Server-side variables (runtime, via docker-compose):**
+| Variable | v4 (Current) | v5 (After Migration) | Notes |
+|----------|--------------|----------------------|-------|
+| `NEXTAUTH_SECRET` | Required | `AUTH_SECRET` (aliased) | Both work; prefer `AUTH_` prefix going forward |
+| `NEXTAUTH_URL` | Required for production | `AUTH_URL` (optional) | v5 auto-infers from request headers |
+| `AUTH_TRUST_HOST` | N/A | `true` (new) | **KEY BENEFIT**: Enables reverse proxy support without hardcoded URL |
 
-| Variable | Purpose | Generation |
-|----------|---------|------------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@db:5432/dbname` |
-| `NEXTAUTH_SECRET` | JWT encryption key | `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | Canonical app URL | `http://nas-ip:3000` or custom domain |
-| `TZ` | Timezone | `Europe/Amsterdam` (hardcoded) |
-
-**Production .env file pattern:**
+### New Environment Setup
 
 ```bash
-# .env.production (on NAS, not in repo)
-POSTGRES_PASSWORD=<generated-strong-password>
-NEXTAUTH_SECRET=<generated-32-byte-secret>
-NEXTAUTH_URL=http://192.168.1.x:3000
+# .env.local (development)
+AUTH_SECRET="your-32-character-secret-here"
+# AUTH_URL not needed - auto-detected
+
+# .env.production (production with reverse proxy)
+AUTH_SECRET="your-32-character-secret-here"
+AUTH_TRUST_HOST=true
+# AUTH_URL not needed - reads X-Forwarded-Host header
 ```
 
-**Security notes:**
-- `NEXTAUTH_SECRET` and `POSTGRES_PASSWORD` are server-side only (safe at runtime)
-- No `NEXT_PUBLIC_` prefixed variables in this app (no client-side secrets)
-- Never commit production secrets to git
-- Synology supports Docker environment files via Container Manager UI
+### Generate AUTH_SECRET
 
-### Synology NAS Compatibility
-
-**Architecture Requirements:**
-- **Required:** x86_64 (Intel/AMD) CPU
-- **Compatible models:** DS918+, DS920+, DS923+, DS1520+, DS1621+, etc. (Plus series)
-- **NOT compatible:** ARM-based models (DS220j, DS218, DS118) without workarounds
-
-**Container Manager Setup:**
-1. Install "Container Manager" package from Synology Package Center
-2. Upload `docker-compose.yml` as a "Project"
-3. Configure environment variables in Container Manager UI
-4. Mount persistent volume for PostgreSQL data
-
-**Volume Mounting on Synology:**
-```yaml
-volumes:
-  - /volume1/docker/habitstreak/postgres:/var/lib/postgresql/data
+```bash
+# Generate new secret (recommended to generate fresh for migration)
+npx auth secret
+# Or manually:
+openssl rand -base64 33
 ```
 
-Or use Docker named volumes (recommended for portability):
-```yaml
-volumes:
-  postgres_data:
+### Configuration File Structure (v5)
+
+**New file:** `auth.ts` (project root)
+
+```typescript
+import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
+import type { NextAuthConfig } from "next-auth"
+
+const config: NextAuthConfig = {
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        // Your existing authorize logic here
+      },
+    }),
+  ],
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+        token.email = user.email
+      }
+      return token
+    },
+    session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string
+        session.user.email = token.email as string
+      }
+      return session
+    },
+  },
+  trustHost: true, // Enable reverse proxy support
+}
+
+export const { auth, handlers, signIn, signOut } = NextAuth(config)
 ```
 
-**Port Considerations:**
-- Default port 3000 works on most Synology setups
-- If using reverse proxy (Synology's built-in or Traefik), configure accordingly
-- Port 5432 for PostgreSQL should NOT be exposed externally (internal network only)
+**Simplified API route:** `src/app/api/auth/[...nextauth]/route.ts`
 
-**Memory/Resource Limits:**
-For NAS with limited RAM (4-8GB), consider adding resource limits:
-```yaml
-services:
-  app:
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-  db:
-    deploy:
-      resources:
-        limits:
-          memory: 256M
+```typescript
+import { handlers } from "@/auth"
+export const { GET, POST } = handlers
 ```
 
-## bcrypt Native Module Handling
+### TypeScript Configuration
 
-The project uses `bcrypt` (native module). Alpine requires build tools for native compilation.
+No changes required to `tsconfig.json`. Ensure path alias `@/auth` resolves to root `auth.ts`:
 
-**Option A: Rebuild in deps stage (recommended)**
-```dockerfile
-FROM base AS deps
-RUN apk add --no-cache libc6-compat make gcc g++ python3
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-RUN npm rebuild bcrypt --build-from-source
-RUN apk del make gcc g++ python3
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/auth": ["./auth"]  // Add if not using src/auth.ts
+    }
+  }
+}
 ```
 
-**Option B: Use pre-built binaries (bcrypt 4.0.1+)**
-bcrypt 4.0.1+ includes pre-built musl binaries for Alpine. The current project uses `bcrypt: ^5.1.1`, which should work out of the box, but rebuilding is safer.
+**Alternative:** Place `auth.ts` in `src/` and import as `@/auth` without config changes.
 
-## Alternatives Considered
+## trustHost Configuration (Primary Migration Goal)
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| `node:22-alpine` | `node:22-slim` (Debian) | If Alpine causes compatibility issues with native modules |
-| `postgres:16-alpine` | `postgres:17-alpine` | When 17 becomes more battle-tested (mid-2026) |
-| Multi-stage Dockerfile | Single-stage | Only for simpler apps without build step |
-| Prisma migrate deploy | Prisma db push | Never in production (no migration history) |
-| Named Docker volumes | Bind mounts | If you need direct NAS folder access for backups |
+### Why This Matters
+
+HabitStreak's login issue: `NEXTAUTH_URL` must match the exact URL users access the app from. When deployed with Docker/reverse proxy, users may access via:
+- `http://localhost:3000` (direct)
+- `http://192.168.1.x:3000` (LAN IP)
+- `https://habit.example.com` (reverse proxy domain)
+
+**v4 Problem:** Must hardcode one URL; others fail with CSRF/session issues.
+
+**v5 Solution:** `AUTH_TRUST_HOST=true` reads `X-Forwarded-Host` header dynamically.
+
+### Configuration Options
+
+```typescript
+// Option 1: Environment variable (recommended)
+// .env
+AUTH_TRUST_HOST=true
+
+// Option 2: Config file
+export const { auth, handlers } = NextAuth({
+  // ...providers, callbacks, etc.
+  trustHost: true,
+})
+```
+
+### Reverse Proxy Requirements
+
+Ensure reverse proxy forwards these headers:
+
+```nginx
+# Nginx example
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+```
 
 ## What NOT to Use
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `node:22` (full Debian) | 1GB+ image size, unnecessary packages | `node:22-alpine` (~153MB) |
-| `node:20-alpine` | Not Active LTS, Prisma 6/7 requires Node 20.19.0+ | `node:22-alpine` |
-| `npm start` / `yarn start` in CMD | Doesn't handle SIGTERM properly, prevents graceful shutdown | `node server.js` |
-| `prisma migrate dev` in production | Creates migrations, not for production | `prisma migrate deploy` |
-| Baked-in secrets in Dockerfile | Security risk, secrets in image layers | Runtime environment variables |
-| Running as root | Security vulnerability | Non-root user (nextjs:nodejs) |
-| ARM-based Synology NAS | No official Container Manager support | x86_64 Synology (Plus series) |
-| Exposing PostgreSQL port (5432) externally | Security risk | Internal Docker network only |
-| `POSTGRES_HOST_AUTH_METHOD=trust` | No password authentication | Always use strong passwords |
+### Deprecated Patterns
 
-## Prisma Migration Strategy
+| Pattern | Status | Replacement |
+|---------|--------|-------------|
+| `getServerSession(authOptions)` | Deprecated | `auth()` from `@/auth` |
+| `import { ... } from 'next-auth/next'` | Removed | `import { auth } from '@/auth'` |
+| `import { withAuth } from 'next-auth/middleware'` | Removed | Use `auth` export as middleware |
+| `@next-auth/*-adapter` packages | Deprecated | Use `@auth/*-adapter` packages |
+| OAuth 1.0 providers | Removed | Use OAuth 2.0 equivalents |
 
-**Development vs Production:**
+### Common Wrong Choices
 
-| Environment | Command | When |
-|-------------|---------|------|
-| Development | `npx prisma migrate dev` | Creating new migrations locally |
-| Production | `npx prisma migrate deploy` | Applying migrations at container start |
+| Mistake | Why It's Wrong | Correct Approach |
+|---------|----------------|------------------|
+| Installing `@auth/core` directly | Internal package; not for direct use | Only install `next-auth@beta` |
+| Using `next-auth` (no tag) | Gets v4.24.x, not v5 | Use `next-auth@beta` explicitly |
+| Keeping `authOptions` export pattern | v5 doesn't pass config around | Export `auth, handlers, signIn, signOut` from config file |
+| Setting `AUTH_TRUST_HOST=false` | String "false" evaluates to truthy | Omit variable entirely to disable |
 
-**Container startup flow:**
-1. Container starts
-2. `prisma migrate deploy` applies pending migrations
-3. `node server.js` starts Next.js
+### Cookie Name Change
 
-**Rollback strategy:**
-- Prisma doesn't support automatic rollback
-- Create a "down" migration manually if needed
-- Always backup database before migrations
+**Note:** Cookie prefix changes from `next-auth` to `authjs`. Existing sessions will be invalidated on migration - users will need to log in again.
 
-## Startup Script Alternative
+## Edge Runtime Considerations
 
-For more control, use a startup script instead of inline CMD:
+HabitStreak uses Prisma which has edge runtime support as of v5.12.0. However, since HabitStreak uses JWT strategy (not database sessions), edge compatibility is not a concern for the auth middleware.
 
-**docker-entrypoint.sh:**
-```bash
-#!/bin/sh
-set -e
+For Credentials provider with JWT strategy:
+- No database adapter needed for session storage
+- Middleware can run at edge without issues
+- `authorize()` callback runs in Node.js runtime (API route)
 
-echo "Running database migrations..."
-npx prisma migrate deploy
+## Breaking Changes Summary
 
-echo "Starting application..."
-exec node server.js
-```
-
-**Dockerfile CMD:**
-```dockerfile
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
-CMD ["./docker-entrypoint.sh"]
-```
-
-## Image Size Expectations
-
-| Stage | Approximate Size |
-|-------|------------------|
-| Base (node:22-alpine) | ~153MB |
-| Final Next.js image | ~200-250MB |
-| PostgreSQL (16-alpine) | ~82MB |
-| **Total deployment** | ~300-350MB |
-
-Compare to non-optimized: 1GB+ with full Debian images.
+| Change | Impact on HabitStreak | Action Required |
+|--------|----------------------|-----------------|
+| OAuth 1.0 removed | None (Credentials only) | None |
+| Minimum Next.js 14.0 | Compatible (v15.1.3) | None |
+| Cookie prefix `next-auth` -> `authjs` | Users logged out | Accept; users re-login once |
+| `NextAuthOptions` -> `NextAuthConfig` | Type imports | Update type imports |
+| Config export pattern | Major refactor | Move config, change exports |
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Next.js Official Deployment Documentation](https://nextjs.org/docs/app/getting-started/deploying) - Docker support, standalone mode
-- [Next.js Official Docker Example](https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile) - Multi-stage Dockerfile pattern
-- [Prisma Docker Guide](https://www.prisma.io/docs/guides/docker) - Migration strategy, base image selection
-- [PostgreSQL Docker Hub](https://hub.docker.com/_/postgres/) - Official image tags, health checks
+- [Auth.js Migration Guide](https://authjs.dev/getting-started/migrating-to-v5) - Official v4 to v5 migration documentation
+- [Auth.js Installation](https://authjs.dev/getting-started/installation) - Package installation guide
+- [Auth.js Credentials Provider](https://authjs.dev/getting-started/authentication/credentials) - Credentials setup guide
+- [Auth.js Deployment](https://authjs.dev/getting-started/deployment) - trustHost and environment variables
+- [Auth.js Prisma Adapter](https://authjs.dev/getting-started/adapters/prisma) - Prisma adapter configuration
 
 ### Secondary (MEDIUM confidence)
-- [Marius Hosting - Synology Docker Guides](https://mariushosting.com/synology-best-nas-for-docker/) - Synology NAS compatibility, PUID/PGID
-- [Next.js Standalone Mode Medium Article](https://ketan-chavan.medium.com/next-js-15-self-hosting-with-docker-complete-guide-0826e15236da) - Optimization patterns
-- [Snyk - Node.js Docker Image Guide](https://snyk.io/blog/choosing-the-best-node-js-docker-image/) - Alpine vs Slim comparison
+- [DEV.to Migration Guide](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad) - Community migration examples
+- [CodeVoweb Next.js 15 + NextAuth v5 Guide](https://codevoweb.com/how-to-set-up-next-js-15-with-nextauth-v5/) - Next.js 15 specific setup
 
-### Tertiary (LOW confidence - needs validation)
-- Community discussions on bcrypt Alpine compatibility
-- Synology Container Manager ARM workarounds (not recommended for production)
+### Tertiary (LOW confidence)
+- Various GitHub discussions on trustHost issues - Confirm configuration patterns work in practice
 
-## Confidence Assessment
+## Metadata
 
-| Area | Level | Reason |
-|------|-------|--------|
-| Docker base images | HIGH | Official documentation, well-established patterns |
-| Multi-stage build pattern | HIGH | Official Next.js example, widely adopted |
-| Prisma migration strategy | HIGH | Official Prisma documentation |
-| Synology compatibility | MEDIUM | Community sources, not official Synology docs |
-| bcrypt on Alpine | MEDIUM | Known issue, multiple workarounds documented |
-| Resource limits for NAS | LOW | Depends on specific model and other services |
+**Confidence breakdown:**
+- Core packages: HIGH - Official Auth.js documentation
+- Import paths: HIGH - Official migration guide
+- trustHost configuration: HIGH - Official deployment docs + GitHub issue confirmations
+- Cookie name change: MEDIUM - Mentioned in migration guide, needs testing
 
-## Open Questions
-
-1. **Synology reverse proxy integration:** How to configure HTTPS with Synology's built-in reverse proxy or Traefik needs testing on actual hardware.
-
-2. **Backup automation:** Best approach for automated PostgreSQL backups on Synology (pg_dump schedule, Hyper Backup integration) requires hands-on validation.
-
-3. **Update strategy:** How to handle Next.js/Node.js version updates with minimal downtime needs operational procedures.
-
-## Research Date & Validity
-
-**Researched:** 2026-01-18
-**Valid until:** ~2026-04-18 (3 months for stable Docker/Node ecosystem)
-
-Node.js and PostgreSQL LTS cycles are predictable. Next.js standalone mode is stable. Re-research needed only if:
-- Next.js 16 introduces breaking Docker changes
-- Node.js 24 becomes LTS (expected Q4 2026)
-- PostgreSQL 18 releases and you want to upgrade
+**Research date:** 2026-01-19
+**Valid until:** Estimated 60 days (until stable v5 release may change patterns)
