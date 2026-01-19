@@ -65,10 +65,10 @@ Which phases cover which requirements. Updated by create-roadmap.
 | DOCKER-04 | Phase 6 | Complete |
 | DOCKER-05 | Phase 6 | Complete |
 | DOCKER-06 | Phase 6 | Complete |
-| STREAK-01 | Phase 7 | Pending |
-| STREAK-02 | Phase 7 | Pending |
-| STREAK-03 | Phase 7 | Pending |
-| STREAK-04 | Phase 7 | Pending |
+| STREAK-01 | Phase 7 | Complete |
+| STREAK-02 | Phase 7 | Complete |
+| STREAK-03 | Phase 7 | Complete |
+| STREAK-04 | Phase 7 | Complete |
 | ANIM-01 | Phase 8 | Pending |
 | ANIM-02 | Phase 8 | Pending |
 | ANIM-03 | Phase 8 | Pending |
@@ -80,4 +80,4 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 ---
 *Requirements defined: 2026-01-18*
-*Last updated: 2026-01-19 after completing Phase 6*
+*Last updated: 2026-01-19 after completing Phase 7*
