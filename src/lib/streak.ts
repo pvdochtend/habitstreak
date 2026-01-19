@@ -3,6 +3,35 @@ import { getLastNDays, getTodayInAmsterdam } from './dates'
 import { isTaskScheduledForDate } from './schedule'
 
 /**
+ * Determine if a day is successful based on completion vs effective target.
+ *
+ * effectiveTarget = min(dailyTarget, scheduledCount)
+ *
+ * This allows success when fewer tasks are scheduled than the daily target,
+ * e.g., a user with dailyTarget=3 and only 2 ALL_WEEK tasks can still
+ * succeed on weekends (WORKWEEK tasks not scheduled).
+ *
+ * @param completedCount - Number of tasks completed on the day
+ * @param scheduledCount - Number of tasks scheduled for the day
+ * @param dailyTarget - User's daily goal
+ * @returns true if the day counts as successful for streak purposes
+ */
+export function isDaySuccessful(
+  completedCount: number,
+  scheduledCount: number,
+  dailyTarget: number
+): boolean {
+  // Days with no scheduled tasks are not evaluated
+  // (caller should handle this case by skipping the day)
+  if (scheduledCount === 0) {
+    return false
+  }
+
+  const effectiveTarget = Math.min(dailyTarget, scheduledCount)
+  return completedCount >= effectiveTarget
+}
+
+/**
  * Calculate the current streak for a user
  * A streak is consecutive days where completedCount >= dailyTarget
  * Missing a day resets the streak to 0
@@ -77,8 +106,8 @@ export async function calculateCurrentStreak(userId: string): Promise<number> {
       continue
     }
 
-    // Check if this day was successful
-    const isSuccessful = completedCount >= dailyTarget
+    // Check if this day was successful using effective target
+    const isSuccessful = isDaySuccessful(completedCount, scheduledCount, dailyTarget)
 
     if (isSuccessful) {
       streak++
@@ -172,8 +201,8 @@ export async function calculateBestStreak(userId: string): Promise<number> {
       continue
     }
 
-    // Check if successful
-    const isSuccessful = completedCount >= dailyTarget
+    // Check if successful using effective target
+    const isSuccessful = isDaySuccessful(completedCount, scheduledCount, dailyTarget)
 
     if (isSuccessful) {
       currentStreak++

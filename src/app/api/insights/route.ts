@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/auth-helpers'
 import { ApiResponse, InsightsData, DayInsight } from '@/types'
 import { getLastNDays } from '@/lib/dates'
 import { isTaskScheduledForDate } from '@/lib/schedule'
-import { calculateCurrentStreak, calculateBestStreak } from '@/lib/streak'
+import { calculateCurrentStreak, calculateBestStreak, isDaySuccessful } from '@/lib/streak'
 import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         date,
         completedCount,
         scheduledCount,
-        isSuccessful: completedCount >= dailyTarget,
+        isSuccessful: isDaySuccessful(completedCount, scheduledCount, dailyTarget),
       }
     })
 

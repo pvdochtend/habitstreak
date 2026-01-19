@@ -79,7 +79,7 @@ export interface DayInsight {
   date: string // YYYY-MM-DD
   completedCount: number
   scheduledCount: number
-  isSuccessful: boolean // completedCount >= dailyTarget
+  isSuccessful: boolean // completedCount >= min(dailyTarget, scheduledCount)
 }
 
 export interface InsightsData {
@@ -106,5 +106,5 @@ export interface TodayData {
   completedCount: number
   totalCount: number
   dailyTarget: number
-  isSuccessful: boolean
+  isSuccessful: boolean // completedCount >= min(dailyTarget, totalCount)
 }

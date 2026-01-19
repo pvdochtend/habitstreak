@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth-helpers'
 import { ApiResponse, TodayData } from '@/types'
 import { getTodayInAmsterdam } from '@/lib/dates'
 import { isTaskScheduledForDate } from '@/lib/schedule'
+import { isDaySuccessful } from '@/lib/streak'
 import { logger } from '@/lib/logger'
 
 // ════════════════════════════════════
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
       completedCount,
       totalCount,
       dailyTarget,
-      isSuccessful: completedCount >= dailyTarget,
+      isSuccessful: isDaySuccessful(completedCount, totalCount, dailyTarget),
     }
 
     return NextResponse.json<ApiResponse>({
