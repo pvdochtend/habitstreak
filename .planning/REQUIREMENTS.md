@@ -43,25 +43,25 @@ Requirements for Auth.js v5 migration milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| AUTH-04 | TBD | Pending |
-| AUTH-05 | TBD | Pending |
-| AUTH-06 | TBD | Pending |
-| AUTH-07 | TBD | Pending |
-| AUTH-08 | TBD | Pending |
-| URL-01 | TBD | Pending |
-| URL-02 | TBD | Pending |
-| URL-03 | TBD | Pending |
-| URL-04 | TBD | Pending |
-| URL-05 | TBD | Pending |
-| URL-06 | TBD | Pending |
+| AUTH-01 | Phase 9 | Pending |
+| AUTH-02 | Phase 9 | Pending |
+| AUTH-03 | Phase 9 | Pending |
+| AUTH-04 | Phase 9 | Pending |
+| AUTH-05 | Phase 9 | Pending |
+| AUTH-06 | Phase 9 | Pending |
+| AUTH-07 | Phase 9 | Pending |
+| AUTH-08 | Phase 9 | Pending |
+| URL-01 | Phase 9 | Pending |
+| URL-02 | Phase 9 | Pending |
+| URL-03 | Phase 9 | Pending |
+| URL-04 | Phase 9 | Pending |
+| URL-05 | Phase 9 | Pending |
+| URL-06 | Phase 9 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 14 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-01-19*
