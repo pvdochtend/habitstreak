@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-18)
 
 **Core value:** Make every interaction feel rewarding. When users complete a task, build a streak, or open the app, they should feel a spark of joy.
-**Current focus:** Phase 6 — Docker Deployment
+**Current focus:** Phase 7 — Streak Calculation Fix
 
 ## Current Position
 
-Phase: 6 of 8 (Docker Deployment)
-Plan: 3 of 3 (Deployment Testing & Documentation)
+Phase: 7 of 8 (Streak Calculation Fix)
+Plan: 1 of 1 (isDaySuccessful with effectiveTarget logic)
 Status: Phase complete
-Last activity: 2026-01-19 — Completed 06-03-PLAN.md (Deployment Testing & Documentation)
+Last activity: 2026-01-19 — Completed 07-01-PLAN.md (Streak Calculation Fix)
 
-Progress: ███████░░░ 72% (18/25 plans complete)
+Progress: ███████░░░ 76% (19/25 plans complete)
 
 ## Milestone History
 
@@ -29,9 +29,10 @@ Progress: ███████░░░ 72% (18/25 plans complete)
 - Average duration: ~10 minutes per plan
 
 **v1.1 In Progress:**
-- Plans completed: 3
-- Last plan duration: 28 minutes
+- Plans completed: 4
+- Last plan duration: 10 minutes
 - Phase 6 (Docker Deployment): Complete
+- Phase 7 (Streak Calculation Fix): Complete
 
 ## Accumulated Context
 
@@ -51,13 +52,16 @@ All v1.0 decisions marked with outcomes.
 - **Prisma CLI path in standalone** (06-03): Use node_modules/prisma/build/index.js for migrations in standalone build
 - **Health check IP address** (06-03): Use 127.0.0.1 instead of localhost for Alpine wget IPv6 compatibility
 - **Synology deployment options** (06-03): Document both Container Manager (GUI) and SSH (CLI) paths for different skill levels
+- **Pure function extraction** (07-01): Extract isDaySuccessful as pure function rather than inline formula for testability
+- **effectiveTarget formula** (07-01): Use min(dailyTarget, scheduledCount) to allow success on low-scheduled days
+- **Zero-scheduled handling** (07-01): Return false for scheduledCount === 0, caller skips with continue
 
 ### Pending Todos
 
 1. **Streak calculation wrong for weekend with weekday tasks** (2026-01-18)
    - Area: ui
    - File: `.planning/todos/pending/2026-01-18-streak-calculation-weekend-weekday-mismatch.md`
-   - **Addressed by:** Phase 7 (STREAK-01 through STREAK-04)
+   - **Status:** ✅ RESOLVED in Phase 7 Plan 01 (07-01-SUMMARY.md)
 
 2. **Make flame animation more visible/bolder** (2026-01-18)
    - Area: ui
@@ -71,9 +75,9 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-19
-Stopped at: Completed 06-03-PLAN.md (Deployment Testing & Documentation)
+Stopped at: Completed 07-01-PLAN.md (Streak Calculation Fix)
 Resume file: None
-Next: Phase 7 (Streak Logic Fixes)
+Next: Phase 8 (UI Animation Improvements)
 
 ---
-*Last updated: 2026-01-19 after completing 06-03-PLAN.md*
+*Last updated: 2026-01-19 after completing 07-01-PLAN.md*
