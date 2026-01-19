@@ -21,6 +21,12 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
   const [isAnimating, setIsAnimating] = useState(false)
   const [localIsCompleted, setLocalIsCompleted] = useState(task.isCompleted)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const hasMounted = useRef(false)
+
+  // Track initial mount to prevent animation re-triggering on data refresh
+  useEffect(() => {
+    hasMounted.current = true
+  }, [])
 
   // Sync local state with props when task.isCompleted changes
   useEffect(() => {
@@ -82,7 +88,8 @@ export function TodayTaskItem({ task, date, onToggle }: TodayTaskItemProps) {
       onClick={handleToggle}
       disabled={isLoading}
       className={cn(
-        'w-full flex items-center gap-4 p-4 rounded-lg border touch-target animate-slide-up',
+        'w-full flex items-center gap-4 p-4 rounded-lg border touch-target',
+        !hasMounted.current && 'animate-slide-up',
         'task-item-hover hover:shadow-[0_0_15px_-3px_hsl(var(--primary)/0.4)] active:scale-[0.98]',
         'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
