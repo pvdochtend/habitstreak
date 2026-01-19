@@ -70,12 +70,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can log in via LAN IP address and session persists
   4. User can log in via custom domain (if configured) and session persists
   5. All existing auth functionality works (login, logout, protected routes)
-**Research**: Unlikely (research complete — see .planning/research/)
-**Plans**: TBD
+**Research**: Complete (see .planning/research/)
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 09-01: TBD (package upgrade, config rewrite)
-- [ ] 09-02: TBD (helpers/middleware update, testing)
+- [ ] 09-01: Package + Configuration (wave 1)
+- [ ] 09-02: Integration + Verification (wave 2)
 
 ## Progress
 
@@ -92,8 +92,8 @@ Phases execute in numeric order: 9 → 9.1 (if inserted) → 10
 | 6. Docker Deployment | v1.1 | 2/2 | Complete | 2026-01-19 |
 | 7. Streak Fix | v1.1 | 1/1 | Complete | 2026-01-19 |
 | 8. Animation Polish | v1.1 | 1/1 | Complete | 2026-01-19 |
-| 9. Auth.js v5 | v1.2 | 0/TBD | Not started | - |
+| 9. Auth.js v5 | v1.2 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-19 after v1.2 requirements defined*
+*Last updated: 2026-01-19 after phase 9 planning*
