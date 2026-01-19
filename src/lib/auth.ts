@@ -1,5 +1,5 @@
-import { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import NextAuth from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcrypt'
 import { prisma } from './prisma'
 import { AuthUser } from '@/types'
@@ -13,23 +13,25 @@ import {
   RATE_LIMIT_CONFIG,
   DUTCH_ERRORS,
 } from './rate-limit'
+import authConfig from './auth.config'
 
-export const authOptions: NextAuthOptions = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email en wachtwoord zijn verplicht')
         }
 
         const email = credentials.email.toLowerCase()
-        const clientIp = getClientIp(req as any)
-        const userAgent = req?.headers?.['user-agent']
+        const clientIp = getClientIp(request as any)
+        const userAgent = request?.headers?.get('user-agent') ?? undefined
 
         try {
           // ════════════════════════════════════════════════════════════
@@ -134,29 +136,4 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: '/login',
-    error: '/login',
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.email = user.email
-      }
-      return token
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.email = token.email as string
-      }
-      return session
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-}
+})
