@@ -156,6 +156,41 @@ The script automatically:
 - Runs health checks
 - Shows deployment status
 
+### Scheduled Updates (Synology)
+
+For automated updates via Synology Task Scheduler:
+
+1. **Control Panel → Task Scheduler → Create → Scheduled Task → User-defined script**
+
+2. **Configure Task:**
+   - **General:**
+     - Task name: `HabitStreak Auto-Update`
+     - User: `root` (required for Docker commands)
+     - Enabled: ✓
+
+   - **Schedule:**
+     - Run on: Choose your preferred schedule
+       - Example: Weekly on Sunday at 3:00 AM
+       - Or: Daily at specific time
+     - Frequency: Run on the following days (select days)
+
+   - **Task Settings:**
+     - User-defined script:
+       ```bash
+       bash /volume1/docker/habitstreak/deploy.sh --yes
+       ```
+     - Send run details by email: ✓ (recommended to get deployment reports)
+
+3. **Manual Trigger:**
+   - You can also run the task manually from the Task Scheduler UI
+   - Select the task → Click "Run"
+
+**Notes:**
+- The `--yes` flag skips the confirmation prompt for automated execution
+- Backups are created automatically before each deployment
+- Check email reports or `/volume1/docker/habitstreak/backups/` for backup history
+- View logs via Task Scheduler → Select task → Action → View Result
+
 ### Manual Update
 
 If you prefer manual control:

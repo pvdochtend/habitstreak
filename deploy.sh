@@ -193,6 +193,7 @@ show_logs() {
 deploy() {
     local version=$1
     local skip_backup=$2
+    local non_interactive=$3
 
     print_header "HabitStreak Deployment"
 
@@ -205,13 +206,17 @@ deploy() {
         print_info "Target: $version"
     fi
 
-    echo ""
-    read -p "Continue with deployment? (y/n) " -n 1 -r
-    echo ""
+    if [ "$non_interactive" != "yes" ]; then
+        echo ""
+        read -p "Continue with deployment? (y/n) " -n 1 -r
+        echo ""
 
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        print_warning "Deployment cancelled"
-        exit 0
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_warning "Deployment cancelled"
+            exit 0
+        fi
+    else
+        print_info "Running in non-interactive mode"
     fi
 
     # Pre-flight checks
@@ -250,6 +255,7 @@ deploy() {
 main() {
     local version=""
     local skip_backup=""
+    local non_interactive=""
     local show_help=false
 
     while [[ $# -gt 0 ]]; do
@@ -261,6 +267,10 @@ main() {
                 ;;
             --skip-backup)
                 skip_backup="skip"
+                shift
+                ;;
+            --yes|-y)
+                non_interactive="yes"
                 shift
                 ;;
             --status)
@@ -296,6 +306,8 @@ Arguments:
 
 Options:
   --skip-backup     Skip database backup before deployment
+  --yes, -y         Non-interactive mode (no confirmation prompt)
+                    Useful for scheduled tasks and automation
   --backup-only     Create backup without deploying
   --status          Show container status
   --logs            Show recent application logs
@@ -305,9 +317,14 @@ Examples:
   ./deploy.sh                    # Deploy latest from current branch
   ./deploy.sh v1.1               # Deploy version 1.1
   ./deploy.sh v1.2 --skip-backup # Deploy v1.2 without backup
+  ./deploy.sh --yes              # Deploy latest without confirmation
+  ./deploy.sh v1.2 -y            # Deploy v1.2 without confirmation
   ./deploy.sh --backup-only      # Create backup only
   ./deploy.sh --status           # Show container status
   ./deploy.sh --logs             # Show recent logs
+
+Scheduled Task Example (Synology):
+  bash /volume1/docker/habitstreak/deploy.sh --yes
 
 Backups are stored in: $SCRIPT_DIR/backups/
 Last 5 backups are kept automatically.
@@ -316,7 +333,7 @@ EOF
         exit 0
     fi
 
-    deploy "$version" "$skip_backup"
+    deploy "$version" "$skip_backup" "$non_interactive"
 }
 
 # Run main function
