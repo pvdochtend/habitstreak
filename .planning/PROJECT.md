@@ -1,16 +1,8 @@
 # HabitStreak
 
-## Current Milestone: v1.2 Auth.js v5 Migration
+## Current Milestone: Planning Next Version
 
-**Goal:** Migrate from NextAuth v4 to Auth.js v5 to enable dynamic URL detection and future-proof the authentication stack.
-
-**Target features:**
-- Auth.js v5 migration with `trustHost` support
-- Dynamic URL detection (localhost, IP, domain, reverse proxy — no config changes needed)
-- Maintained existing auth functionality (credentials provider, JWT sessions)
-- E2E test coverage for multi-URL authentication
-
-**Status:** Ready to define requirements
+**Status:** v1.2 shipped 2026-01-23. Ready to discuss next milestone goals.
 
 ## What This Is
 
@@ -53,15 +45,15 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 - ✓ Streak calculation fix — effectiveTarget formula corrects weekend/weekday task mismatch edge case — v1.1
 - ✓ Flame animation visibility — Enhanced glow (50-80% opacity) and eliminated visual blink on completion — v1.1
 
+<!-- v1.2 Auth.js v5 Migration — shipped 2026-01-23 -->
+
+- ✓ Migrate NextAuth v4 → Auth.js v5 — Upgraded to v5.0.0-beta.30 with split configuration pattern — v1.2
+- ✓ Enable trustHost for dynamic URL detection — No hardcoded NEXTAUTH_URL needed — v1.2
+- ✓ Login works on localhost, IP address, domain without config changes — Verified on localhost, 127.0.0.1, LAN IP — v1.2
+- ✓ Existing auth functionality preserved — Zero regression, all rate limiting and validation maintained — v1.2
+
 ### Active
 
-<!-- v1.2 Auth.js v5 Migration -->
-
-- [ ] Migrate NextAuth v4 → Auth.js v5
-- [ ] Enable `trustHost` for dynamic URL detection
-- [ ] Login works on localhost, IP address, domain, and reverse proxy without config changes
-- [ ] Existing auth functionality preserved (credentials provider, JWT sessions, user scoping)
-- [ ] E2E tests verify multi-URL authentication
 
 ### Out of Scope
 
@@ -72,28 +64,26 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 - @tsparticles backgrounds — React 19 compatibility uncertain; CSS approach used instead
 - Share cards — social features deferred
 - iOS scroll-to-top fix — deferred to v1.3; tracked in debug session
-- Test configuration fixes — deferred to v1.3; low priority (Prisma mock + Playwright config)
-- Domain/reverse proxy setup — v1.2 enables capability only; actual setup is deployment task
+- Test configuration fixes — deferred; low priority (Prisma mock + Playwright config)
+- Domain/reverse proxy setup — Code enables capability; actual nginx/traefik setup is deployment task
+- Cookie migration v4→v5 — Users re-login once after v1.2 upgrade; acceptable for small user base
+- OAuth providers — Credentials-only auth sufficient for personal self-hosted app
 
 ## Context
 
-**Current state:** HabitStreak v1.1 ships with Docker self-hosting, streak fix, and animation polish. 5,692 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), comprehensive unit tests for streak logic.
+**Current state:** HabitStreak v1.2 ships with Auth.js v5 dynamic URL detection. 5,676 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), comprehensive unit tests for streak logic.
 
-**Tech stack:** Next.js 15 (standalone output), React 19, TypeScript, Tailwind CSS, shadcn/ui, Prisma, PostgreSQL, Docker.
+**Tech stack:** Next.js 15 (standalone output), React 19, TypeScript, Tailwind CSS, shadcn/ui, Prisma, PostgreSQL, Docker, Auth.js v5 (trustHost-enabled).
 
 **v1.0 delivered (2026-01-18):** Glassmorphism visual identity, full animation foundation, joyful task completion experience, animated streak displays, dynamic backgrounds, consistent glass styling across all screens.
 
 **v1.1 delivered (2026-01-19):** Docker containerization with multi-stage builds, PostgreSQL orchestration, Synology NAS deployment guide (both GUI/CLI paths), fixed streak calculation with isDaySuccessful() pure function, enhanced flame visibility, eliminated animation blink bug.
 
-**Known issues:**
-- iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) — deferred to v1.3
-- Login IP address issue — resolved; solution is Auth.js v5 migration (this milestone)
+**v1.2 delivered (2026-01-23):** Auth.js v5 migration with trustHost support, dynamic URL detection (localhost/IP/domain all work without config), split configuration pattern (edge-compatible auth.config.ts + full auth.ts), zero-regression auth functionality preservation.
 
-**v1.2 context:**
-- NextAuth v4.24.11 chosen in initial commit (Jan 6, 2026) before formal planning
-- v4 lacks `trustHost` feature (Auth.js v5 only), preventing dynamic URL detection
-- Current workaround: set NEXTAUTH_URL manually to match access method
-- Migration will enable login on localhost/IP/domain/reverse proxy without config changes
+**Known issues:**
+- iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) — deferred to future version
+- Cookie collision in dev environment (port 3000 vs 3001 on localhost) — documented in v1.2 audit, workaround: use different domains or stop one instance
 
 ## Constraints
 
@@ -122,6 +112,9 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | effectiveTarget formula | min(dailyTarget, scheduledCount) allows success on low-scheduled days | ✓ Good — fixes critical streak bug |
 | Portal-based dialog rendering | Bypasses PageTransition transform constraints | ✓ Good — fixes positioning issues |
 | Animation-only-on-mount pattern | hasMounted ref prevents re-trigger on data refresh | ✓ Good — eliminates visual blink |
+| Auth.js v5 trustHost | Dynamic URL detection from Host header, no hardcoded NEXTAUTH_URL | ✓ Good — enables self-hosting flexibility |
+| Split auth config pattern | auth.config.ts (edge-compatible) + auth.ts (full with DB) | ✓ Good — proper v5 architecture |
+| auth() function pattern | Replaces getServerSession(authOptions) with simpler auth() call | ✓ Good — cleaner v5 API |
 
 ---
-*Last updated: 2026-01-19 after starting v1.2 milestone*
+*Last updated: 2026-01-23 after v1.2 milestone completion*

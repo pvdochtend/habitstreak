@@ -2,34 +2,35 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-19)
+See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Make every interaction feel rewarding.
-**Current focus:** Phase 9 — Auth.js v5 Migration
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 9 of 9 (Auth.js v5 Migration)
-Plan: 2/2 complete
-Status: Complete
-Last activity: 2026-01-19 — Completed 09-02-PLAN.md
+Phase: None (milestone complete)
+Plan: N/A
+Status: v1.2 milestone complete, ready to plan next version
+Last activity: 2026-01-23 — v1.2 milestone complete
 
-Progress: ██████████ 100% (v1.2)
+Progress: ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 0% (next milestone)
 
 ## Milestone History
 
-- **v1.1 Self-Hosting & Polish** — Shipped 2026-01-19 (Phases 6-8, 5 plans)
-- **v1.0 UI Refresh** — Shipped 2026-01-18 (Phases 1-5, 16 plans)
+- **v1.2 Auth.js v5 Migration** — Shipped 2026-01-23 (Phase 9, 2 plans) - [Archive](milestones/v1.2-ROADMAP.md)
+- **v1.1 Self-Hosting & Polish** — Shipped 2026-01-19 (Phases 6-8, 5 plans) - [Archive](milestones/v1.1-ROADMAP.md)
+- **v1.0 UI Refresh** — Shipped 2026-01-18 (Phases 1-5, 16 plans) - [Archive](milestones/v1.0-ROADMAP.md)
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 23 (across v1.0 + v1.1 + v1.2)
 - Average duration: ~8 min/plan
-- Total execution time: ~3.9 hours
+- Total execution time: ~4.1 hours
 
-**Recent Trend:**
-- v1.2: 2 plans in current session
+**Recent Milestone:**
+- v1.2: 2 plans, 17 days (including research and planning)
 - Trend: Stable
 
 ## Accumulated Context
@@ -38,11 +39,10 @@ Progress: ██████████ 100% (v1.2)
 
 All decisions logged in PROJECT.md Key Decisions table.
 
-Recent decisions affecting current work:
-- Accept one-time user re-login after Auth.js v5 migration (simpler than cookie migration)
-- Use trustHost: true for dynamic URL detection (eliminates need for NEXTAUTH_URL)
-- Split configuration: auth.config.ts (edge) + auth.ts (full with DB)
-- Preserve all existing rate limiting logic during migration
+Most recent decisions (v1.2):
+- trustHost: true for dynamic URL detection (enables self-hosting flexibility)
+- Split auth config pattern (auth.config.ts for edge, auth.ts for full DB access)
+- auth() function pattern replaces getServerSession(authOptions) (cleaner v5 API)
 
 ### Pending Todos
 
@@ -54,9 +54,11 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-19
-Stopped at: Completed Phase 9 (all plans)
+Last session: 2026-01-23
+Stopped at: v1.2 milestone complete
 Resume file: None
 
+Next: Use `/gsd:discuss-milestone` to plan next version
+
 ---
-*Last updated: 2026-01-19 after completing Phase 9*
+*Last updated: 2026-01-23 after v1.2 milestone completion*

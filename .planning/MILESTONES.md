@@ -1,5 +1,32 @@
 # Project Milestones: HabitStreak
 
+## v1.2 Auth.js v5 Migration (Shipped: 2026-01-23)
+
+**Delivered:** Enabled dynamic URL detection for self-hosting, allowing login on localhost, IP addresses, and custom domains without configuration changes.
+
+**Phases completed:** 9 (2 plans total)
+
+**Key accomplishments:**
+
+- Migrated NextAuth v4 → Auth.js v5 - Upgraded to v5.0.0-beta.30 with split configuration pattern (edge-compatible auth.config.ts + full auth.ts)
+- Dynamic URL detection enabled - Configured trustHost: true, eliminating need for hardcoded NEXTAUTH_URL
+- Complete v5 integration - Updated API routes, middleware, and auth helpers to use v5 patterns (handlers export, auth() function, NextAuth(authConfig))
+- Multi-URL authentication verified - Tested and confirmed login works on localhost:3000, 127.0.0.1:3000, and LAN IP 192.168.0.3:3000 with session persistence
+- Zero-regression migration - Preserved all existing auth functionality including rate limiting, credential validation, and protected route handling
+
+**Stats:**
+
+- 18 files modified (+563 insertions / -411 deletions)
+- 5,676 lines of TypeScript/TSX total
+- 1 phase, 2 plans, 8 tasks
+- 17 days from start to ship (2026-01-06 → 2026-01-23)
+
+**Git range:** `027194f` (chore: upgrade to next-auth@beta) → `2dace40` (docs: complete Integration plan)
+
+**What's next:** To be determined in next milestone planning
+
+---
+
 ## v1.1 Self-Hosting & Polish (Shipped: 2026-01-19)
 
 **Delivered:** Enabled self-hosting via Docker while fixing critical streak calculation bug and enhancing flame animation visibility.

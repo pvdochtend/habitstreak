@@ -2,9 +2,9 @@
 
 ## Milestones
 
-- ✅ **v1.0 UI Refresh** - Phases 1-4 (shipped 2026-01-18)
-- ✅ **v1.1 Self-Hosting & Polish** - Phases 5-8 (shipped 2026-01-19)
-- ✅ **v1.2 Auth.js v5 Migration** - Phase 9 (shipped 2026-01-23)
+- ✅ **v1.0 UI Refresh** - Phases 1-4 (shipped 2026-01-18) - [Archive](milestones/v1.0-ROADMAP.md)
+- ✅ **v1.1 Self-Hosting & Polish** - Phases 5-8 (shipped 2026-01-19) - [Archive](milestones/v1.1-ROADMAP.md)
+- ✅ **v1.2 Auth.js v5 Migration** - Phase 9 (shipped 2026-01-23) - [Archive](milestones/v1.2-ROADMAP.md)
 
 ## Phases
 
@@ -56,28 +56,18 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 </details>
 
-## ✅ v1.2 Auth.js v5 Migration (SHIPPED 2026-01-23)
-
-**Milestone Goal:** Enable dynamic URL detection so login works on localhost, LAN IPs, and custom domains without config changes.
+<details>
+<summary>✅ v1.2 Auth.js v5 Migration (Phase 9) - SHIPPED 2026-01-23</summary>
 
 ### Phase 9: Auth.js v5 Migration
 **Goal**: Migrate NextAuth v4 to Auth.js v5 with trustHost support
-**Depends on**: Phase 8 (v1.1 complete)
-**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, AUTH-08, URL-01, URL-02, URL-03, URL-04, URL-05, URL-06
-**Success Criteria** (what must be TRUE):
-  1. User can log in via localhost:3000 and session persists
-  2. User can log in via 127.0.0.1:3000 and session persists
-  3. User can log in via LAN IP address and session persists
-  4. User can log in via custom domain (if configured) and session persists
-  5. All existing auth functionality works (login, logout, protected routes)
-**Research**: Complete (see .planning/research/)
-**Plans**: 2 plans in 2 waves
 **Status**: Complete
-**Completed**: 2026-01-23
 
 Plans:
 - [x] 09-01: Package + Configuration (wave 1)
 - [x] 09-02: Integration + Verification (wave 2)
+
+</details>
 
 ## Progress
 
