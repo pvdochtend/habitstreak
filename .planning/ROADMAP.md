@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 UI Refresh** - Phases 1-4 (shipped 2026-01-18)
 - ✅ **v1.1 Self-Hosting & Polish** - Phases 5-8 (shipped 2026-01-19)
-- 🚧 **v1.2 Auth.js v5 Migration** - Phase 9 (in progress)
+- ✅ **v1.2 Auth.js v5 Migration** - Phase 9 (shipped 2026-01-23)
 
 ## Phases
 
@@ -56,7 +56,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 </details>
 
-## 🚧 v1.2 Auth.js v5 Migration (In Progress)
+## ✅ v1.2 Auth.js v5 Migration (SHIPPED 2026-01-23)
 
 **Milestone Goal:** Enable dynamic URL detection so login works on localhost, LAN IPs, and custom domains without config changes.
 
@@ -72,10 +72,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. All existing auth functionality works (login, logout, protected routes)
 **Research**: Complete (see .planning/research/)
 **Plans**: 2 plans in 2 waves
+**Status**: Complete
+**Completed**: 2026-01-23
 
 Plans:
-- [ ] 09-01: Package + Configuration (wave 1)
-- [ ] 09-02: Integration + Verification (wave 2)
+- [x] 09-01: Package + Configuration (wave 1)
+- [x] 09-02: Integration + Verification (wave 2)
 
 ## Progress
 
@@ -92,8 +94,8 @@ Phases execute in numeric order: 9 → 9.1 (if inserted) → 10
 | 6. Docker Deployment | v1.1 | 2/2 | Complete | 2026-01-19 |
 | 7. Streak Fix | v1.1 | 1/1 | Complete | 2026-01-19 |
 | 8. Animation Polish | v1.1 | 1/1 | Complete | 2026-01-19 |
-| 9. Auth.js v5 | v1.2 | 0/2 | Planned | - |
+| 9. Auth.js v5 | v1.2 | 2/2 | Complete | 2026-01-23 |
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-19 after phase 9 planning*
+*Last updated: 2026-01-23 after phase 9 completion*

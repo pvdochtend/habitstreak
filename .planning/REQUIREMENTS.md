@@ -43,20 +43,20 @@ Requirements for Auth.js v5 migration milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 9 | Pending |
-| AUTH-02 | Phase 9 | Pending |
-| AUTH-03 | Phase 9 | Pending |
-| AUTH-04 | Phase 9 | Pending |
-| AUTH-05 | Phase 9 | Pending |
-| AUTH-06 | Phase 9 | Pending |
-| AUTH-07 | Phase 9 | Pending |
-| AUTH-08 | Phase 9 | Pending |
-| URL-01 | Phase 9 | Pending |
-| URL-02 | Phase 9 | Pending |
-| URL-03 | Phase 9 | Pending |
-| URL-04 | Phase 9 | Pending |
-| URL-05 | Phase 9 | Pending |
-| URL-06 | Phase 9 | Pending |
+| AUTH-01 | Phase 9 | Complete |
+| AUTH-02 | Phase 9 | Complete |
+| AUTH-03 | Phase 9 | Complete |
+| AUTH-04 | Phase 9 | Complete |
+| AUTH-05 | Phase 9 | Complete |
+| AUTH-06 | Phase 9 | Complete |
+| AUTH-07 | Phase 9 | Complete |
+| AUTH-08 | Phase 9 | Complete |
+| URL-01 | Phase 9 | Complete |
+| URL-02 | Phase 9 | Complete |
+| URL-03 | Phase 9 | Complete |
+| URL-04 | Phase 9 | Complete |
+| URL-05 | Phase 9 | Complete |
+| URL-06 | Phase 9 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 14 total
@@ -65,4 +65,4 @@ Requirements for Auth.js v5 migration milestone.
 
 ---
 *Requirements defined: 2026-01-19*
-*Last updated: 2026-01-19 after initial definition*
+*Last updated: 2026-01-23 after Phase 9 completion*
