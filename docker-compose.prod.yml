@@ -9,7 +9,8 @@ services:
       - '3000:3000'
     environment:
       - DATABASE_URL=postgresql://habitstreak:${POSTGRES_PASSWORD:-habitstreak_dev_password}@habitstreak-db:5432/habitstreak
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - AUTH_SECRET=${AUTH_SECRET:-${NEXTAUTH_SECRET}}
+      - AUTH_TRUST_HOST=true
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - TZ=Europe/Amsterdam
     networks:
