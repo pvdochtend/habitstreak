@@ -142,13 +142,13 @@ deploy_containers() {
     print_header "Building and Deploying Containers"
 
     print_info "Stopping existing containers..."
-    docker-compose -f "$COMPOSE_FILE" down
+    docker-compose -f "$COMPOSE_FILE" --env-file .env.production down
 
     print_info "Building Docker images (this may take a few minutes)..."
-    docker-compose -f "$COMPOSE_FILE" build --no-cache
+    docker-compose -f "$COMPOSE_FILE" --env-file .env.production build --no-cache
 
     print_info "Starting containers..."
-    docker-compose -f "$COMPOSE_FILE" up -d
+    docker-compose -f "$COMPOSE_FILE" --env-file .env.production up -d
 
     print_success "Containers deployed"
 }
@@ -180,13 +180,13 @@ wait_for_health() {
 # Show container status
 show_status() {
     print_header "Container Status"
-    docker-compose -f "$COMPOSE_FILE" ps
+    docker-compose -f "$COMPOSE_FILE" --env-file .env.production ps
 }
 
 # Show logs
 show_logs() {
     print_header "Recent Logs"
-    docker-compose -f "$COMPOSE_FILE" logs --tail=20 app
+    docker-compose -f "$COMPOSE_FILE" --env-file .env.production logs --tail=20 app
 }
 
 # Main deployment function
