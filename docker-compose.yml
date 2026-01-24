@@ -3,20 +3,23 @@ services:
     image: postgres:16-alpine
     container_name: habitstreak-db
     restart: unless-stopped
-    ports:
-      - '5432:5432'
     environment:
       POSTGRES_USER: habitstreak
-      POSTGRES_PASSWORD: habitstreak_dev_password
-      POSTGRES_DB: habitstreak_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-habitstreak_dev_password}
+      POSTGRES_DB: habitstreak
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - habitstreak_default
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U habitstreak']
       interval: 10s
       timeout: 5s
       retries: 5
+
+networks:
+  habitstreak_default:
+    external: true
 
 volumes:
   postgres_data:
