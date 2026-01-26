@@ -36,9 +36,14 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        const message = result.error === 'CredentialsSignin'
+        // NextAuth v5 returns error types (not messages) to the client.
+        // 'CredentialsSignin' = explicit credentials error
+        // 'Configuration' = any error thrown in authorize() that isn't client-safe
+        // Other types are possible but rare for credentials flow
+        const isCredentialError = result.error === 'CredentialsSignin' || result.error === 'Configuration'
+        const message = isCredentialError
           ? 'Ongeldige inloggegevens'
-          : result.error
+          : 'Er is een fout opgetreden. Probeer het opnieuw.'
         setError(message)
         setIsLoading(false)
         return
