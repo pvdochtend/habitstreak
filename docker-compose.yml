@@ -19,7 +19,7 @@ services:
 
 networks:
   habitstreak_default:
-    external: true
+    name: habitstreak_default
 
 volumes:
   postgres_data:
