@@ -1,8 +1,13 @@
 # HabitStreak
 
-## Current Milestone: Planning Next Version
+## Current Milestone: v1.3 First Impressions
 
-**Status:** v1.2 shipped 2026-01-23. Ready to discuss next milestone goals.
+**Goal:** Create an inviting entry experience that showcases HabitStreak's playful personality before users even log in.
+
+**Target features:**
+- Landing page with hero section, app preview, features showcase, and signup CTA (glassmorphism design)
+- PWA icon set (144x144, 192x192, 512x512, etc.) to fix manifest 404 errors
+- Login page polish with welcoming message and branding
 
 ## What This Is
 
@@ -54,6 +59,11 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ### Active
 
+<!-- v1.3 First Impressions — targeting completion soon -->
+
+- [ ] Landing page for first-time visitors — hero section with app preview, features display (streaks, tasks, insights), clear signup CTA, glassmorphism design matching existing app aesthetic
+- [ ] PWA icons — complete icon set (144x144, 192x192, 512x512, etc.) to fix manifest 404 errors in console
+- [ ] Login page polish — welcoming message and branding for returning users
 
 ### Out of Scope
 
@@ -117,4 +127,4 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | auth() function pattern | Replaces getServerSession(authOptions) with simpler auth() call | ✓ Good — cleaner v5 API |
 
 ---
-*Last updated: 2026-01-23 after v1.2 milestone completion*
+*Last updated: 2026-01-26 after v1.3 milestone start*
