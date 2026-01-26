@@ -6,7 +6,7 @@ services:
     container_name: habitstreak-app
     restart: unless-stopped
     ports:
-      - '3000:3000'
+      - '${APP_PORT:-3000}:3000'
     environment:
       - DATABASE_URL=postgresql://habitstreak:${POSTGRES_PASSWORD:-habitstreak_dev_password}@habitstreak-db:5432/habitstreak
       - AUTH_SECRET=${AUTH_SECRET:-${NEXTAUTH_SECRET}}
@@ -24,4 +24,4 @@ services:
 
 networks:
   habitstreak_default:
-    external: true
+    name: habitstreak_default

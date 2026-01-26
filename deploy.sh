@@ -77,6 +77,33 @@ check_env() {
     fi
 }
 
+# Start database container
+start_database() {
+    print_header "Starting Database"
+
+    if docker ps --format '{{.Names}}' | grep -q '^habitstreak-db$'; then
+        print_info "Database container already running"
+    else
+        print_info "Starting database container..."
+        docker-compose -f docker-compose.yml --env-file .env.production up -d postgres
+
+        # Wait for database to be ready
+        print_info "Waiting for database to be ready..."
+        local max_attempts=30
+        local attempt=1
+        while [ $attempt -le $max_attempts ]; do
+            if docker exec habitstreak-db pg_isready -U habitstreak > /dev/null 2>&1; then
+                print_success "Database is ready"
+                return 0
+            fi
+            sleep 1
+            attempt=$((attempt + 1))
+        done
+        print_error "Database failed to start"
+        exit 1
+    fi
+}
+
 # Get current version/commit
 get_current_version() {
     local current_tag=$(git describe --tags --exact-match 2>/dev/null || echo "")
@@ -160,7 +187,7 @@ wait_for_health() {
     while [ $attempt -le $max_attempts ]; do
         print_info "Checking health (attempt $attempt/$max_attempts)..."
 
-        if curl -f -s http://localhost:3000/api/health > /dev/null 2>&1; then
+        if curl -f -s http://localhost:${APP_PORT:-3000}/api/health > /dev/null 2>&1; then
             print_success "Application is healthy!"
             return 0
         fi
@@ -221,6 +248,9 @@ deploy() {
     check_docker
     check_env
 
+    # Start database (network auto-created by docker-compose)
+    start_database
+
     # Create backup unless skipped
     if [ "$skip_backup" != "skip" ]; then
         create_backup
@@ -240,7 +270,7 @@ deploy() {
 
         local new_version=$(get_current_version)
         print_info "Deployed version: $new_version"
-        print_info "Access at: http://localhost:3000"
+        print_info "Access at: http://localhost:${APP_PORT:-3000}"
     else
         print_error "Deployment completed but health check failed"
         show_logs
