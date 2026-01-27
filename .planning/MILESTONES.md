@@ -1,5 +1,33 @@
 # Project Milestones: HabitStreak
 
+## v1.3 First Impressions (Shipped: 2026-01-27)
+
+**Delivered:** Inviting entry experience with glassmorphism landing page, phone mockup, feature highlights, and polished auth pages with branding.
+
+**Phases completed:** 10-12 (3 plans total)
+
+**Key accomplishments:**
+
+- Complete PWA icon set - Generated 9 icons (72-512px) from favicon.svg, fixed manifest 404 errors
+- Glassmorphism landing page - Hero section with Dutch headline, subheadline, and CTAs
+- Phone mockup preview - Stylized Today view showing tasks and progress bar
+- Feature highlights - 4 cards explaining tracking, streaks, insights, and mobile-first design
+- Auth page polish - Added animated backgrounds, flame branding, welcoming messages to login/signup
+- Visual continuity - All entry points share consistent glassmorphism aesthetic
+
+**Stats:**
+
+- 30 files created/modified
+- +1,357 lines (6,048 total TypeScript/TSX)
+- 3 phases, 3 plans
+- 1 day (entire milestone completed 2026-01-27)
+
+**Git range:** `feat(10-01)` → `feat(12-01)`
+
+**What's next:** To be determined — consider iOS scroll-to-top fix, streak freezes, or additional polish
+
+---
+
 ## v1.2 Auth.js v5 Migration (Shipped: 2026-01-23)
 
 **Delivered:** Enabled dynamic URL detection for self-hosting, allowing login on localhost, IP addresses, and custom domains without configuration changes.

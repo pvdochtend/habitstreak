@@ -1,13 +1,12 @@
 # HabitStreak
 
-## Current Milestone: v1.3 First Impressions
+## Current State
 
-**Goal:** Create an inviting entry experience that showcases HabitStreak's playful personality before users even log in.
+**Shipped:** v1.3 First Impressions (2026-01-27)
 
-**Target features:**
-- Landing page with hero section, app preview, features showcase, and signup CTA (glassmorphism design)
-- PWA icon set (144x144, 192x192, 512x512, etc.) to fix manifest 404 errors
-- Login page polish with welcoming message and branding
+HabitStreak now has a complete entry experience — landing page with glassmorphism hero, phone mockup, feature highlights, and polished auth pages with branding. PWA icons are generated and manifest works correctly.
+
+**Next milestone:** To be determined
 
 ## What This Is
 
@@ -57,13 +56,15 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 - ✓ Login works on localhost, IP address, domain without config changes — Verified on localhost, 127.0.0.1, LAN IP — v1.2
 - ✓ Existing auth functionality preserved — Zero regression, all rate limiting and validation maintained — v1.2
 
+<!-- v1.3 First Impressions — shipped 2026-01-27 -->
+
+- ✓ Landing page for first-time visitors — Hero section with phone mockup, feature highlights, CTAs, glassmorphism design — v1.3
+- ✓ PWA icons — Complete icon set (72-512px) generated from favicon.svg, manifest 404s fixed — v1.3
+- ✓ Login page polish — Welcoming message, flame branding, animated backgrounds on login/signup — v1.3
+
 ### Active
 
-<!-- v1.3 First Impressions — targeting completion soon -->
-
-- [ ] Landing page for first-time visitors — hero section with app preview, features display (streaks, tasks, insights), clear signup CTA, glassmorphism design matching existing app aesthetic
-- [ ] PWA icons — complete icon set (144x144, 192x192, 512x512, etc.) to fix manifest 404 errors in console
-- [ ] Login page polish — welcoming message and branding for returning users
+<!-- No active requirements — next milestone to be determined -->
 
 ### Out of Scope
 
@@ -81,7 +82,7 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ## Context
 
-**Current state:** HabitStreak v1.2 ships with Auth.js v5 dynamic URL detection. 5,676 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), comprehensive unit tests for streak logic.
+**Current state:** HabitStreak v1.3 shipped with inviting entry experience. 6,048 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), complete PWA icon set, glassmorphism landing page, polished auth pages.
 
 **Tech stack:** Next.js 15 (standalone output), React 19, TypeScript, Tailwind CSS, shadcn/ui, Prisma, PostgreSQL, Docker, Auth.js v5 (trustHost-enabled).
 
@@ -90,6 +91,8 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 **v1.1 delivered (2026-01-19):** Docker containerization with multi-stage builds, PostgreSQL orchestration, Synology NAS deployment guide (both GUI/CLI paths), fixed streak calculation with isDaySuccessful() pure function, enhanced flame visibility, eliminated animation blink bug.
 
 **v1.2 delivered (2026-01-23):** Auth.js v5 migration with trustHost support, dynamic URL detection (localhost/IP/domain all work without config), split configuration pattern (edge-compatible auth.config.ts + full auth.ts), zero-regression auth functionality preservation.
+
+**v1.3 delivered (2026-01-27):** Inviting entry experience — landing page with hero, phone mockup, feature highlights; PWA icon set (9 icons); polished login/signup with branding and animated backgrounds.
 
 **Known issues:**
 - iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) — deferred to future version
@@ -125,6 +128,10 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | Auth.js v5 trustHost | Dynamic URL detection from Host header, no hardcoded NEXTAUTH_URL | ✓ Good — enables self-hosting flexibility |
 | Split auth config pattern | auth.config.ts (edge-compatible) + auth.ts (full with DB) | ✓ Good — proper v5 architecture |
 | auth() function pattern | Replaces getServerSession(authOptions) with simpler auth() call | ✓ Good — cleaner v5 API |
+| PWA icon "any" purpose | Icon design not maskable-safe; maskable deferred to v2 | ✓ Good — works on all platforms |
+| Server-side landing redirect | Authenticated users redirect to /vandaag server-side | ✓ Good — simpler than route groups |
+| CSS phone mockup | Stylized mockup instead of screenshot for theme consistency | ✓ Good — maintainable across themes |
+| Reusable AuthHeader | Consistent branding across login/signup pages | ✓ Good — easy to update |
 
 ---
-*Last updated: 2026-01-26 after v1.3 milestone start*
+*Last updated: 2026-01-27 after v1.3 milestone completion*
