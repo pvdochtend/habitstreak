@@ -5,7 +5,7 @@
 - ✅ **v1.0 UI Refresh** - Phases 1-4 (shipped 2026-01-18) - [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v1.1 Self-Hosting & Polish** - Phases 5-8 (shipped 2026-01-19) - [Archive](milestones/v1.1-ROADMAP.md)
 - ✅ **v1.2 Auth.js v5 Migration** - Phase 9 (shipped 2026-01-23) - [Archive](milestones/v1.2-ROADMAP.md)
-- 🚧 **v1.3 First Impressions** - Phases 10-12 (in progress)
+- 🚧 **v1.3 First Impressions** - Phases 10-12 (ready to ship)
 
 ## Phases
 
@@ -102,7 +102,7 @@ Plans:
 Plans:
 - [x] 11-01: Landing Page with Hero, Mockup, and Features
 
-#### Phase 12: Login Page Polish
+#### Phase 12: Login Page Polish ✓
 **Goal**: Add welcoming message and branding to login page
 **Depends on**: Phase 11
 **Requirements**: LOGIN-01, LOGIN-02, LOGIN-03
@@ -110,11 +110,10 @@ Plans:
   1. User sees welcoming message on login page
   2. User sees HabitStreak branding/logo on login page
   3. Login page visual style matches landing page glassmorphism
-**Research**: Unlikely (minor UI adjustments to existing page)
-**Plans**: TBD
+**Status**: Complete
 
 Plans:
-- [ ] 12-01: TBD
+- [x] 12-01: Login Polish with Branding and Glassmorphism
 
 ## Progress
 
@@ -134,8 +133,8 @@ Phases execute in numeric order: 10 → 11 → 12
 | 9. Auth.js v5 | v1.2 | 2/2 | Complete | 2026-01-23 |
 | 10. PWA Icons | v1.3 | 1/1 | Complete | 2026-01-27 |
 | 11. Landing Page | v1.3 | 1/1 | Complete | 2026-01-27 |
-| 12. Login Polish | v1.3 | 0/TBD | Not started | - |
+| 12. Login Polish | v1.3 | 1/1 | Complete | 2026-01-27 |
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-27 after Phase 11 completion*
+*Last updated: 2026-01-27 after Phase 12 completion*

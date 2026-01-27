@@ -19,15 +19,15 @@ Requirements for the First Impressions milestone. Each maps to roadmap phases.
 
 ### PWA
 
-- [ ] **PWA-01**: PWA manifest includes 192x192 icon with "any" purpose
-- [ ] **PWA-02**: PWA manifest includes 512x512 icon with "any" purpose
-- [ ] **PWA-03**: Apple touch icon (180x180) displays on iOS home screen bookmarks
+- [x] **PWA-01**: PWA manifest includes 192x192 icon with "any" purpose
+- [x] **PWA-02**: PWA manifest includes 512x512 icon with "any" purpose
+- [x] **PWA-03**: Apple touch icon (180x180) displays on iOS home screen bookmarks
 
 ### Login Page
 
-- [ ] **LOGIN-01**: User sees welcoming message on login page
-- [ ] **LOGIN-02**: User sees logo/branding at top of login form
-- [ ] **LOGIN-03**: Login page matches glassmorphism design from landing page
+- [x] **LOGIN-01**: User sees welcoming message on login page
+- [x] **LOGIN-02**: User sees logo/branding at top of login form
+- [x] **LOGIN-03**: Login page matches glassmorphism design from landing page
 
 ## v2 Requirements
 
@@ -74,9 +74,9 @@ Which phases cover which requirements. Updated by create-roadmap.
 | LAND-05 | Phase 11 | Complete |
 | LAND-06 | Phase 11 | Complete |
 | LAND-07 | Phase 11 | Complete |
-| LOGIN-01 | Phase 12 | Pending |
-| LOGIN-02 | Phase 12 | Pending |
-| LOGIN-03 | Phase 12 | Pending |
+| LOGIN-01 | Phase 12 | Complete |
+| LOGIN-02 | Phase 12 | Complete |
+| LOGIN-03 | Phase 12 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 13 total
@@ -85,4 +85,4 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after Phase 11 completion*
+*Last updated: 2026-01-27 after Phase 12 completion*
