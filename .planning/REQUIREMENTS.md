@@ -9,13 +9,13 @@ Requirements for the First Impressions milestone. Each maps to roadmap phases.
 
 ### Landing Page
 
-- [ ] **LAND-01**: Visitor sees hero section with Dutch headline and subheadline communicating habit tracking value
-- [ ] **LAND-02**: Visitor sees phone mockup displaying real app UI (Today view)
-- [ ] **LAND-03**: Visitor sees primary CTA button ("Aan de slag") above the fold
-- [ ] **LAND-04**: Visitor sees 3-4 feature highlights with icons (tracking, streaks, insights, mobile-first)
-- [ ] **LAND-05**: Visitor sees secondary CTA button at bottom of page
-- [ ] **LAND-06**: Landing page is mobile-responsive
-- [ ] **LAND-07**: Landing page matches existing glassmorphism design system
+- [x] **LAND-01**: Visitor sees hero section with Dutch headline and subheadline communicating habit tracking value
+- [x] **LAND-02**: Visitor sees phone mockup displaying real app UI (Today view)
+- [x] **LAND-03**: Visitor sees primary CTA button ("Aan de slag") above the fold
+- [x] **LAND-04**: Visitor sees 3-4 feature highlights with icons (tracking, streaks, insights, mobile-first)
+- [x] **LAND-05**: Visitor sees secondary CTA button at bottom of page
+- [x] **LAND-06**: Landing page is mobile-responsive
+- [x] **LAND-07**: Landing page matches existing glassmorphism design system
 
 ### PWA
 
@@ -67,13 +67,13 @@ Which phases cover which requirements. Updated by create-roadmap.
 | PWA-01 | Phase 10 | Complete |
 | PWA-02 | Phase 10 | Complete |
 | PWA-03 | Phase 10 | Complete |
-| LAND-01 | Phase 11 | Pending |
-| LAND-02 | Phase 11 | Pending |
-| LAND-03 | Phase 11 | Pending |
-| LAND-04 | Phase 11 | Pending |
-| LAND-05 | Phase 11 | Pending |
-| LAND-06 | Phase 11 | Pending |
-| LAND-07 | Phase 11 | Pending |
+| LAND-01 | Phase 11 | Complete |
+| LAND-02 | Phase 11 | Complete |
+| LAND-03 | Phase 11 | Complete |
+| LAND-04 | Phase 11 | Complete |
+| LAND-05 | Phase 11 | Complete |
+| LAND-06 | Phase 11 | Complete |
+| LAND-07 | Phase 11 | Complete |
 | LOGIN-01 | Phase 12 | Pending |
 | LOGIN-02 | Phase 12 | Pending |
 | LOGIN-03 | Phase 12 | Pending |
@@ -85,4 +85,4 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after Phase 10 completion*
+*Last updated: 2026-01-27 after Phase 11 completion*
