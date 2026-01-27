@@ -1,328 +1,392 @@
-# Feature Research: Landing Pages for Habit Tracking / Productivity Apps
+# Feature Landscape: PWA Install Prompts
 
-**Domain:** Landing pages for habit tracking / productivity apps
-**Researched:** 2026-01-26
-**Confidence:** HIGH (verified across multiple authoritative sources)
+**Domain:** Progressive Web App installation promotion and guidance
+**Researched:** 2026-01-27
+**Confidence:** HIGH (verified with Context7, MDN, web.dev official documentation)
 
-## Summary
+## Executive Summary
 
-Landing pages for habit/productivity apps follow established conversion patterns. The standard structure is: Hero (headline + CTA + mockup) > Social Proof > Features > CTA repeat. For a self-hosted personal app without SaaS concerns (pricing, enterprise features), the focus shifts to: communicating value quickly, showcasing the visual experience, and making signup frictionless.
-
-Key insight: HabitStreak's glassmorphism + confetti identity is a **differentiator** — most habit apps have utilitarian designs. The landing page should lead with visual appeal.
+PWA install prompts require platform-specific implementations due to fundamental differences between Android and iOS. Android supports programmatic `beforeinstallprompt` events enabling custom UI triggers, while iOS requires manual instruction walkthroughs. Best practices emphasize respectful timing (post-engagement), persistent dismissal tracking, and non-disruptive placement. The feature landscape divides into core installation mechanics (table stakes) and enhanced UX patterns (differentiators).
 
 ---
 
-## Feature Landscape
+## Table Stakes
 
-### Table Stakes (Users Expect These)
-
-These elements are expected on any app landing page. Missing them makes the page feel incomplete or untrustworthy.
+Features users expect from PWA install prompts. Missing these = broken or frustrating experience.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Hero Section** | First impression, communicates value in 5 seconds | LOW | Headline + subheadline + primary CTA + visual |
-| **Clear Value Proposition** | Visitors decide in seconds if page is relevant | LOW | "What does it do? Why should I care?" |
-| **Primary CTA Above Fold** | 73% of top-performing CTAs are above fold or in navbar | LOW | "Get Started" or "Sign Up" button, highly visible |
-| **App Screenshot/Mockup** | Visitors want to see the product before committing | LOW-MEDIUM | Phone mockup with real app UI, not placeholders |
-| **Feature Highlights** | Explains what the app does | LOW-MEDIUM | 3-4 key features with icons and short descriptions |
-| **Secondary CTA** | Catches users who scroll past first CTA | LOW | Repeat CTA at bottom of page |
-| **Mobile-Responsive Design** | 60% of traffic is mobile; page must work on all devices | LOW | Already using Tailwind/Next.js, built-in |
-| **Fast Load Time** | 53% abandon pages taking >3 seconds; 1s delay = 7% fewer conversions | MEDIUM | Optimize images, minimal JS for landing |
+| **Dismissible UI** | Users must be able to decline without friction | Low | All prompts need close button with localStorage persistence |
+| **Platform Detection** | Different UI for iOS vs Android | Low | Check `BeforeInstallPromptEvent` support + user agent |
+| **Android Native Prompt** | Android users expect system install dialog | Medium | Requires `beforeinstallprompt` event capture + `.prompt()` call |
+| **iOS Visual Instructions** | iOS lacks programmatic install, needs manual guidance | Medium | Step-by-step with Share icon + "Add to Home Screen" visuals |
+| **Persistent Dismissal** | Don't re-show after user dismisses | Low | localStorage flag tracking dismissal state |
+| **Touch-Friendly Targets** | Mobile-first requires ≥44px touch targets | Low | WCAG AAA: 44×44px minimum for buttons |
+| **Display Mode Detection** | Hide install UI if already installed | Low | CSS media query `display-mode: standalone` |
+| **Accessible Markup** | Screen reader support | Low | Semantic HTML (`<button>`, `<dialog>`) + ARIA labels |
 
-### Differentiators (Competitive Advantage)
+---
 
-These features separate good landing pages from great ones. They build trust and increase conversion, but the app can launch without them.
+## Differentiators
+
+Features that set install experiences apart. Not expected, but highly valued.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Visual Identity Showcase** | HabitStreak's glassmorphism + animations are unique; leading with beauty differentiates | MEDIUM | Animate mockup, show confetti, use brand colors |
-| **Interactive Demo/Preview** | 54% click-through rate on interactive demos; 1.7x more signups | HIGH | Would need to build sandboxed preview; defer |
-| **Micro-Animations** | Creates feeling of polish and delight; matches app experience | LOW-MEDIUM | Fade-ins, subtle parallax, hover effects |
-| **"How It Works" Section** | Reduces uncertainty for new users | LOW | 3 steps: Sign up > Add habits > Build streaks |
-| **Streak/Gamification Teaser** | Habit apps are about motivation; preview the reward system | LOW | Show streak counter, completion animations |
-| **Testimonials** | Social proof increases trust (but requires real users) | N/A | Skip for personal/self-hosted — no external users |
-| **Video Demo** | 86% increase in conversions for pages with video | HIGH | Production effort; defer to post-launch |
-| **App Store Badges** | Expected for mobile apps | N/A | Not applicable — HabitStreak is a PWA/web app |
+| **Contextual Timing** | Show after engagement signals (login, task completion) | Low | Defer prompt until conversion event vs immediate page load |
+| **Value Proposition Copy** | Explain *why* to install before showing prompt | Low | "Access HabitStreak instantly" beats "Install this app" |
+| **Multi-Location Availability** | Install option in multiple places (banner, settings, menu) | Low | Increases discoverability without being pushy |
+| **Visual Walkthrough Modal** | iOS: Full-screen modal with screenshots of Share button | Medium | More effective than text-only instructions |
+| **Animated Instructions** | Highlight Share button location with animation | Medium-High | Attention-grabbing for iOS where button isn't obvious |
+| **Snackbar/Toast Pattern** | Temporary, non-blocking notification (4-7 seconds) | Low | Better UX than permanent banner |
+| **"Show Me How" Button** | User-initiated instruction trigger | Low | Respectful alternative to auto-showing instructions |
+| **Progressive Disclosure** | Banner → Button → Full instructions flow | Medium | Reduces cognitive load |
+| **Localization** | Install prompts in user's language | Low-Medium | HabitStreak already uses Dutch UI text |
+| **Install Success Feedback** | Confirmation message after successful install | Low | Closes the feedback loop |
 
-### Anti-Features (Deliberately NOT Building)
+---
 
-These are common on SaaS landing pages but inappropriate for a personal self-hosted app.
+## Anti-Features
 
-| Feature | Why Commonly Requested | Why Problematic for HabitStreak | Alternative |
-|---------|------------------------|----------------------------------|-------------|
-| **Pricing Section** | Standard for SaaS | Self-hosted, no paid tiers | None needed |
-| **Enterprise Features** | B2B SaaS pattern | Personal app, single user | None needed |
-| **Company Logos ("Trusted by")** | Social proof for SaaS | No enterprise customers | Skip entirely |
-| **User Count Stats** | "Join 1M+ users" builds FOMO | Self-hosted = personal use only | Skip entirely |
-| **Newsletter Signup** | Lead generation | No marketing emails needed | Skip entirely |
-| **Complex Navigation** | Multi-page marketing sites | Single-page landing is cleaner | Minimal nav: Logo + "Log In" + "Sign Up" |
-| **Cookie Banner** | GDPR for marketing cookies | Self-hosted, no third-party tracking | Skip entirely |
-| **Live Chat Widget** | Customer support | Self-hosted, you ARE the support | Skip entirely |
-| **Comparison Tables** | "Us vs Competitors" | Not competing; personal tool | Skip entirely |
-| **Blog/Resources Link** | Content marketing | Not a content business | Skip entirely |
-| **Request a Demo Form** | Enterprise sales | Immediate signup, no demo booking | Direct signup CTA |
+Features to explicitly NOT build. Common mistakes in PWA install patterns.
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| **Immediate Page Load Prompt** | Disruptive, no value context established | Wait for engagement signals (2+ visits, login, task complete) |
+| **Modal on Every Visit** | Annoying, reduces engagement metrics | Respect dismissal permanently (or until major conversion) |
+| **Blocking Critical UI** | Interferes with core user journey | Place prompts outside navigation flow (footer, settings) |
+| **No Dismiss Option** | Traps users, feels pushy | Always provide close button with persistent dismissal |
+| **Desktop-Focused Install UI** | PWAs are mobile-first | Design for mobile touch, desktop is secondary |
+| **Auto-Playing Install Video** | Wastes bandwidth, annoying | Static images with optional "Show Me" trigger |
+| **Permission Bundle** | "Install + enable notifications" together | Separate concerns, ask for install first |
+| **Fake Install Buttons** | Show install UI when `beforeinstallprompt` hasn't fired | Hide UI until event fires or provide iOS fallback |
+| **Generic "Install App" Copy** | Doesn't explain value | "Track habits instantly" or "Open HabitStreak faster" |
+| **Non-Semantic HTML** | Breaks keyboard nav and screen readers | Use `<button>`, `<dialog>`, not `<div onclick>` |
+| **Prompt on Login Page** | Blocks authentication flow | Place below login form or defer until post-login |
 
 ---
 
 ## Feature Dependencies
 
-```
-                    +------------------+
-                    |   Hero Section   |
-                    | (headline, CTA,  |
-                    |    mockup)       |
-                    +--------+---------+
-                             |
-              +--------------+--------------+
-              |                             |
-    +---------v---------+         +---------v---------+
-    | Feature Highlights|         | How It Works      |
-    | (what it does)    |         | (3 steps)         |
-    +-------------------+         +-------------------+
-              |                             |
-              +--------------+--------------+
-                             |
-                    +--------v---------+
-                    | Secondary CTA    |
-                    | (signup button)  |
-                    +------------------+
-                             |
-                    +--------v---------+
-                    |     Footer       |
-                    | (minimal links)  |
-                    +------------------+
+### Installation Flow Hierarchy
 
-Dependencies:
-- Hero requires: App mockup screenshot (need to capture real UI)
-- Hero requires: Headline copy (needs copywriting)
-- Feature Highlights require: Icon set (can use existing Lucide icons)
-- All sections require: Brand colors + glassmorphism styles from app
+```
+Platform Detection
+    ↓
+├─ Android/Chrome
+│   ↓
+│   beforeinstallprompt Event Listener
+│   ↓
+│   Custom Install Trigger Button
+│   ↓
+│   Native Install Dialog (.prompt())
+│
+└─ iOS/Safari
+    ↓
+    Manual Install Instructions
+    ↓
+    Visual Walkthrough Modal
+    ↓
+    Step-by-step with Icons/Screenshots
 ```
 
----
+### Dismissal & State Management
 
-## MVP Definition
-
-### Launch With (v1.3)
-
-These features define a complete, professional landing page that matches HabitStreak's quality.
-
-1. **Hero Section**
-   - Headline: Benefit-focused, Dutch ("Bouw gewoontes die blijven" or similar)
-   - Subheadline: One sentence explaining the app
-   - Primary CTA: "Aan de slag" / "Maak account" button
-   - Visual: Phone mockup with real app screenshot (Today view)
-
-2. **App Preview Mockup**
-   - Glassmorphism-styled phone frame
-   - Screenshot of the Today page with some habits
-   - Optional: Subtle animation (fade-in, slight float)
-
-3. **Feature Highlights (3-4 features)**
-   - Daily habit tracking
-   - Streak visualization
-   - 7-day insights chart
-   - Mobile-first design
-   - Each with icon + short Dutch description
-
-4. **How It Works (3 steps)**
-   - Step 1: Maak een account (icon: user)
-   - Step 2: Voeg je gewoontes toe (icon: plus)
-   - Step 3: Bouw je streak (icon: flame/star)
-
-5. **Secondary CTA**
-   - Repeat the signup button at bottom
-   - Same styling as hero CTA
-
-6. **Minimal Footer**
-   - Just copyright + maybe link to login if already have account
-
-7. **Mobile-Responsive**
-   - Stack sections vertically on mobile
-   - Touch-friendly CTA buttons
-
-### Add After Validation
-
-Features to consider after the landing page is live and working.
-
-1. **Micro-Animations**
-   - Parallax on scroll
-   - Staggered fade-ins for feature cards
-   - Hover effects on CTAs
-
-2. **Multiple Mockup Views**
-   - Show Insights page as second screenshot
-   - Carousel or scroll-triggered switch
-
-3. **Streak Counter Animation**
-   - Animated number counting up
-   - Confetti burst (matches app celebration)
-
-### Future Consideration
-
-Nice-to-have features that require significant effort.
-
-1. **Interactive Demo**
-   - Sandboxed version users can try without signup
-   - Complexity: HIGH — needs isolated state, guest mode
-
-2. **Video Walkthrough**
-   - 30-60 second product tour
-   - Complexity: HIGH — production, editing, hosting
-
-3. **Dark Mode Toggle**
-   - Preview app in dark mode from landing page
-   - Complexity: MEDIUM — requires dark mode in app first
-
----
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Hero Section | HIGH | LOW | **P0 - Must Have** |
-| App Mockup Screenshot | HIGH | LOW | **P0 - Must Have** |
-| Primary CTA Above Fold | HIGH | LOW | **P0 - Must Have** |
-| Feature Highlights | MEDIUM | LOW | **P0 - Must Have** |
-| Mobile-Responsive | HIGH | LOW | **P0 - Must Have** |
-| How It Works Section | MEDIUM | LOW | **P1 - Should Have** |
-| Secondary CTA | MEDIUM | LOW | **P1 - Should Have** |
-| Minimal Footer | LOW | LOW | **P1 - Should Have** |
-| Micro-Animations | MEDIUM | MEDIUM | **P2 - Nice to Have** |
-| Multiple Mockup Views | LOW | MEDIUM | **P2 - Nice to Have** |
-| Streak Animation | LOW | MEDIUM | **P2 - Nice to Have** |
-| Interactive Demo | HIGH | HIGH | **P3 - Future** |
-| Video Walkthrough | MEDIUM | HIGH | **P3 - Future** |
-
----
-
-## Competitor Feature Analysis
-
-| Feature | Habitica | Todoist | Notion | Streaks App | Our Approach |
-|---------|----------|---------|--------|-------------|--------------|
-| **Hero Headline** | "Gamify Your Life" | "Clarity, finally." | "One workspace. Zero busywork." | "The to-do list that helps you form good habits" | Dutch, benefit-focused: "Bouw gewoontes die blijven" |
-| **Hero Visual** | Avatar/game art | App screenshot | Product GIF | iPhone mockup | Phone mockup with glassmorphism frame |
-| **Primary CTA** | "Get Started for Free" | "Start for free" | "Get Notion free" | "Download" | "Aan de slag" (Get Started) |
-| **Social Proof** | User count | 374K reviews, press quotes, stats | 100M users, Fortune 100, G2 badges | App Store rating | None (personal app) |
-| **Feature Sections** | RPG mechanics, quests, guilds | Clear mind, focus, plan, team | Agents, search, notes, workflows | 12 habits, health sync | Simple: track, streak, insights |
-| **Pricing** | Freemium tiers | Free/Pro/Business/Enterprise | Free/Plus/Business/Enterprise | One-time purchase | None (self-hosted) |
-| **Gamification Preview** | Avatars, pets, quests | None | None | Streak circles | Streak counter, confetti |
-| **Video** | None on homepage | None | Product carousel | None | None (defer) |
-| **Interactive Demo** | None | None | None | None | None (defer) |
-
-### Key Insight
-
-Commercial apps lead with scale ("30M downloads") and feature depth ("AI agents"). HabitStreak should lead with **visual delight** and **simplicity** — the glassmorphism design is more polished than most habit trackers.
-
----
-
-## Conversion Best Practices Applied to HabitStreak
-
-### Above the Fold (Critical)
-
-Based on research: visitors decide in 5 seconds. Above the fold must include:
-
-1. **Headline** that passes "caveman test" — immediately clear what app does
-2. **CTA button** in contrasting color, large touch target
-3. **Visual** showing the product (not generic stock photo)
-
-**Recommendation for HabitStreak:**
 ```
-+------------------------------------------+
-|  Logo                        [Inloggen]  |
-|                                          |
-|   Bouw gewoontes                         |
-|   die blijven.                           |
-|                                          |
-|   Track je dagelijkse gewoontes,         |
-|   bouw streaks en vier je voortgang.     |
-|                                          |
-|   [Aan de slag]                          |
-|                                          |
-|        [Phone Mockup with Today view]    |
-|                                          |
-+------------------------------------------+
+User Dismisses Prompt
+    ↓
+localStorage.setItem('pwa-dismissed', 'true')
+    ↓
+Check on Future Visits
+    ↓
+Only Re-show After Conversion Event
+(e.g., user completes 7-day streak)
 ```
 
-### Feature Section Pattern
+### Multi-Location Pattern
 
-Use 3-4 features maximum. Each with:
-- Icon (use Lucide for consistency)
-- Short headline (2-4 words)
-- One-line description
-
-**Recommended features to highlight:**
-1. **Dagelijkse check-ins** — Vink je gewoontes af met een tik
-2. **Streak tracking** — Houd je motivatie hoog met streaks
-3. **Weekoverzicht** — Bekijk je voortgang in een grafiek
-4. **Mobiel-eerst** — Ontworpen voor onderweg
-
-### CTA Best Practices
-
-- One primary CTA (not competing options)
-- Action-oriented: "Aan de slag" > "Meer informatie"
-- Contrasting color (use primary brand color)
-- Repeat at bottom of page for scrollers
-- Large touch target (min 44px)
+```
+Landing Page Banner (new visitors)
+    ↓
+Post-Login Toast (after first successful login)
+    ↓
+Settings Page Button (permanent fallback)
+```
 
 ---
 
-## Technical Considerations
+## MVP Recommendation
 
-### Performance Budget
+For HabitStreak's PWA install prompt milestone, prioritize:
 
-| Metric | Target | Rationale |
-|--------|--------|-----------|
-| First Contentful Paint | <1.5s | 53% abandon after 3s |
-| Largest Contentful Paint | <2.5s | Core Web Vitals threshold |
-| Hero image size | <500KB | Mobile performance |
-| Total page weight | <1MB | Fast on mobile networks |
+### Phase 1: Core Mechanics (Must Have)
+1. **Platform detection** - Detect Android vs iOS
+2. **Android native prompt** - Capture `beforeinstallprompt`, show custom button
+3. **iOS visual instructions** - Modal with Share icon + "Add to Home Screen" graphics
+4. **Dismissal persistence** - localStorage tracking, respect user choice
+5. **Display mode detection** - Hide install UI if already installed
 
-### Implementation Notes
+### Phase 2: Enhanced UX (Should Have)
+6. **Snackbar/toast pattern** - Non-blocking, auto-dismissing (5s)
+7. **"Show Me How" button** - iOS users trigger instructions manually
+8. **Contextual timing** - Show after login (existing users) or on landing page (new visitors)
+9. **Settings fallback** - Permanent "Install App" button in settings
 
-- Landing page can be a separate route (`/`) vs app routes (`/vandaag`)
-- Consider pre-rendering landing page for instant load
-- Mockup image: Create once, optimize for web (WebP with PNG fallback)
-- Reuse existing Tailwind config and design tokens
-- Navigation: Only "Inloggen" and "Aan de slag" buttons (not full nav)
+### Phase 3: Polish (Nice to Have)
+10. **Value proposition copy** - Dutch text explaining benefits
+11. **Install success feedback** - Confirmation toast
+12. **Multi-location availability** - Landing + post-login + settings
+
+### Explicitly Defer to Post-MVP
+- Animated instruction highlights (complex, diminishing returns)
+- Video walkthroughs (bandwidth concerns)
+- A/B testing install copy variations
+- Analytics tracking (install rate, dismissal rate)
+- Re-prompting logic after streak milestones
+
+---
+
+## Implementation Complexity Assessment
+
+| Feature Category | Estimated Effort | Risk Level |
+|-----------------|------------------|-----------|
+| Platform Detection | 2 hours | Low - straightforward user agent + API checks |
+| Android Native Prompt | 4 hours | Low - well-documented `beforeinstallprompt` API |
+| iOS Visual Instructions | 6 hours | Medium - requires modal design + graphics |
+| Dismissal Tracking | 2 hours | Low - simple localStorage operations |
+| Toast/Snackbar UI | 3 hours | Low - existing Tailwind animations |
+| Settings Page Button | 2 hours | Low - add button + trigger existing logic |
+| **Total Estimated** | **~19 hours** | **Overall: Low-Medium** |
+
+---
+
+## Platform-Specific Considerations
+
+### Android/Chrome
+
+**Supported Browsers:**
+- Chrome for Android
+- Edge for Android
+- Samsung Internet (Chromium-based)
+
+**Key Technical Details:**
+- `beforeinstallprompt` event fires when PWA meets installability criteria
+- Must call `event.preventDefault()` to defer native prompt
+- Can only call `prompt()` once per event instance
+- Enhanced install dialog if manifest includes `description` + `screenshots`
+
+**Best Practices:**
+- Wait for user gesture before calling `.prompt()`
+- Track dismissal outcome via `event.outcome` property
+- Listen for `appinstalled` event to hide custom UI
+
+### iOS/Safari
+
+**Supported Browsers:**
+- Safari (iOS 11.3+)
+- Chrome on iOS (iOS 17+ via Share button, but not programmatic)
+
+**Key Technical Details:**
+- NO `beforeinstallprompt` support
+- Installation only via Safari's Share → "Add to Home Screen"
+- Installed PWAs appear in App Library, Spotlight, Siri Suggestions
+
+**Best Practices:**
+- Show step-by-step instructions with visual icons
+- Use Share icon graphic (square with upward arrow)
+- Provide "Show Me How" button instead of auto-modal
+- Detect iOS specifically (not just "no beforeinstallprompt")
+
+### Desktop
+
+**Not a Priority for HabitStreak:**
+- PWA is mobile-first habit tracker
+- Desktop install prompts are lower priority
+- Can reuse Android logic for Chromium desktop browsers
+
+---
+
+## Accessibility Requirements
+
+### WCAG Compliance
+
+| Criterion | Requirement | Implementation |
+|-----------|-------------|----------------|
+| **2.5.5 Target Size (AAA)** | 44×44px minimum touch targets | All buttons: `min-width: 44px; min-height: 44px` |
+| **2.5.8 Target Size (AA)** | 24×24px minimum (WCAG 2.2) | Exceed with 44px standard |
+| **1.4.3 Contrast** | 4.5:1 text contrast ratio | Use existing theme colors (already compliant) |
+| **2.1.1 Keyboard** | All functionality keyboard accessible | Semantic `<button>` elements auto-support |
+| **4.1.2 Name, Role, Value** | ARIA labels for screen readers | `aria-label="Install HabitStreak app"` |
+
+### Mobile Touch Optimization
+
+- **Touch target spacing:** 8px minimum between interactive elements
+- **Edge precision:** Avoid placing critical buttons at top/bottom screen edges (lower precision)
+- **Thumb zone:** Place primary "Install" button in lower 1/3 of screen (natural thumb reach)
+
+### Keyboard Navigation
+
+- Modal should trap focus (tab loops within dialog)
+- ESC key closes modal
+- Enter key activates focused button
+- Use `<dialog>` element for native focus management
+
+---
+
+## Design Patterns from Real-World PWAs
+
+### Successful Implementations (2026)
+
+**Fodmapedia:**
+- Installation right from home page
+- Step-by-step instructions tailored to device
+- Non-intrusive placement
+
+**Bingo em Casa:**
+- Install prompt on login page (below form, not blocking)
+- Post-install push notification prompt (separate timing)
+
+**Starbucks PWA:**
+- Snackbar pattern after adding item to cart (engagement signal)
+- 5-second auto-dismiss with action button
+
+### Common Patterns
+
+| Pattern | Use Case | Timing | Duration |
+|---------|----------|--------|----------|
+| **Snackbar** | Post-interaction prompt | After engagement action | 4-7 seconds |
+| **Banner (dismissible)** | Landing page | On page load | Persistent until dismissed |
+| **Modal** | iOS instructions | User clicks "Show Me How" | User-controlled |
+| **Menu Item** | Settings page | Permanent fallback | N/A |
+
+---
+
+## Anti-Pattern Case Studies
+
+### What NOT to Do
+
+**❌ Install Prompt on Page Load (Immediate)**
+- **Problem:** No context, user hasn't experienced value
+- **Result:** High dismissal rate, annoyance
+- **Fix:** Wait for 2+ visits or engagement signal
+
+**❌ Non-Dismissible Full-Screen Takeover**
+- **Problem:** Blocks access to app, feels coercive
+- **Result:** User closes tab entirely
+- **Fix:** Always provide close button, non-blocking UI
+
+**❌ Showing Android Prompt on iOS**
+- **Problem:** "Install" button does nothing (no API support)
+- **Result:** Broken experience, user confusion
+- **Fix:** Platform detection → iOS instructions vs Android native
+
+**❌ Combining Install + Push Notifications**
+- **Problem:** Double permission request feels aggressive
+- **Result:** Users reject both
+- **Fix:** Install first, ask for notifications post-install
+
+---
+
+## Testing Strategy
+
+### Functional Testing
+
+| Test Case | Android Expected | iOS Expected |
+|-----------|------------------|--------------|
+| **First visit** | `beforeinstallprompt` fires, button shows | Instructions available on demand |
+| **Click install** | Native dialog appears | Modal with Share instructions |
+| **Dismiss prompt** | localStorage set, no re-show | localStorage set, no re-show |
+| **Already installed** | Install UI hidden | Install UI hidden |
+| **Post-login** | Toast appears (if dismissed earlier) | Toast appears (if dismissed earlier) |
+
+### Cross-Browser Testing
+
+- **Android:** Chrome 120+, Edge, Samsung Internet
+- **iOS:** Safari 15+, Chrome on iOS 17+
+- **Desktop:** Chrome, Edge (lower priority)
+
+### Accessibility Testing
+
+- Keyboard navigation (Tab, Enter, ESC)
+- Screen reader (VoiceOver on iOS, TalkBack on Android)
+- Touch target sizes (manual measurement)
+- Color contrast (automated tools)
 
 ---
 
 ## Sources
 
-### Primary (HIGH confidence)
-- [Todoist.com](https://todoist.com) - Fetched and analyzed landing page structure
-- [Notion.com](https://notion.com) - Fetched and analyzed landing page structure
-- [Habitica Features Page](https://habitica.com/static/features) - Referenced for gamification patterns
-- [KlientBoost Landing Page Examples](https://www.klientboost.com/landing-pages/app-landing-page/) - 17 full-length examples
-- [Involve.me Landing Page Best Practices 2026](https://www.involve.me/blog/landing-page-best-practices) - Current best practices
-- [Hostinger Landing Page Statistics 2025](https://www.hostinger.com/tutorials/landing-page-statistics) - Conversion benchmarks
-- [Unbounce Mobile Landing Page Examples](https://unbounce.com/landing-page-examples/best-mobile-landing-page-examples/) - Mobile optimization
+### Official Documentation (HIGH Confidence)
+- [MDN: Making PWAs installable](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable)
+- [MDN: Trigger installation from your PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Trigger_install_prompt)
+- [MDN: PWA Best Practices](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Best_practices)
+- [web.dev: Installation prompt](https://web.dev/learn/pwa/installation-prompt)
+- [web.dev: Patterns for promoting PWA installation](https://web.dev/articles/promote-install)
+- [Chrome Developers: Changes to A2HS behavior](https://developer.chrome.com/blog/a2hs-updates)
 
-### Secondary (MEDIUM confidence)
-- [TyrAds Mobile App Landing Page Best Practices](https://tyrads.com/mobile-app-landing-page/) - App-specific patterns
-- [Storylane Interactive Demo Statistics](https://www.storylane.io/blog/awesome-interactive-demo-examples) - Demo conversion data
-- [Navattic State of Interactive Product Demo](https://www.navattic.com/report/state-of-the-interactive-product-demo-2023) - Demo placement stats
-- [Gamify Website Gamification Examples](https://www.gamify.com/gamification-blog/7-examples-of-website-gamification) - Gamification patterns
-- [Lapa Ninja Minimal Landing Pages](https://www.lapa.ninja/category/minimal/) - Design inspiration
+### WCAG Standards (HIGH Confidence)
+- [W3C: Success Criterion 2.5.5: Target Size (AAA)](https://www.w3.org/WAI/WCAG21/Understanding/target-size.html)
+- [W3C: Success Criterion 2.5.8: Target Size Minimum (AA)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html)
+- [Smashing Magazine: Accessible Target Sizes Cheatsheet](https://www.smashingmagazine.com/2023/04/accessible-tap-target-sizes-rage-taps-clicks/)
 
-### Tertiary (LOW confidence - design inspiration only)
-- [Dribbble Habit Tracker Designs](https://dribbble.com/tags/habit-tracker) - Visual inspiration
-- [Figma Habitus Template](https://www.figma.com/community/file/1507106587522840897) - Landing page template reference
-- [GitHub Mobile App Landing Template](https://github.com/sofiyevsr/mobile-app-landing-template) - Indie developer template
+### Implementation Examples (MEDIUM Confidence)
+- [GitHub: khmyznikov/pwa-install](https://github.com/khmyznikov/pwa-install) - Web component library
+- [Progressier: PWA Examples 2026](https://progressier.com/pwa-examples-you-can-learn-from)
+- [SimiCart: PWA Add to Home Screen Guide](https://simicart.com/blog/pwa-add-to-home-screen/)
+
+### Community Resources (MEDIUM Confidence)
+- [What PWA Can Do Today: Installation](https://whatpwacando.today/installation/)
+- [love2dev: beforeinstallprompt Guide](https://love2dev.com/blog/beforeinstallprompt/)
+- [Progressier: In-App PWA Promotion Patterns](https://progressier.com/features/in-app-pwa-promotion)
 
 ---
 
-## Confidence Assessment
+## Research Notes
 
-| Area | Level | Reason |
-|------|-------|--------|
-| Table Stakes | HIGH | Consistent across all sources (Todoist, Notion, best practice guides) |
-| Differentiators | HIGH | Verified with conversion statistics and competitor analysis |
-| Anti-Features | HIGH | Clear distinction between SaaS and self-hosted use cases |
-| Competitor Analysis | MEDIUM | Based on current live sites; may change |
-| Conversion Stats | MEDIUM | Statistics from 2023-2025 sources; trends stable |
-| MVP Definition | HIGH | Based on minimum viable patterns from successful apps |
+### Verification Status
 
-**Research date:** 2026-01-26
-**Valid until:** 2026-03-26 (landing page patterns stable; check for new trends quarterly)
+- ✅ **Android `beforeinstallprompt` API:** Verified via MDN and web.dev official docs
+- ✅ **iOS manual installation requirement:** Verified via MDN and Chrome Developers blog
+- ✅ **WCAG target size requirements:** Verified via W3C official specifications
+- ✅ **Best practice patterns:** Cross-verified across MDN, web.dev, and community implementations
+
+### Open Questions for Implementation
+
+1. **Timing Logic:** Should post-login toast show immediately or after N seconds delay?
+2. **Re-prompt Strategy:** Should we re-prompt after 7-day streak milestone, or never?
+3. **Analytics:** Do we track install attempts/success rates in this milestone or defer?
+4. **iOS Graphics:** Use custom illustrations or standard iOS Share icon SVG?
+
+### Assumptions
+
+- HabitStreak manifest already meets PWA installability criteria (manifest.json, service worker, HTTPS)
+- Existing Dutch localization infrastructure can be reused for install prompt text
+- `.touch-target` class already implements 44px minimum (per CLAUDE.md)
+- Tailwind animations (`animate-fade-in`, `animate-slide-up`) can be reused
+
+### Confidence Assessment
+
+| Research Area | Confidence | Rationale |
+|--------------|------------|-----------|
+| Android Implementation | HIGH | Official MDN/web.dev docs, well-established API |
+| iOS Implementation | HIGH | Official docs confirm manual-only approach |
+| Accessibility Standards | HIGH | W3C WCAG specifications, not interpretive |
+| UX Best Practices | MEDIUM-HIGH | Consensus across multiple authoritative sources |
+| Design Patterns | MEDIUM | Based on real-world examples, but subjective |
+| Complexity Estimates | MEDIUM | Based on similar feature complexity in HabitStreak |
+
+---
+
+## Conclusion
+
+PWA install prompts are a **well-established pattern with clear platform requirements**. The feature set divides cleanly into Android's programmatic approach and iOS's manual instruction approach. Implementation complexity is LOW-MEDIUM for core features, with the primary challenge being iOS instructional design (requires visual assets).
+
+**Key Success Factors:**
+1. Respect user agency (dismissible, non-blocking)
+2. Provide clear value proposition (why install?)
+3. Platform-appropriate UX (native dialog vs instructions)
+4. Accessible implementation (WCAG AAA target sizes)
+
+**Recommended MVP Scope:** Core mechanics (Android native + iOS instructions + dismissal tracking) achievable in ~15-20 hours. Enhanced UX patterns (snackbar, multi-location, polish) add another ~10 hours.
+
+**Risk Assessment:** LOW overall risk. Well-documented APIs, established patterns, no novel technical challenges. Primary dependency is iOS visual asset creation (design time).
