@@ -64,25 +64,25 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PWA-01 | TBD | Pending |
-| PWA-02 | TBD | Pending |
-| PWA-03 | TBD | Pending |
-| LAND-01 | TBD | Pending |
-| LAND-02 | TBD | Pending |
-| LAND-03 | TBD | Pending |
-| LAND-04 | TBD | Pending |
-| LAND-05 | TBD | Pending |
-| LAND-06 | TBD | Pending |
-| LAND-07 | TBD | Pending |
-| LOGIN-01 | TBD | Pending |
-| LOGIN-02 | TBD | Pending |
-| LOGIN-03 | TBD | Pending |
+| PWA-01 | Phase 10 | Pending |
+| PWA-02 | Phase 10 | Pending |
+| PWA-03 | Phase 10 | Pending |
+| LAND-01 | Phase 11 | Pending |
+| LAND-02 | Phase 11 | Pending |
+| LAND-03 | Phase 11 | Pending |
+| LAND-04 | Phase 11 | Pending |
+| LAND-05 | Phase 11 | Pending |
+| LAND-06 | Phase 11 | Pending |
+| LAND-07 | Phase 11 | Pending |
+| LOGIN-01 | Phase 12 | Pending |
+| LOGIN-02 | Phase 12 | Pending |
+| LOGIN-03 | Phase 12 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 13 total
-- Mapped to phases: 0 (pending create-roadmap)
-- Unmapped: 13
+- Mapped to phases: 13 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after initial definition*
+*Last updated: 2026-01-27 after roadmap creation*

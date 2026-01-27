@@ -5,6 +5,7 @@
 - ✅ **v1.0 UI Refresh** - Phases 1-4 (shipped 2026-01-18) - [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v1.1 Self-Hosting & Polish** - Phases 5-8 (shipped 2026-01-19) - [Archive](milestones/v1.1-ROADMAP.md)
 - ✅ **v1.2 Auth.js v5 Migration** - Phase 9 (shipped 2026-01-23) - [Archive](milestones/v1.2-ROADMAP.md)
+- 🚧 **v1.3 First Impressions** - Phases 10-12 (in progress)
 
 ## Phases
 
@@ -69,10 +70,58 @@ Plans:
 
 </details>
 
+### 🚧 v1.3 First Impressions (In Progress)
+
+**Milestone Goal:** Create an inviting entry experience that showcases HabitStreak's playful personality before users even log in.
+
+#### Phase 10: PWA Icons
+**Goal**: Generate complete PWA icon set to fix manifest 404 errors
+**Depends on**: Nothing (first phase of v1.3)
+**Requirements**: PWA-01, PWA-02, PWA-03
+**Success Criteria** (what must be TRUE):
+  1. PWA manifest loads without 404 errors in browser console
+  2. App can be installed as PWA on Android/Chrome
+  3. iOS home screen bookmark shows HabitStreak icon
+**Research**: Unlikely (well-documented @vite-pwa/assets-generator CLI)
+**Plans**: TBD
+
+Plans:
+- [ ] 10-01: TBD
+
+#### Phase 11: Landing Page
+**Goal**: Build landing page with hero, features, CTAs, and phone mockup
+**Depends on**: Phase 10
+**Requirements**: LAND-01, LAND-02, LAND-03, LAND-04, LAND-05, LAND-06, LAND-07
+**Success Criteria** (what must be TRUE):
+  1. Visitor at `/` sees landing page (not redirected to login)
+  2. Visitor sees hero section with Dutch headline and CTA button
+  3. Visitor sees phone mockup showing app preview
+  4. Visitor sees feature highlights explaining app value
+  5. Landing page displays correctly on mobile and desktop
+**Research**: Unlikely (standard Next.js patterns, research completed)
+**Plans**: TBD
+
+Plans:
+- [ ] 11-01: TBD
+
+#### Phase 12: Login Page Polish
+**Goal**: Add welcoming message and branding to login page
+**Depends on**: Phase 11
+**Requirements**: LOGIN-01, LOGIN-02, LOGIN-03
+**Success Criteria** (what must be TRUE):
+  1. User sees welcoming message on login page
+  2. User sees HabitStreak branding/logo on login page
+  3. Login page visual style matches landing page glassmorphism
+**Research**: Unlikely (minor UI adjustments to existing page)
+**Plans**: TBD
+
+Plans:
+- [ ] 12-01: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 9 → 9.1 (if inserted) → 10
+Phases execute in numeric order: 10 → 11 → 12
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -85,7 +134,10 @@ Phases execute in numeric order: 9 → 9.1 (if inserted) → 10
 | 7. Streak Fix | v1.1 | 1/1 | Complete | 2026-01-19 |
 | 8. Animation Polish | v1.1 | 1/1 | Complete | 2026-01-19 |
 | 9. Auth.js v5 | v1.2 | 2/2 | Complete | 2026-01-23 |
+| 10. PWA Icons | v1.3 | 0/TBD | Not started | - |
+| 11. Landing Page | v1.3 | 0/TBD | Not started | - |
+| 12. Login Polish | v1.3 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-23 after phase 9 completion*
+*Last updated: 2026-01-27 after v1.3 roadmap creation*
