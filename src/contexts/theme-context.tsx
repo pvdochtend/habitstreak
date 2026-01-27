@@ -24,8 +24,8 @@ const STORAGE_KEY_DARK = 'habitstreak-dark-mode'
 
 export function ThemeProvider({
   children,
-  initialColorScheme = 'blue',
-  initialDarkMode = false,
+  initialColorScheme = 'pink',
+  initialDarkMode = true,
 }: {
   children: ReactNode
   initialColorScheme?: ColorScheme
