@@ -23,6 +23,8 @@ vi.mock('@/lib/prisma', () => ({
     authAttempt: {
       create: vi.fn().mockResolvedValue({}),
       count: vi.fn().mockResolvedValue(0),
+      findFirst: vi.fn().mockResolvedValue(null),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
     accountLockout: {
       findUnique: vi.fn().mockResolvedValue(null),
