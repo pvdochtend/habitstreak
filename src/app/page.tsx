@@ -15,7 +15,7 @@ export default async function HomePage() {
 
   // Unauthenticated users see the landing page
   return (
-    <main className="min-h-screen relative">
+    <main className="min-h-svh relative">
       <AnimatedBackground />
       <div className="flex flex-col items-center gap-16 md:gap-24 p-4 md:p-8 pt-12 md:pt-20 pb-16">
         <HeroSection />

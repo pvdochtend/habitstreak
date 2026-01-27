@@ -64,7 +64,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
+    <div className="min-h-svh flex items-center justify-center p-4 relative">
       <AnimatedBackground />
       <Card className="w-full max-w-md shadow-xl animate-scale-in glass-strong">
         <CardHeader className="text-center">

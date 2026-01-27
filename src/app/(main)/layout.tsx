@@ -15,7 +15,7 @@ export default async function MainLayout({
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-svh">
       <AnimatedBackground />
       <main className="pb-20 container max-w-2xl mx-auto relative z-10">{children}</main>
       <BottomNav />
