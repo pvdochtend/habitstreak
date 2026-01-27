@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Make every interaction feel rewarding.
-**Current focus:** Next milestone to be determined
+**Current focus:** v1.4 App Experience — PWA install prompts
 
 ## Current Position
 
-Phase: None active
-Plan: None active
-Status: Between milestones
-Last activity: 2026-01-27 - Archived v1.3 First Impressions milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-01-27 — Milestone v1.4 started
 
-Progress: [==========] 100% (v1.0-v1.3 complete)
+Progress: [░░░░░░░░░░] 0% (v1.4 App Experience)
 
 ## Milestone History
 
@@ -56,7 +56,7 @@ Last session: 2026-01-27
 Stopped at: v1.3 milestone archived
 Resume file: None
 
-Next: Start next milestone with `/gsd:discuss-milestone`
+Next: Define requirements, then `/gsd:plan-phase 13`
 
 ---
-*Last updated: 2026-01-27 after v1.3 milestone completion*
+*Last updated: 2026-01-27 after v1.4 milestone start*

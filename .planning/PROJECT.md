@@ -6,7 +6,17 @@
 
 HabitStreak now has a complete entry experience — landing page with glassmorphism hero, phone mockup, feature highlights, and polished auth pages with branding. PWA icons are generated and manifest works correctly.
 
-**Next milestone:** To be determined
+## Current Milestone: v1.4 App Experience
+
+**Goal:** Make PWA installation discoverable and easy, especially for iOS users.
+
+**Target features:**
+- Install banner on landing page and in-app (after login)
+- iOS walkthrough with visual step-by-step guide
+- Android native install prompt via beforeinstallprompt API
+- Settings page "Install" button as fallback
+- Permanent dismissal with localStorage persistence
+- Hide prompts when already installed (standalone mode detection)
 
 ## What This Is
 
@@ -64,7 +74,15 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ### Active
 
-<!-- No active requirements — next milestone to be determined -->
+<!-- v1.4 App Experience — in progress -->
+
+- [ ] PWA install banner on landing page — discoverable prompt for new visitors
+- [ ] PWA install banner in-app — prompt for logged-in users
+- [ ] iOS visual walkthrough — step-by-step "Add to Home Screen" guide
+- [ ] Android native install prompt — beforeinstallprompt API integration
+- [ ] Settings page install button — fallback for dismissed users
+- [ ] Permanent dismissal — localStorage persistence, never re-show
+- [ ] Standalone mode detection — hide prompts when already installed
 
 ### Out of Scope
 
@@ -134,4 +152,4 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | Reusable AuthHeader | Consistent branding across login/signup pages | ✓ Good — easy to update |
 
 ---
-*Last updated: 2026-01-27 after v1.3 milestone completion*
+*Last updated: 2026-01-27 after v1.4 milestone start*
