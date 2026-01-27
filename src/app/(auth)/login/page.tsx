@@ -10,11 +10,11 @@ import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
+import { AuthHeader } from '@/components/auth/auth-header'
+import { AnimatedBackground } from '@/components/backgrounds/animated-background'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -64,13 +64,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md shadow-xl animate-scale-in">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <AnimatedBackground />
+      <Card className="w-full max-w-md shadow-xl animate-scale-in glass-strong">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Inloggen</CardTitle>
-          <CardDescription>
-            Log in op je HabitStreak account
-          </CardDescription>
+          <AuthHeader
+            title="Welkom terug!"
+            subtitle="Log in op je HabitStreak account"
+          />
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
