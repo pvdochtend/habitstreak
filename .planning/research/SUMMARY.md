@@ -1,172 +1,178 @@
 # Project Research Summary
 
-**Project:** HabitStreak v1.2 Auth.js v5 Migration
-**Domain:** NextAuth v4 → Auth.js v5 Migration
-**Researched:** 2026-01-19
+**Project:** HabitStreak v1.3 First Impressions
+**Domain:** Landing pages and PWA enhancement for Next.js 15 apps
+**Researched:** 2026-01-26
 **Confidence:** HIGH
 
 ## Executive Summary
 
-The Auth.js v5 migration is well-documented with clear upgrade paths. The key benefit for HabitStreak is **`trustHost` support** — enabling dynamic URL detection so login works on localhost, LAN IPs, and custom domains without changing `NEXTAUTH_URL`. The migration involves updating the package (`next-auth@beta`), restructuring the auth configuration, and updating all session access patterns from `getServerSession(authOptions)` to `auth()`.
+HabitStreak v1.3 aims to create an inviting entry experience with a landing page, PWA icons, and login polish. Research reveals the existing stack (Next.js 15, React 19, Tailwind CSS, shadcn/ui) already provides everything needed — no new framework dependencies required.
 
-**Critical decision point:** Cookie name changes (`next-auth.*` → `authjs.*`) and JWT encoding changes will log out all existing users. For a small-user-base self-hosted app, accepting one-time re-login is simpler than implementing cookie migration middleware.
+The primary technical debt is PWA icons: the manifest.json declares 8 icon sizes but `/public/icons/` only contains a README placeholder, causing 404 errors. This must be fixed before landing page work. The current `"purpose": "any maskable"` pattern is deprecated and should be replaced with separate icon entries.
 
-**Migration complexity:** MEDIUM — substantial file changes but patterns are well-documented. No data migration needed (user accounts stay intact, only sessions reset).
+For the landing page, Next.js 15 App Router with a `(marketing)` route group provides clean separation from auth and app routes. Landing pages are static by default (SSG), giving optimal SEO and performance. Middleware requires updating to allow public access to `/` and redirect authenticated users to `/vandaag`. HabitStreak's glassmorphism design is a competitive differentiator — most habit trackers have utilitarian UIs. Lead with visual appeal.
 
 ## Key Findings
 
-### Recommended Stack (from STACK.md)
+### Recommended Stack
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `next-auth` | `@beta` (5.0.0-beta.x) | Core authentication library |
-| `@auth/prisma-adapter` | Latest | Prisma ORM adapter (if needed) |
+No new framework dependencies needed. The existing stack handles everything:
 
-**Installation:** `npm install next-auth@beta`
+- **Next.js 15.1.3**: SSG for landing page is automatic (no `generateStaticParams` needed)
+- **Tailwind CSS 3.4**: Has `backdrop-blur-*` utilities built-in for glassmorphism
+- **shadcn/ui**: Reuse Button, Card components for CTAs and feature cards
+- **@vite-pwa/assets-generator** (new dev dep): Generate PWA icons from single source image
 
-**Environment Variables:**
-- `AUTH_SECRET` — Required (replaces `NEXTAUTH_SECRET`, both work)
-- `AUTH_TRUST_HOST=true` — Required for self-hosted deployments
-- `AUTH_URL` — Not needed (auto-detected from request headers)
+See [STACK.md](./STACK.md) for full details.
 
-### Core Features (from FEATURES.md)
+### Expected Features
 
-**trustHost — The Primary Benefit:**
-- Auth.js v5 reads `Host` header from each request to construct URLs dynamically
-- Behind proxies, reads `X-Forwarded-Host` and `X-Forwarded-Proto`
-- Eliminates the hardcoded `NEXTAUTH_URL` requirement
-- Works with localhost, LAN IPs, custom domains simultaneously
+**Must have (table stakes):**
+- Hero section with headline, subheadline, primary CTA, phone mockup
+- Feature highlights (3-4 features with icons)
+- Secondary CTA at bottom
+- Mobile-responsive design
+- Fast load time (<3 seconds)
 
-**Multi-URL Behavior:**
-| Scenario | v4 (Current) | v5 with trustHost |
-|----------|--------------|-------------------|
-| localhost:3000 | Works if URL matches | Works automatically |
-| 192.168.1.x:3000 | Fails | Works automatically |
-| Custom domain | Fails unless configured | Works automatically |
-| Reverse proxy (HTTPS) | Fails | Works (reads X-Forwarded-Proto) |
+**Should have (competitive):**
+- "How It Works" 3-step section
+- Visual identity showcase (glassmorphism + animations as differentiator)
+- Minimal footer
 
-### Architecture (from ARCHITECTURE.md)
+**Defer (v2+):**
+- Interactive demo (HIGH complexity)
+- Video walkthrough (production effort)
+- Testimonials (no external users for self-hosted app)
 
-**File Structure Changes:**
+**Anti-features (skip entirely):**
+- Pricing section (self-hosted, no tiers)
+- User count stats (personal app)
+- Newsletter signup (not a marketing business)
+- Live chat / enterprise features
 
-| Current Location | New Location | Change |
-|------------------|--------------|--------|
-| `src/lib/auth.ts` | `src/lib/auth.ts` | Complete rewrite — new export pattern |
-| `src/lib/auth-helpers.ts` | `src/lib/auth-helpers.ts` | Update imports — `auth()` replaces `getServerSession` |
-| `src/app/api/auth/[...nextauth]/route.ts` | Same | Simplify to 2-line re-export |
-| `src/middleware.ts` | Same | Rewrite — use `auth` export |
-| N/A | `src/lib/auth.config.ts` | NEW — Edge-compatible config for middleware |
+See [FEATURES.md](./FEATURES.md) for full details.
 
-**Key Pattern Changes:**
+### Architecture Approach
 
-```typescript
-// BEFORE (v4)
-import { getServerSession } from 'next-auth'
-import { authOptions } from './auth'
-const session = await getServerSession(authOptions)
+Use `(marketing)` route group at root level for landing page:
 
-// AFTER (v5)
-import { auth } from './auth'
-const session = await auth()
+```
+src/app/
+├── (marketing)/          # NEW: Public marketing pages
+│   ├── layout.tsx        # Minimal layout (no app chrome)
+│   └── page.tsx          # Landing page at /
+├── (auth)/               # Existing: login, signup
+├── (main)/               # Existing: protected app
+└── api/                  # Existing: API routes
 ```
 
-### Critical Pitfalls (from PITFALLS.md)
+**Key patterns:**
+1. Landing page is static Server Component (SSG) — no auth checks in component
+2. Middleware handles redirect: authenticated users → `/vandaag`
+3. Delete current `src/app/page.tsx` (redirect-only) after landing page complete
 
-| Pitfall | Risk | Mitigation |
-|---------|------|------------|
-| **P1: Cookie name change** | HIGH — All users logged out | Accept re-login or implement migration |
-| **P2: JWT encoding change** | HIGH — Old tokens invalid | Accept re-login (simpler for small user base) |
-| **P3: `withAuth` removed** | BUILD FAIL | Rewrite middleware |
-| **P4: `getServerSession` removed** | BUILD FAIL | Replace with `auth()` |
-| **P6: `req` parameter change** | MEDIUM — Rate limiting affected | Investigate alternative approach |
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for full details.
 
-**Recommended approach for HabitStreak:** Accept one-time re-login after migration. The user base is small (self-hosted), and cookie migration adds significant complexity for minimal benefit.
+### Critical Pitfalls
+
+1. **PWA Icons Not Generated** — manifest.json references files that don't exist. Fix: Generate icons BEFORE adding them to manifest. Use `@vite-pwa/assets-generator`.
+
+2. **"any maskable" Combined Purpose** — Deprecated pattern causes display issues. Fix: Create separate icon entries for `any` and `maskable` purposes.
+
+3. **Middleware Blocking Static Assets** — Current pattern explicitly lists files to exclude. Fix: Use extension-based exclusion pattern for future-proofing.
+
+4. **Route Group Conflicts** — Adding landing page requires middleware update first. Fix: Whitelist `/` in `authorized` callback BEFORE creating landing page.
+
+5. **Glassmorphism Performance** — backdrop-filter is GPU-intensive. Fix: Limit blur to 6-10px, max 2-3 glass elements per viewport, never animate.
+
+See [PITFALLS.md](./PITFALLS.md) for full details.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Auth.js v5 Migration
+### Phase 1: PWA Icons
+**Rationale:** Unblocks manifest errors, required before any public-facing work
+**Delivers:** Complete icon set (192x192, 512x512 for any/maskable), apple-touch-icon
+**Addresses:** PWA install capability, console 404 errors
+**Avoids:** Pitfalls #1, #2, #6 (icons not generated, any maskable, apple icon)
 
-**Rationale:** Single cohesive migration — splitting would leave auth in broken state between phases.
+### Phase 2: Landing Page Foundation
+**Rationale:** Must update middleware before adding public routes
+**Delivers:** `(marketing)` route group, middleware updates, basic landing page structure
+**Uses:** Next.js route groups, Auth.js middleware patterns
+**Avoids:** Pitfall #3, #4 (middleware blocking, route conflicts)
 
-**Delivers:**
-- Auth.js v5 with `trustHost` support
-- Login works on any URL without config changes
-- Existing auth functionality preserved
-- Updated middleware and helpers
+### Phase 3: Landing Page Content
+**Rationale:** Content depends on route structure being correct
+**Delivers:** Hero section, feature highlights, CTAs, phone mockup
+**Implements:** Table stakes features from FEATURES.md
+**Avoids:** Pitfall #5 (first impression UX failures)
 
-**Tasks (suggested order):**
-1. Install `next-auth@beta` package
-2. Create `auth.config.ts` (edge-compatible config)
-3. Rewrite `auth.ts` with new export pattern
-4. Update API route handler
-5. Update middleware
-6. Update `auth-helpers.ts`
-7. Update environment variables
-8. Update type declarations
-9. Test all auth flows
-
-**Addresses:**
-- Multi-URL login issue (v1.2 core goal)
-- Future-proofs auth stack
-
-**Avoids:**
-- P1/P2: Accepts re-login (simpler than cookie migration)
-- P3: Middleware rewrite included
-- P4: getServerSession replacement included
+### Phase 4: Login Page Polish
+**Rationale:** Final polish after main landing page complete
+**Delivers:** Welcoming message, branding consistency, improved flow from landing
+**Uses:** Existing glassmorphism design system
 
 ### Phase Ordering Rationale
 
-**Single phase recommended:** Auth migration is atomic — cannot be split without breaking auth. All file changes depend on each other.
-
-**Why not split:**
-- Package upgrade breaks existing imports immediately
-- Middleware can't work without new config
-- API route depends on new exports
-- Helpers depend on new `auth()` function
+- **PWA icons first**: Fixing manifest errors should precede any public launch — visitors shouldn't see 404s in console
+- **Foundation before content**: Middleware and route structure must work before building landing page UI
+- **Landing before login polish**: Login page improvements are lower priority than the main entry experience
+- **No parallelization**: Each phase depends on the previous (icons → routes → content → polish)
 
 ### Research Flags
 
-| Phase | Flag | Reason |
-|-------|------|--------|
-| Auth Migration | SKIP RESEARCH | Research complete — patterns clear |
-| Auth Migration | SPIKE NEEDED | `req` parameter for rate limiting — verify actual v5 behavior |
+Phases with standard patterns (skip research-phase):
+- **Phase 1 (PWA Icons):** Well-documented, `@vite-pwa/assets-generator` CLI handles everything
+- **Phase 2 (Foundation):** Standard Next.js patterns, documented in ARCHITECTURE.md
+- **Phase 3 (Landing Content):** Copy/design decisions, not technical research
+- **Phase 4 (Login Polish):** Minor UI adjustments, no research needed
 
-**Spike details:** Current `authorize` callback uses `req` parameter to extract client IP for rate limiting. v5 changed this pattern. During implementation, verify how to access request headers and update `ip-utils.ts` accordingly.
+No phases require additional research — all patterns are well-documented.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack (packages, versions) | HIGH | Official Auth.js documentation |
-| Features (trustHost) | HIGH | Official deployment docs + GitHub issues |
-| Architecture (file structure) | HIGH | Official migration guide + examples |
-| Pitfalls (breaking changes) | HIGH | Official docs + community verification |
-| Rate limiting in v5 | MEDIUM | Needs hands-on verification |
+| Stack | HIGH | Verified existing deps handle all requirements |
+| Features | HIGH | Consistent patterns across competitor analysis |
+| Architecture | HIGH | Official Next.js docs + existing codebase patterns |
+| Pitfalls | HIGH | Verified against actual project code + official docs |
 
 **Overall confidence:** HIGH
 
-### Gaps to Address During Implementation
+### Gaps to Address
 
-1. **Rate limiting request access:** Verify how `authorize` callback accesses request headers in v5
-2. **Split config necessity:** May not need `auth.config.ts` if not using database adapter
-3. **Error message handling:** Dutch error messages may need adjustment for v5 error flow
+- **Dutch copywriting**: Headlines like "Bouw gewoontes die blijven" need native speaker review for natural phrasing
+- **Phone mockup creation**: Will need to capture real app screenshots and create device frame — tooling TBD
+- **OG image design**: Need to create 1200x630 Open Graph image for social sharing
+- **Logo source file**: Need high-quality SVG or 512x512+ PNG for PWA icon generation
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Auth.js Migration Guide](https://authjs.dev/getting-started/migrating-to-v5)
-- [Auth.js Upgrade Guide](https://authjs.dev/guides/upgrade-to-v5)
-- [Auth.js Edge Compatibility](https://authjs.dev/guides/edge-compatibility)
-- [Auth.js Credentials Provider](https://authjs.dev/getting-started/authentication/credentials)
-- [Auth.js Next.js Reference](https://authjs.dev/reference/nextjs)
+- [Next.js App Icons Documentation](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons)
+- [Next.js Route Groups Documentation](https://nextjs.org/docs/app/building-your-application/routing/route-groups)
+- [Auth.js Protecting Routes](https://authjs.dev/getting-started/session-management/protecting)
+- [@vite-pwa/assets-generator CLI](https://vite-pwa-org.netlify.app/assets-generator/cli)
+- [Tailwind CSS Backdrop Blur](https://tailwindcss.com/docs/backdrop-filter-blur)
 
 ### Secondary (MEDIUM confidence)
-- [DEV.to Migration Guide](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad)
-- [Medium: Migration Without Logout](https://medium.com/@sajvanleeuwen/migrating-from-nextauth-v4-to-auth-js-v5-without-logging-out-users-c7ac6bbb0e51)
-- [CodeVoweb Next.js 15 + NextAuth v5](https://codevoweb.com/how-to-set-up-next-js-15-with-nextauth-v5/)
+- [Todoist Landing Page](https://todoist.com) — Competitor analysis
+- [Notion Landing Page](https://notion.com) — Competitor analysis
+- [Clerk: Skip Middleware for Static Files](https://clerk.com/blog/skip-nextjs-middleware-static-and-public-files)
+- [Dev.to: Why PWA icons shouldn't use "any maskable"](https://dev.to/progressier/why-a-pwa-app-icon-shouldnt-have-a-purpose-set-to-any-maskable-4c78)
+
+### Verified from Project
+- `package.json` — Current dependency versions
+- `public/manifest.json` — PWA manifest structure (has 404 errors)
+- `public/icons/README.md` — Confirms icons not generated
+- `src/middleware.ts` — Current matcher pattern
+- `src/lib/auth.config.ts` — Current authorized callback
+- `src/app/globals.css` — Existing glassmorphism utilities
 
 ---
-*Research completed: 2026-01-19*
+*Research completed: 2026-01-26*
 *Ready for roadmap: yes*

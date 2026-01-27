@@ -1,294 +1,355 @@
-# Stack Research: Auth.js v5 Migration
+# Stack Research: Landing Pages and PWA Enhancement
 
-**Researched:** 2026-01-19
-**Domain:** Authentication - NextAuth v4 to Auth.js v5 Migration
-**Confidence:** HIGH (verified via official Auth.js documentation)
+**Domain:** Landing pages and PWA enhancement for Next.js 15 apps
+**Researched:** 2026-01-26
+**Confidence:** HIGH
 
-## Summary
+## Executive Summary
 
-Auth.js v5 (formerly NextAuth.js v5) is the next major version of the authentication library. The package name remains `next-auth` but is installed with the `@beta` tag. The key benefit for HabitStreak is native `trustHost` support via the `AUTH_TRUST_HOST` environment variable, enabling automatic host detection behind reverse proxies without hardcoding `NEXTAUTH_URL`. The migration is straightforward for Credentials+JWT setups: move configuration to a root `auth.ts` file, update imports from `getServerSession(authOptions)` to the unified `auth()` function, and replace the Prisma adapter package.
+HabitStreak v1.3 requires a landing page, PWA icons, and login polish. The existing stack (Next.js 15, React 19, Tailwind CSS 3.4, shadcn/ui) already provides everything needed for landing pages. No new framework dependencies required.
 
-**Primary recommendation:** Install `next-auth@beta` and `@auth/prisma-adapter`. The migration requires updating import paths and configuration structure but preserves existing business logic.
+**Key findings:**
+- Landing pages are static by default in Next.js 15 App Router - just create a `page.tsx` without dynamic data
+- Glassmorphism CSS is already implemented in `globals.css` (`.glass`, `.glass-subtle`, `.glass-strong`)
+- PWA manifest exists but icon files are missing from `/public/icons/`
+- Use `@vite-pwa/assets-generator` (standalone CLI, works without Vite) for icon generation
 
-## Recommended Packages
+## Recommended Stack
 
-### Core
+### Core Technologies (Already Installed)
 
-| Package | Version | Purpose | Confidence |
+| Technology | Current Version | Purpose | Notes |
+|------------|-----------------|---------|-------|
+| Next.js | 15.1.3 | Framework | Static generation is default for pages without dynamic data |
+| React | 19.0.0 | UI library | Server Components for landing page |
+| Tailwind CSS | 3.4.17 | Styling | Has `backdrop-blur-*` utilities built-in |
+| shadcn/ui | (radix-based) | Components | Already installed, use for CTAs |
+
+### Supporting Libraries (Already Installed)
+
+| Library | Version | Purpose | Landing Page Use |
+|---------|---------|---------|------------------|
+| lucide-react | 0.460.0 | Icons | Feature section icons |
+| tailwindcss-animate | 1.0.7 | Animations | Hero entrance animations |
+| clsx/tailwind-merge | 2.1.1/2.6.0 | Class utilities | Conditional styling |
+
+### New Dev Dependencies
+
+| Library | Version | Purpose | Why Needed |
 |---------|---------|---------|------------|
-| `next-auth` | `@beta` (5.0.0-beta.x) | Core authentication library for Next.js | HIGH - Official docs specify `npm install next-auth@beta` |
-| `@auth/prisma-adapter` | Latest | Database adapter for Prisma ORM | HIGH - Replaces deprecated `@next-auth/prisma-adapter` |
+| @vite-pwa/assets-generator | ^0.2.6 | PWA icon generation | Single source image to all PWA sizes |
 
-### Installation Command
+### Optional: Animation Enhancement
 
-```bash
-npm install next-auth@beta @auth/prisma-adapter
-npm uninstall @next-auth/prisma-adapter  # If previously installed (HabitStreak does not have this)
-```
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| motion | 12.x | Advanced animations | Only if CSS animations insufficient |
 
-### What NOT to Install
+**Recommendation:** Start with CSS animations (already have `animate-slide-up`, `animate-fade-in`). Only add `motion` if hero section needs complex orchestrated animations.
 
-| Package | Status | Reason |
-|---------|--------|--------|
-| `@auth/core` | DO NOT INSTALL | Internal dependency; users should never interact with it directly |
-| `@next-auth/prisma-adapter` | DEPRECATED | Old scope; replaced by `@auth/prisma-adapter` |
-
-### Version Status Notes
-
-- **Stable v5 not yet released:** As of January 2026, Auth.js v5 remains in beta (v5.0.0-beta.x series)
-- **Production-ready:** Despite beta tag, widely used in production; December 2025 articles confirm stability
-- **HabitStreak's current stack:** `next-auth@4.24.11` with no separate adapter package (Credentials-only)
-
-## Migration Notes
-
-### Package Changes
-
-| v4 Package | v5 Package | Notes |
-|------------|------------|-------|
-| `next-auth` | `next-auth@beta` | Same package, beta tag for v5 |
-| `@next-auth/prisma-adapter` | `@auth/prisma-adapter` | New scope (HabitStreak doesn't use adapters currently) |
-
-### Import Path Changes
-
-| Context | v4 (Current HabitStreak) | v5 (After Migration) |
-|---------|--------------------------|----------------------|
-| Config type | `import { NextAuthOptions } from 'next-auth'` | `import { NextAuthConfig } from 'next-auth'` |
-| Get session (Server Components) | `import { getServerSession } from 'next-auth'` + `getServerSession(authOptions)` | `import { auth } from '@/auth'` + `auth()` |
-| Credentials provider | `import CredentialsProvider from 'next-auth/providers/credentials'` | `import Credentials from 'next-auth/providers/credentials'` |
-| Client-side signIn/signOut | `import { signIn, signOut } from 'next-auth/react'` | Same (unchanged) |
-| Middleware | `import { withAuth } from 'next-auth/middleware'` | `import { auth } from '@/auth'` (use `auth` as middleware) |
-
-### Type Declaration Changes
-
-| v4 | v5 |
-|----|-----|
-| `declare module 'next-auth'` | Same |
-| `declare module 'next-auth/jwt'` | Same |
-| `NextAuthOptions` | `NextAuthConfig` |
-
-### Files That Change
-
-| Current File | Migration Action |
-|--------------|------------------|
-| `src/lib/auth.ts` | Move to `auth.ts` (project root), change export pattern |
-| `src/app/api/auth/[...nextauth]/route.ts` | Simplify to `export { handlers as GET, handlers as POST }` |
-| `src/lib/auth-helpers.ts` | Update imports: `auth()` replaces `getServerSession(authOptions)` |
-| `src/types/next-auth.d.ts` | Keep, but verify type names still valid |
-| `src/middleware.ts` | Update to use `auth` export from `@/auth` |
-
-## Configuration Requirements
-
-### Environment Variables
-
-| Variable | v4 (Current) | v5 (After Migration) | Notes |
-|----------|--------------|----------------------|-------|
-| `NEXTAUTH_SECRET` | Required | `AUTH_SECRET` (aliased) | Both work; prefer `AUTH_` prefix going forward |
-| `NEXTAUTH_URL` | Required for production | `AUTH_URL` (optional) | v5 auto-infers from request headers |
-| `AUTH_TRUST_HOST` | N/A | `true` (new) | **KEY BENEFIT**: Enables reverse proxy support without hardcoded URL |
-
-### New Environment Setup
+## Installation
 
 ```bash
-# .env.local (development)
-AUTH_SECRET="your-32-character-secret-here"
-# AUTH_URL not needed - auto-detected
+# PWA icon generation (dev dependency)
+npm install -D @vite-pwa/assets-generator
 
-# .env.production (production with reverse proxy)
-AUTH_SECRET="your-32-character-secret-here"
-AUTH_TRUST_HOST=true
-# AUTH_URL not needed - reads X-Forwarded-Host header
+# Optional: only if CSS animations insufficient for hero
+npm install motion
 ```
 
-### Generate AUTH_SECRET
+## Glassmorphism Implementation
 
-```bash
-# Generate new secret (recommended to generate fresh for migration)
-npx auth secret
-# Or manually:
-openssl rand -base64 33
-```
+### Existing Utilities (globals.css)
 
-### Configuration File Structure (v5)
+The project already has glassmorphism classes:
 
-**New file:** `auth.ts` (project root)
-
-```typescript
-import NextAuth from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-import type { NextAuthConfig } from "next-auth"
-
-const config: NextAuthConfig = {
-  providers: [
-    Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        // Your existing authorize logic here
-      },
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.email = user.email
-      }
-      return token
-    },
-    session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.email = token.email as string
-      }
-      return session
-    },
-  },
-  trustHost: true, // Enable reverse proxy support
+```css
+/* Already in globals.css - use these */
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: hsl(var(--card) / 0.7);
+  border: 1px solid hsl(var(--border) / 0.3);
 }
 
-export const { auth, handlers, signIn, signOut } = NextAuth(config)
+.glass-subtle {
+  backdrop-filter: blur(8px);
+  background: hsl(var(--card) / 0.5);
+}
+
+.glass-strong {
+  backdrop-filter: blur(20px);
+  background: hsl(var(--card) / 0.85);
+}
 ```
 
-**Simplified API route:** `src/app/api/auth/[...nextauth]/route.ts`
+### Hero Section Pattern
 
-```typescript
-import { handlers } from "@/auth"
-export const { GET, POST } = handlers
+```tsx
+// Glassmorphism hero with gradient background
+<section className="relative min-h-screen overflow-hidden">
+  {/* Gradient background */}
+  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/20" />
+
+  {/* Floating orbs (already have animate-float-* classes) */}
+  <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary/30 blur-3xl animate-float-slow" />
+  <div className="absolute bottom-20 right-10 w-48 h-48 rounded-full bg-accent/30 blur-3xl animate-float-medium" />
+
+  {/* Content panel */}
+  <div className="relative z-10 glass rounded-2xl p-8 max-w-xl mx-auto">
+    <h1 className="text-4xl font-bold animate-fade-in">...</h1>
+  </div>
+</section>
 ```
 
-### TypeScript Configuration
+### Tailwind Backdrop-Blur Utilities
 
-No changes required to `tsconfig.json`. Ensure path alias `@/auth` resolves to root `auth.ts`:
+Built-in utilities (no configuration needed):
+
+| Class | Blur Amount | Use Case |
+|-------|-------------|----------|
+| `backdrop-blur-sm` | 4px | Subtle glass |
+| `backdrop-blur-md` | 12px | Standard glass |
+| `backdrop-blur-lg` | 16px | Prominent glass |
+| `backdrop-blur-xl` | 24px | Strong glass |
+| `backdrop-blur-2xl` | 40px | Very strong |
+| `backdrop-blur-3xl` | 64px | Maximum |
+
+**Pattern:** `backdrop-blur-md bg-white/30 border border-white/20`
+
+## Landing Page Architecture
+
+### Route Structure
+
+```
+src/app/
+├── (public)/           # Route group for public pages
+│   ├── layout.tsx      # Minimal layout (no auth, no bottom nav)
+│   └── page.tsx        # Landing page (static by default)
+├── (auth)/             # Existing auth pages
+└── (main)/             # Existing protected app
+```
+
+### Static Generation (Default)
+
+Landing pages are **automatically static** in Next.js 15 App Router unless you:
+- Use `cookies()`, `headers()`, or `searchParams`
+- Call `fetch()` with `cache: 'no-store'`
+- Export `dynamic = 'force-dynamic'`
+
+**Do not add `generateStaticParams` for the landing page** - it's unnecessary for non-dynamic routes.
+
+### Metadata Configuration
+
+```tsx
+// src/app/(public)/page.tsx
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'HabitStreak - Bouw betere gewoonten',
+  description: 'Track dagelijkse gewoonten, bouw streaks, en bereik je doelen met HabitStreak.',
+  metadataBase: new URL('https://habitstreak.nl'), // Required for OG images
+  openGraph: {
+    title: 'HabitStreak - Bouw betere gewoonten',
+    description: 'Track dagelijkse gewoonten, bouw streaks, en bereik je doelen.',
+    images: ['/og-image.png'], // 1200x630 recommended
+    locale: 'nl_NL',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'HabitStreak - Bouw betere gewoonten',
+    description: 'Track dagelijkse gewoonten, bouw streaks, en bereik je doelen.',
+    images: ['/og-image.png'],
+  },
+}
+```
+
+### Landing Page Sections
+
+Standard structure for SaaS landing pages:
+
+1. **Hero** - Headline, subheadline, CTA, app preview
+2. **Features** - 3-4 key benefits with icons
+3. **How it works** - Simple 3-step process
+4. **Social proof** - Optional for v1.3
+5. **CTA** - Final call to action
+
+## PWA Icon Generation
+
+### Current State
+
+`public/manifest.json` references icons that do not exist:
+- `/icons/icon-72x72.png` through `/icons/icon-512x512.png`
+- All 8 sizes need to be generated
+
+### Using @vite-pwa/assets-generator
+
+**Step 1: Create source image**
+
+Create a 512x512 or larger SVG/PNG at `public/logo.svg` (SVG recommended for quality).
+
+**Step 2: Add script to package.json**
 
 ```json
 {
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"],
-      "@/auth": ["./auth"]  // Add if not using src/auth.ts
-    }
+  "scripts": {
+    "generate-pwa-icons": "pwa-assets-generator --preset minimal-2023 public/logo.svg"
   }
 }
 ```
 
-**Alternative:** Place `auth.ts` in `src/` and import as `@/auth` without config changes.
+**Step 3: Run generation**
 
-## trustHost Configuration (Primary Migration Goal)
-
-### Why This Matters
-
-HabitStreak's login issue: `NEXTAUTH_URL` must match the exact URL users access the app from. When deployed with Docker/reverse proxy, users may access via:
-- `http://localhost:3000` (direct)
-- `http://192.168.1.x:3000` (LAN IP)
-- `https://habit.example.com` (reverse proxy domain)
-
-**v4 Problem:** Must hardcode one URL; others fail with CSRF/session issues.
-
-**v5 Solution:** `AUTH_TRUST_HOST=true` reads `X-Forwarded-Host` header dynamically.
-
-### Configuration Options
-
-```typescript
-// Option 1: Environment variable (recommended)
-// .env
-AUTH_TRUST_HOST=true
-
-// Option 2: Config file
-export const { auth, handlers } = NextAuth({
-  // ...providers, callbacks, etc.
-  trustHost: true,
-})
+```bash
+npm run generate-pwa-icons
 ```
 
-### Reverse Proxy Requirements
+### Output Files (minimal-2023 preset)
 
-Ensure reverse proxy forwards these headers:
+The `minimal-2023` preset generates:
 
-```nginx
-# Nginx example
-proxy_set_header Host $host;
-proxy_set_header X-Forwarded-Host $host;
-proxy_set_header X-Forwarded-Proto $scheme;
-proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+| File | Size | Purpose |
+|------|------|---------|
+| `pwa-64x64.png` | 64x64 | Small favicon |
+| `pwa-192x192.png` | 192x192 | Android home screen |
+| `pwa-512x512.png` | 512x512 | Android splash |
+| `maskable-icon-512x512.png` | 512x512 | Maskable (full-bleed) |
+| `apple-touch-icon-180x180.png` | 180x180 | iOS home screen |
+
+**Note:** Rename output files to match existing manifest.json paths, OR update manifest.json to use new naming.
+
+### Maskable Icon Guidelines
+
+Maskable icons allow full-bleed display on Android. Critical content must be in the **safe zone** (central 80% of icon - 40% radius from center).
+
 ```
+┌─────────────────┐
+│                 │
+│   ┌─────────┐   │
+│   │ SAFE    │   │  ← Critical content here
+│   │ ZONE    │   │
+│   └─────────┘   │
+│                 │
+└─────────────────┘
+     10% margin
+```
+
+### Recommended Manifest Update
+
+After generation, update `manifest.json` icons array:
+
+```json
+{
+  "icons": [
+    {
+      "src": "/icons/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
+```
+
+**Important:** Do not use `"purpose": "any maskable"` - use separate icon entries.
+
+## Alternatives Considered
+
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| CSS animations | motion (framer-motion) | Complex orchestrated sequences, spring physics, layout animations |
+| @vite-pwa/assets-generator | pwa-asset-generator | Need iOS splash screens (uses Puppeteer, heavier) |
+| Static metadata export | generateMetadata | Dynamic OG images per page (not needed for landing) |
+| Tailwind backdrop-blur | Custom CSS | Never - Tailwind covers all blur values |
 
 ## What NOT to Use
 
-### Deprecated Patterns
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `next-pwa` | Adds service worker complexity, overkill for icons | Just generate icons manually |
+| `pwa-asset-generator` (Puppeteer-based) | Heavy dependency, uses browser for generation | `@vite-pwa/assets-generator` (sharp-based) |
+| `motion` for simple fades | Unnecessary JS bundle | CSS `animate-fade-in`, `animate-slide-up` |
+| External animation libraries (GSAP, anime.js) | Not needed, adds bundle size | Tailwind animations + optional motion |
+| Static export (`output: 'export'`) | Breaks ISR, API routes | Keep `output: 'standalone'` |
+| `generateStaticParams` for landing page | Only needed for dynamic [slug] routes | Default static generation |
 
-| Pattern | Status | Replacement |
-|---------|--------|-------------|
-| `getServerSession(authOptions)` | Deprecated | `auth()` from `@/auth` |
-| `import { ... } from 'next-auth/next'` | Removed | `import { auth } from '@/auth'` |
-| `import { withAuth } from 'next-auth/middleware'` | Removed | Use `auth` export as middleware |
-| `@next-auth/*-adapter` packages | Deprecated | Use `@auth/*-adapter` packages |
-| OAuth 1.0 providers | Removed | Use OAuth 2.0 equivalents |
+## Version Compatibility
 
-### Common Wrong Choices
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| Next.js 15.1.3 | React 19.0.0 | Verified working |
+| motion 12.x | React 19.0.0 | Use `import { motion } from "motion/react"` |
+| @vite-pwa/assets-generator 0.2.x | Node.js 18+ | Standalone CLI, no Vite required |
+| Tailwind CSS 3.4.x | Next.js 15 | Works out of box |
 
-| Mistake | Why It's Wrong | Correct Approach |
-|---------|----------------|------------------|
-| Installing `@auth/core` directly | Internal package; not for direct use | Only install `next-auth@beta` |
-| Using `next-auth` (no tag) | Gets v4.24.x, not v5 | Use `next-auth@beta` explicitly |
-| Keeping `authOptions` export pattern | v5 doesn't pass config around | Export `auth, handlers, signIn, signOut` from config file |
-| Setting `AUTH_TRUST_HOST=false` | String "false" evaluates to truthy | Omit variable entirely to disable |
+## Performance Considerations
 
-### Cookie Name Change
+### Backdrop-Filter Performance
 
-**Note:** Cookie prefix changes from `next-auth` to `authjs`. Existing sessions will be invalidated on migration - users will need to log in again.
+**Issue:** `backdrop-filter: blur()` is GPU-intensive, can cause jank on mobile.
 
-## Edge Runtime Considerations
+**Mitigations:**
+1. Apply glass effects to small, static elements (cards, not full-screen)
+2. Avoid animating glass elements
+3. Use `will-change: transform` sparingly
+4. Test on low-end devices (Android Go, old iPhones)
 
-HabitStreak uses Prisma which has edge runtime support as of v5.12.0. However, since HabitStreak uses JWT strategy (not database sessions), edge compatibility is not a concern for the auth middleware.
+### Hero Animation Performance
 
-For Credentials provider with JWT strategy:
-- No database adapter needed for session storage
-- Middleware can run at edge without issues
-- `authorize()` callback runs in Node.js runtime (API route)
+**Best practices:**
+- Use CSS transforms, not layout properties (top, left, width)
+- Prefer `opacity` and `transform` for 60fps
+- Add `prefers-reduced-motion` support (already in globals.css)
+- Limit floating orb count (2-3 max)
 
-## Breaking Changes Summary
+## File Checklist for v1.3
 
-| Change | Impact on HabitStreak | Action Required |
-|--------|----------------------|-----------------|
-| OAuth 1.0 removed | None (Credentials only) | None |
-| Minimum Next.js 14.0 | Compatible (v15.1.3) | None |
-| Cookie prefix `next-auth` -> `authjs` | Users logged out | Accept; users re-login once |
-| `NextAuthOptions` -> `NextAuthConfig` | Type imports | Update type imports |
-| Config export pattern | Major refactor | Move config, change exports |
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `public/logo.svg` | Source image for PWA icon generation |
+| `public/icons/*.png` | Generated PWA icons |
+| `public/og-image.png` | 1200x630 Open Graph image |
+| `src/app/(public)/layout.tsx` | Public page layout (no auth) |
+| `src/app/(public)/page.tsx` | Landing page |
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `public/manifest.json` | Update icon paths after generation |
+| `src/app/layout.tsx` | Add metadataBase for OG images |
+| `package.json` | Add `generate-pwa-icons` script |
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Auth.js Migration Guide](https://authjs.dev/getting-started/migrating-to-v5) - Official v4 to v5 migration documentation
-- [Auth.js Installation](https://authjs.dev/getting-started/installation) - Package installation guide
-- [Auth.js Credentials Provider](https://authjs.dev/getting-started/authentication/credentials) - Credentials setup guide
-- [Auth.js Deployment](https://authjs.dev/getting-started/deployment) - trustHost and environment variables
-- [Auth.js Prisma Adapter](https://authjs.dev/getting-started/adapters/prisma) - Prisma adapter configuration
+- [Next.js App Icons Documentation](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons) - File conventions for PWA icons
+- [Next.js Metadata API](https://nextjs.org/docs/app/api-reference/functions/generate-metadata) - SEO and OG configuration
+- [Tailwind CSS Backdrop Blur](https://tailwindcss.com/docs/backdrop-filter-blur) - Official backdrop-filter utilities
+- [@vite-pwa/assets-generator CLI](https://vite-pwa-org.netlify.app/assets-generator/cli) - PWA icon generation
 
 ### Secondary (MEDIUM confidence)
-- [DEV.to Migration Guide](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad) - Community migration examples
-- [CodeVoweb Next.js 15 + NextAuth v5 Guide](https://codevoweb.com/how-to-set-up-next-js-15-with-nextauth-v5/) - Next.js 15 specific setup
+- [Motion for React Upgrade Guide](https://motion.dev/docs/react-upgrade-guide) - React 19 compatibility confirmed
+- [Epic Web Dev Glassmorphism](https://www.epicweb.dev/tips/creating-glassmorphism-effects-with-tailwind-css) - Tailwind glass patterns
+- [Next.js 15 SEO Checklist](https://dev.to/vrushikvisavadiya/nextjs-15-seo-checklist-for-developers-in-2025-with-code-examples-57i1) - 2025 best practices
 
-### Tertiary (LOW confidence)
-- Various GitHub discussions on trustHost issues - Confirm configuration patterns work in practice
-
-## Metadata
-
-**Confidence breakdown:**
-- Core packages: HIGH - Official Auth.js documentation
-- Import paths: HIGH - Official migration guide
-- trustHost configuration: HIGH - Official deployment docs + GitHub issue confirmations
-- Cookie name change: MEDIUM - Mentioned in migration guide, needs testing
-
-**Research date:** 2026-01-19
-**Valid until:** Estimated 60 days (until stable v5 release may change patterns)
+### Verified from Project
+- `package.json` - Current dependency versions (Next.js 15.1.3, React 19.0.0, Tailwind 3.4.17)
+- `globals.css` - Existing `.glass`, `.glass-subtle`, `.glass-strong` utilities
+- `public/manifest.json` - Existing PWA manifest structure
+- `next.config.js` - Current configuration (`output: 'standalone'`)

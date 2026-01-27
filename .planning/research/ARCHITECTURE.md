@@ -1,527 +1,354 @@
-# Architecture Research: NextAuth v4 to Auth.js v5 Migration
+# Architecture Research
 
-**Researched:** 2026-01-19
-**Domain:** Authentication - NextAuth v4 to Auth.js v5 Migration
-**Confidence:** HIGH (Official documentation verified)
+**Domain:** Landing pages in Next.js 15 App Router with Auth.js v5
+**Researched:** 2026-01-26
+**Confidence:** HIGH
 
 ## Summary
 
-Auth.js v5 is a major rewrite that centralizes configuration into a single `auth.ts` file that exports `handlers`, `auth`, `signIn`, and `signOut`. The API route becomes a simple re-export of handlers. The key architectural change is moving from `getServerSession(authOptions)` to a universal `auth()` function. For projects using Prisma (which is not edge-compatible), a split configuration pattern is required: `auth.config.ts` for edge-safe config (used by middleware) and `auth.ts` for full config with database adapter.
+Landing pages in Next.js 15 should use route groups to separate marketing/public pages from the authenticated app. The standard pattern is a `(marketing)` route group at the root level containing all public pages, with the landing page at `(marketing)/page.tsx` serving as the home route (`/`). This integrates cleanly with existing `(auth)` and `(main)` route groups.
 
-**Primary recommendation:** Migrate using the split configuration pattern to maintain middleware functionality while keeping Prisma adapter support.
+For HabitStreak, the landing page should be a **Server Component using Static Site Generation (SSG)** for optimal SEO and performance. Auth.js v5 middleware handles redirecting authenticated users to `/vandaag` when they visit the landing page.
 
-## File Structure Changes
+**Primary recommendation:** Add a `(marketing)` route group with the landing page as a static Server Component. Update middleware to allow public access to `/` and add auth-based redirect logic.
 
-### Current (v4)
+## System Overview
+
 ```
-src/
-  lib/
-    auth.ts              -- authOptions: NextAuthOptions export
-    auth-helpers.ts      -- getCurrentUser, requireAuth, isAuthenticated
-  app/
-    api/auth/[...nextauth]/route.ts  -- handler = NextAuth(authOptions)
-  middleware.ts          -- withAuth from next-auth/middleware
-  types/
-    next-auth.d.ts       -- Session/JWT type augmentation
-```
-
-### Target (v5)
-```
-src/
-  lib/
-    auth.config.ts       -- NEW: Edge-compatible config (no adapter)
-    auth.ts              -- CHANGED: NextAuth() with adapter, exports {handlers, auth, signIn, signOut}
-    auth-helpers.ts      -- CHANGED: Uses auth() instead of getServerSession
-  app/
-    api/auth/[...nextauth]/route.ts  -- SIMPLIFIED: export { GET, POST } from handlers
-  middleware.ts          -- CHANGED: Uses auth from auth.config.ts
-  types/
-    next-auth.d.ts       -- UPDATED: Module augmentation syntax changes
-```
-
-## Configuration Changes
-
-### auth.config.ts (NEW FILE)
-
-Edge-compatible configuration without database adapter. Used by middleware.
-
-```typescript
-// src/lib/auth.config.ts
-import type { NextAuthConfig } from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-
-// Note: This file contains ONLY edge-compatible code
-// No Prisma, no bcrypt, no database calls
-
-export default {
-  providers: [
-    Credentials({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      // authorize is NOT defined here - it's in auth.ts
-      // This allows middleware to work without database access
-    }),
-  ],
-  pages: {
-    signIn: '/login',
-    error: '/login',
-  },
-  callbacks: {
-    // JWT callback can stay here (edge-compatible)
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.email = user.email
-      }
-      return token
-    },
-    // Session callback can stay here
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.email = token.email as string
-      }
-      return session
-    },
-    // Authorized callback for middleware route protection
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user
-      const isOnProtectedRoute = !nextUrl.pathname.startsWith('/login') &&
-                                  !nextUrl.pathname.startsWith('/signup')
-
-      if (isOnProtectedRoute && !isLoggedIn) {
-        return false // Redirect to signIn page
-      }
-      return true
-    },
-  },
-} satisfies NextAuthConfig
+                    Request to /
+                         |
+                         v
+              +------------------+
+              |   Middleware     |
+              | (Auth.js v5)     |
+              +------------------+
+                    |
+        +-----------+-----------+
+        |                       |
+   Authenticated?           Not Auth?
+        |                       |
+        v                       v
++---------------+       +------------------+
+| Redirect to   |       | (marketing)/     |
+| /vandaag      |       | page.tsx         |
++---------------+       | (Static SSG)     |
+                        +------------------+
+                               |
+                               v
+                        +------------------+
+                        | Landing Page UI  |
+                        | (Server Rendered)|
+                        +------------------+
 ```
 
-### auth.ts (Before vs After)
+### Component Responsibilities
 
-**BEFORE (v4):**
-```typescript
-import { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import bcrypt from 'bcrypt'
-import { prisma } from './prisma'
+| Component | Responsibility | Implementation |
+|-----------|----------------|----------------|
+| `(marketing)/page.tsx` | Landing page content | Static Server Component (SSG) |
+| `(marketing)/layout.tsx` | Marketing layout (no app chrome) | Minimal layout, no bottom nav |
+| Middleware | Route protection + auth redirects | Check auth, redirect logged-in users from landing |
+| `auth.config.ts` | Define public paths | Add `/` to publicPaths array in `authorized` callback |
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: { ... },
-      async authorize(credentials, req) {
-        // All auth logic here
-      },
-    }),
-  ],
-  session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
-  pages: { signIn: '/login', error: '/login' },
-  callbacks: { jwt, session },
-  secret: process.env.NEXTAUTH_SECRET,
-}
+## Recommended Project Structure
+
+```
+src/app/
+├── layout.tsx              # Root layout (unchanged - html/body/ThemeProvider)
+├── (marketing)/            # NEW: Public marketing pages
+│   ├── layout.tsx          # Marketing layout (optional, for shared header/footer)
+│   └── page.tsx            # Landing page at /
+├── (auth)/                 # Existing: Auth pages
+│   ├── login/page.tsx
+│   └── signup/page.tsx
+├── (main)/                 # Existing: Protected app pages
+│   ├── layout.tsx          # App layout with BottomNav
+│   ├── vandaag/page.tsx
+│   ├── inzichten/page.tsx
+│   ├── taken/page.tsx
+│   └── instellingen/page.tsx
+└── api/                    # Existing: API routes
 ```
 
-**AFTER (v5):**
-```typescript
-// src/lib/auth.ts
-import NextAuth from 'next-auth'
-import Credentials from 'next-auth/providers/credentials'
-import bcrypt from 'bcrypt'
-import { prisma } from './prisma'
-import authConfig from './auth.config'
-import { AuthUser } from '@/types'
-import { getClientIp } from './ip-utils'
-import {
-  checkRateLimit,
-  recordAttempt,
-  isAccountLocked,
-  lockAccount,
-  countRecentFailures,
-  RATE_LIMIT_CONFIG,
-  DUTCH_ERRORS,
-} from './rate-limit'
+**DELETE:** `src/app/page.tsx` (current redirect-only page superseded by landing page)
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  ...authConfig,
-  // Override providers to add authorize function (requires database)
-  providers: [
-    Credentials({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials, request) {
-        // Note: 'req' is now 'request' (Request object, not IncomingMessage)
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email en wachtwoord zijn verplicht')
-        }
+### Structure Rationale
 
-        const email = (credentials.email as string).toLowerCase()
+1. **Route groups preserve URL structure**: `(marketing)/page.tsx` serves `/`, not `/marketing/`
+2. **Separate layouts per concern**: Marketing pages get marketing layout (header/CTA), app pages keep BottomNav
+3. **Minimal disruption**: Existing `(auth)` and `(main)` groups unchanged
+4. **Clear boundaries**: Marketing vs app pages obvious from folder structure
+5. **Supports future expansion**: `/pricing`, `/features`, `/about` can live in `(marketing)/`
 
-        // Get client IP from request headers
-        const clientIp = getClientIp(request)
-        const userAgent = request?.headers?.get('user-agent') ?? undefined
+## Architectural Patterns
 
-        // ... existing rate limiting and auth logic ...
-        // (All existing logic preserved, just request object access updated)
+### Pattern 1: Route Group Separation
 
-        return {
-          id: user.id,
-          email: user.email,
-        }
-      },
-    }),
-  ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  // Note: secret is now AUTH_SECRET (auto-detected from env)
-})
+**What:** Use parentheses folders to organize routes by concern without affecting URLs.
+
+**When to use:** When you have distinct sections (marketing/app) with different layouts, navigation, and auth requirements.
+
+**Trade-offs:**
+- Pro: Clean URL structure, separate layouts, clear organization
+- Pro: Different rendering strategies per group (SSG for marketing, dynamic for app)
+- Con: Navigating between groups with different root layouts triggers full page reload
+- Con: Cannot have same URL path in multiple groups
+
+**HabitStreak application:** `(marketing)` for public pages, `(auth)` for login/signup, `(main)` for authenticated app.
+
+### Pattern 2: Static Landing Page with Auth Redirect
+
+**What:** Landing page is statically generated at build time. Middleware checks auth and redirects logged-in users server-side before the page renders.
+
+**When to use:** When landing page content is the same for all visitors and SEO is important.
+
+**Trade-offs:**
+- Pro: Fastest possible load time (pre-rendered at build)
+- Pro: Excellent SEO (full HTML available to crawlers)
+- Pro: Redirect happens at edge, no flash of landing page for logged-in users
+- Con: Cannot personalize landing page content per user
+- Con: Middleware redirect adds slight latency for authenticated users
+
+**HabitStreak application:** Landing page is static marketing content. No personalization needed. Authenticated users get redirected before seeing landing page.
+
+### Pattern 3: Server Component with Session Check
+
+**What:** Server Component checks session and conditionally renders or redirects.
+
+**When to use:** When you need to show different content based on auth state within the same page.
+
+**Trade-offs:**
+- Pro: Can show personalized content ("Welcome back, [name]")
+- Pro: Single page handles both states
+- Con: Cannot use SSG (must be dynamic)
+- Con: More complex component logic
+
+**HabitStreak application:** NOT recommended for landing page. Use middleware redirect instead for cleaner separation.
+
+## Data Flow
+
+### Request Flow for Unauthenticated Visitor
+
+```
+1. User visits /
+2. Middleware runs (edge)
+   - auth() returns null (no session)
+   - authorized() callback checks: / is in publicPaths
+   - Returns true, request continues
+3. (marketing)/page.tsx serves (from static cache)
+4. User sees landing page
+5. User clicks "Aan de slag" (CTA)
+6. Navigates to /signup
 ```
 
-**Key Changes:**
-1. Import `NextAuth` default export (not `NextAuthOptions` type)
-2. Export destructured `{ handlers, auth, signIn, signOut }`
-3. Spread `authConfig` and override providers with authorize function
-4. `authorize(credentials, request)` - second param is now `Request` object
-5. Access headers via `request.headers.get()` instead of `req.headers[]`
-6. Remove `secret` - now auto-detected as `AUTH_SECRET`
+### Request Flow for Authenticated User
 
-### API Route (Before vs After)
-
-**BEFORE (v4):**
-```typescript
-// src/app/api/auth/[...nextauth]/route.ts
-import NextAuth from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
-const handler = NextAuth(authOptions)
-
-export { handler as GET, handler as POST }
+```
+1. User visits /
+2. Middleware runs (edge)
+   - auth() returns session
+   - Custom middleware logic: user IS authenticated + path IS /
+   - Returns Response.redirect('/vandaag')
+3. Browser redirects to /vandaag
+4. (main)/vandaag/page.tsx serves
+5. User sees today's tasks (never saw landing page)
 ```
 
-**AFTER (v5):**
-```typescript
-// src/app/api/auth/[...nextauth]/route.ts
-import { handlers } from '@/lib/auth'
+### Auth State Reading Options
 
-export const { GET, POST } = handlers
-```
+| Location | Method | Use Case |
+|----------|--------|----------|
+| Middleware | `req.auth` | Route protection, redirects |
+| Server Component | `await auth()` | Conditional rendering |
+| Client Component | `useSession()` | Dynamic UI updates |
+| API Route | `await auth()` | Request authorization |
 
-**Change:** Route becomes a simple 2-line re-export. All configuration lives in `auth.ts`.
-
-### Middleware (Before vs After)
-
-**BEFORE (v4):**
-```typescript
-// src/middleware.ts
-import { withAuth } from 'next-auth/middleware'
-import { NextResponse } from 'next/server'
-
-export default withAuth(
-  function middleware(req) {
-    return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
-    pages: {
-      signIn: '/login',
-    },
-  }
-)
-
-export const config = {
-  matcher: ['/((?!login|signup|api|_next/static|_next/image|favicon.ico|manifest.json|icons).*)'],
-}
-```
-
-**AFTER (v5):**
-```typescript
-// src/middleware.ts
-import NextAuth from 'next-auth'
-import authConfig from '@/lib/auth.config'
-
-// Use edge-compatible config only (no database adapter)
-const { auth } = NextAuth(authConfig)
-
-export default auth
-
-export const config = {
-  matcher: ['/((?!login|signup|api|_next/static|_next/image|favicon.ico|manifest.json|icons).*)'],
-}
-```
-
-**Key Changes:**
-1. Import `authConfig` instead of full `auth` (edge-compatible)
-2. Instantiate new NextAuth with edge config
-3. Export `auth` directly as middleware
-4. Route protection handled by `callbacks.authorized` in `auth.config.ts`
-
-### auth-helpers.ts (Before vs After)
-
-**BEFORE (v4):**
-```typescript
-import { getServerSession } from 'next-auth'
-import { authOptions } from './auth'
-
-export async function getCurrentUser(): Promise<AuthUser | null> {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return null
-  return { id: session.user.id, email: session.user.email }
-}
-```
-
-**AFTER (v5):**
-```typescript
-import { auth } from './auth'
-import { AuthUser } from '@/types'
-
-export async function getCurrentUser(): Promise<AuthUser | null> {
-  const session = await auth()
-  if (!session?.user?.id) return null
-  return { id: session.user.id, email: session.user.email }
-}
-
-// requireAuth and isAuthenticated remain the same structure
-// (they call getCurrentUser internally)
-```
-
-**Key Change:** Replace `getServerSession(authOptions)` with `auth()`. No parameters needed.
-
-### Type Declarations (Before vs After)
-
-**BEFORE (v4):**
-```typescript
-// src/types/next-auth.d.ts
-import 'next-auth'
-import 'next-auth/jwt'
-
-declare module 'next-auth' {
-  interface Session {
-    user: { id: string; email: string }
-  }
-  interface User {
-    id: string
-    email: string
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string
-    email: string
-  }
-}
-```
-
-**AFTER (v5):**
-```typescript
-// src/types/next-auth.d.ts
-import { DefaultSession, DefaultUser } from 'next-auth'
-import { DefaultJWT } from 'next-auth/jwt'
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string
-      email: string
-    } & DefaultSession['user']
-  }
-
-  interface User extends DefaultUser {
-    id: string
-    email: string
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT extends DefaultJWT {
-    id: string
-    email: string
-  }
-}
-```
-
-**Change:** Extend default types instead of replacing. Import base types from `next-auth`.
-
-## Environment Variables
-
-**BEFORE:**
-```env
-NEXTAUTH_SECRET=your-secret-key
-NEXTAUTH_URL=http://localhost:3000
-```
-
-**AFTER:**
-```env
-AUTH_SECRET=your-secret-key
-AUTH_URL=http://localhost:3000   # Optional - auto-detected
-AUTH_TRUST_HOST=true             # Required if behind proxy
-```
-
-**Migration commands:**
-```bash
-sed -i 's/NEXTAUTH_SECRET/AUTH_SECRET/g' .env.local
-sed -i 's/NEXTAUTH_URL/AUTH_URL/g' .env.local
-```
-
-## Package Changes
-
-**BEFORE:**
-```json
-{
-  "next-auth": "^4.x.x"
-}
-```
-
-**AFTER:**
-```json
-{
-  "next-auth": "^5.0.0-beta.25"
-}
-```
-
-**Installation:**
-```bash
-npm uninstall next-auth
-npm install next-auth@beta
-```
-
-Note: As of January 2026, Auth.js v5 is still in beta. Check for stable release.
-
-## Migration Order
-
-Execute in this sequence to maintain a working auth system throughout migration:
-
-### Phase 1: Package and Environment
-1. **Update package.json** - Install `next-auth@beta`
-2. **Update environment variables** - `NEXTAUTH_SECRET` to `AUTH_SECRET`
-3. **Run tests** - Verify nothing breaks from package update alone
-
-### Phase 2: Configuration Files
-4. **Create auth.config.ts** - New edge-compatible config file
-5. **Update auth.ts** - New NextAuth() export pattern with providers override
-6. **Update types** - `next-auth.d.ts` type augmentation
-
-### Phase 3: Integration Points
-7. **Update API route** - Simplify to handlers re-export
-8. **Update middleware** - Use auth from auth.config.ts
-9. **Update auth-helpers.ts** - Replace getServerSession with auth()
-
-### Phase 4: Verification
-10. **Update ip-utils.ts** - Adjust for Request object (headers.get())
-11. **Test all auth flows** - Login, logout, session persistence
-12. **Test middleware** - Protected route redirects
-13. **Test session access** - Server components, API routes
+**Landing page recommendation:** Middleware handles redirect. Landing page itself does NOT check auth (pure static content).
 
 ## Integration Points
 
-### Session Access Patterns
+### Middleware Changes
 
-| Location | v4 Pattern | v5 Pattern |
-|----------|------------|------------|
-| Server Component | `getServerSession(authOptions)` | `auth()` |
-| API Route | `getServerSession(authOptions)` | `auth()` |
-| Client Component | `useSession()` | `useSession()` (unchanged) |
-| Middleware | `withAuth` callback | `callbacks.authorized` |
-
-### Request Object Changes
-
-The `authorize` function signature changes:
-
+Current middleware (`src/middleware.ts`):
 ```typescript
-// v4: req is IncomingMessage-like
-async authorize(credentials, req) {
-  const ip = req?.headers?.['x-forwarded-for']
-  const ua = req?.headers?.['user-agent']
-}
-
-// v5: request is standard Request object
-async authorize(credentials, request) {
-  const ip = request?.headers?.get('x-forwarded-for')
-  const ua = request?.headers?.get('user-agent')
+// Protect all routes except /login, /signup, /api, static files
+export const config = {
+  matcher: [
+    '/((?!login|signup|api|_next/static|_next/image|favicon.ico|manifest.json|icons).*)',
+  ],
 }
 ```
 
-**Impact on ip-utils.ts:** The `getClientIp` function needs updating to handle `Request` object:
+**Required change:** Add `/` to excluded paths OR update matcher:
 
+**Option A: Update matcher to exclude root path**
 ```typescript
-// Update signature
-export function getClientIp(request: Request | undefined): string {
-  if (!request) return 'unknown'
-
-  // v5: Use headers.get() method
-  const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) {
-    return forwarded.split(',')[0].trim()
-  }
-
-  const realIp = request.headers.get('x-real-ip')
-  if (realIp) {
-    return realIp
-  }
-
-  return 'unknown'
+export const config = {
+  matcher: [
+    // Exclude: /, /login, /signup, /api, static files
+    '/((?!login|signup|api|_next/static|_next/image|favicon.ico|manifest.json|icons)(?!$).*)',
+  ],
 }
 ```
 
-### Cookie Name Change
+**Option B: Wrap middleware with custom logic (RECOMMENDED)**
+```typescript
+import NextAuth from 'next-auth'
+import authConfig from '@/lib/auth.config'
 
-**Critical:** Session cookie name changes from `next-auth.session-token` to `authjs.session-token`.
+const { auth } = NextAuth(authConfig)
 
-**Impact:** All existing users will be logged out on migration. This is expected behavior. Consider:
-- Communicating maintenance/re-login requirement to users
-- Or implementing cookie migration script (advanced)
+export default auth((req) => {
+  const isLoggedIn = !!req.auth
+  const { pathname } = req.nextUrl
 
-### Middleware Limitations with Split Config
+  // Redirect authenticated users from landing page to app
+  if (isLoggedIn && pathname === '/') {
+    return Response.redirect(new URL('/vandaag', req.nextUrl.origin))
+  }
 
-When using the split configuration pattern (required for Prisma):
+  // Allow request to continue (authorized callback handles protection)
+})
 
-**What middleware CAN do:**
-- Check if user has valid session token
-- Redirect unauthenticated users to login
-- Bump session cookie expiry
+export const config = {
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|icons).*)',
+  ],
+}
+```
 
-**What middleware CANNOT do:**
-- Access user details from database
-- Perform role-based authorization
-- Make database queries
+### Auth Config Changes
 
-**Mitigation:** Implement authorization checks in Server Components/API routes, not middleware.
+Current `authorized` callback in `src/lib/auth.config.ts`:
+```typescript
+authorized({ auth, request: { nextUrl } }) {
+  const isLoggedIn = !!auth?.user
+  const publicPaths = ['/login', '/signup']
+  const isPublicPath = publicPaths.some(path =>
+    nextUrl.pathname.startsWith(path)
+  )
+
+  if (!isLoggedIn && !isPublicPath) {
+    return false // Redirect to signIn
+  }
+  return true
+}
+```
+
+**Required change:** Add `/` (exact match) to public paths:
+```typescript
+authorized({ auth, request: { nextUrl } }) {
+  const isLoggedIn = !!auth?.user
+  const publicPaths = ['/login', '/signup']
+  const isPublicPath = publicPaths.some(path =>
+    nextUrl.pathname.startsWith(path)
+  )
+  const isLandingPage = nextUrl.pathname === '/'
+
+  if (!isLoggedIn && !isPublicPath && !isLandingPage) {
+    return false // Redirect to signIn
+  }
+  return true
+}
+```
+
+### Shared Components
+
+Components that can be shared between landing page and app:
+
+| Component | Location | Shareable? | Notes |
+|-----------|----------|------------|-------|
+| Button | `components/ui/button.tsx` | YES | Same styling for CTAs |
+| Card | `components/ui/card.tsx` | YES | Feature cards on landing |
+| AnimatedBackground | `components/backgrounds/` | MAYBE | Consider landing-specific variant |
+| ThemeProvider | `contexts/theme-context` | YES | Already in root layout |
+
+**New components for landing page:**
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| `Hero` | Hero section with headline + CTA | `components/marketing/hero.tsx` |
+| `Features` | Feature grid/list | `components/marketing/features.tsx` |
+| `Testimonials` | Social proof (if applicable) | `components/marketing/testimonials.tsx` |
+| `MarketingNav` | Top navigation for marketing pages | `components/marketing/nav.tsx` |
+| `Footer` | Marketing footer | `components/marketing/footer.tsx` |
+
+## Build Order Implications
+
+### Phase Dependencies
+
+1. **Middleware update FIRST**: Must allow public access to `/` before landing page works
+2. **Landing page route group SECOND**: Create `(marketing)/page.tsx`
+3. **Landing page content THIRD**: Build out hero, features, CTA sections
+4. **Delete old redirect page LAST**: Remove `src/app/page.tsx` after landing page complete
+
+### Build/Deploy Considerations
+
+- Landing page uses SSG: Rebuilt at deploy time only
+- No runtime dependencies for landing page (no database, no auth check)
+- Marketing content changes require redeploy
+
+### Performance Characteristics
+
+| Page Type | Rendering | Cache | TTFB |
+|-----------|-----------|-------|------|
+| Landing (/) | SSG | CDN edge | ~50ms |
+| Auth (/login) | Client Component | None | ~100ms |
+| App (/vandaag) | Dynamic SSR | None | ~200ms |
+
+## Anti-Patterns to Avoid
+
+### 1. Checking Auth in Landing Page Component
+
+**Wrong:**
+```typescript
+// (marketing)/page.tsx
+export default async function LandingPage() {
+  const user = await getCurrentUser()
+  if (user) redirect('/vandaag')  // BAD: Should be in middleware
+  return <LandingContent />
+}
+```
+
+**Right:** Handle redirect in middleware. Landing page is pure static content.
+
+### 2. Using Client Component for Landing Page
+
+**Wrong:**
+```typescript
+'use client'
+export default function LandingPage() {
+  // Loses SSG benefits, worse SEO, slower load
+}
+```
+
+**Right:** Server Component (or implicitly static). Only use Client Components for interactive elements (e.g., animated demo).
+
+### 3. Creating Landing Page in Root Without Route Group
+
+**Wrong:**
+```
+src/app/
+├── page.tsx          # Landing page here
+├── (auth)/
+├── (main)/
+```
+
+**Right:** Use `(marketing)` route group for future expansion (pricing, about, etc.).
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Official Migration Guide](https://authjs.dev/getting-started/migrating-to-v5) - Complete v4 to v5 migration documentation
-- [Auth.js Next.js Reference](https://authjs.dev/reference/nextjs) - API reference for handlers, auth, signIn, signOut
-- [Edge Compatibility Guide](https://authjs.dev/guides/edge-compatibility) - Split configuration pattern for Prisma
-- [Credentials Provider](https://authjs.dev/getting-started/authentication/credentials) - Authorize function and error handling
+- [Next.js Route Groups Documentation](https://nextjs.org/docs/app/building-your-application/routing/route-groups) - Official route groups guide
+- [Auth.js Protecting Routes](https://authjs.dev/getting-started/session-management/protecting) - Middleware protection patterns
 
 ### Secondary (MEDIUM confidence)
-- [DEV.to Migration Guide](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad) - Real-world migration examples
-- [Medium: Auth.js v5 Setup](https://javascript.plainenglish.io/step-by-step-guide-integrate-nextauth-v5-beta-with-credentials-jwt-sessions-into-next-js-2a9182504c85) - JWT sessions with credentials
-- [Medium: Migrating Without Logging Out Users](https://medium.com/@sajvanleeuwen/migrating-from-nextauth-v4-to-auth-js-v5-without-logging-out-users-c7ac6bbb0e51) - Cookie migration strategies
+- [Next.js App Router Project Structure](https://makerkit.dev/blog/tutorials/nextjs-app-router-project-structure) - Marketing/app separation patterns
+- [Next.js SEO Rendering Strategies](https://nextjs.org/learn/seo/rendering-strategies) - SSG for landing pages
+- [Maximizing Next.js 15 SSR for SEO](https://www.wisp.blog/blog/maximizing-nextjs-15-ssr-for-seo-and-beyond-when-to-use-it) - SSG vs SSR decision factors
 
-## Confidence Assessment
-
-| Area | Level | Reason |
-|------|-------|--------|
-| File structure | HIGH | Official documentation verified |
-| Configuration pattern | HIGH | Official edge compatibility guide |
-| API changes | HIGH | Official migration guide + reference |
-| Middleware changes | HIGH | Official documentation |
-| Cookie name change | HIGH | Multiple sources confirm |
-| Request object changes | MEDIUM | Inferred from v5 types, verify during implementation |
-
-**Research date:** 2026-01-19
-**Valid until:** 30 days (Auth.js v5 still in beta, may have updates)
+### Existing Codebase (verified)
+- `src/middleware.ts` - Current matcher pattern
+- `src/lib/auth.config.ts` - Current authorized callback
+- `src/app/(main)/layout.tsx` - App layout pattern
+- `src/lib/auth-helpers.ts` - Auth utility functions

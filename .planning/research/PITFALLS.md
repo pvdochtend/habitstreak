@@ -1,539 +1,348 @@
-# Pitfalls Research: NextAuth v4 to Auth.js v5 Migration
+# Pitfalls Research
 
-**Researched:** 2026-01-19
-**Confidence:** HIGH (Official documentation + multiple verified sources)
-**Current Version:** next-auth@4.24.11
-**Target Version:** next-auth@5.x (Auth.js v5)
+**Domain:** Landing pages and PWA setup for Next.js apps
+**Researched:** 2026-01-26
+**Confidence:** HIGH (verified against official docs, current project code, and multiple sources)
 
-## Summary
+## Critical Pitfalls
 
-The migration from NextAuth v4 to Auth.js v5 presents several critical breaking changes that can silently break authentication for existing users. The most dangerous is the **cookie name change** from `next-auth.session-token` to `authjs.session-token`, which will immediately log out all existing users unless mitigated. Additionally, the **JWT encoding changes** (salt was added) mean existing tokens cannot be decoded by v5 without special handling. The project's use of Credentials provider, custom JWT callbacks, and middleware all require updates but are lower risk than the cookie/encoding changes.
+### Pitfall 1: PWA Icons Declared But Not Generated
 
-**Critical risk:** Without cookie migration, all existing HabitStreak users will be forced to log in again after deployment.
+**What goes wrong:**
+The manifest.json references icon files that don't exist, causing 404 errors in the browser console. HabitStreak has this exact issue: manifest declares 8 icon sizes (72x72 through 512x512) but the `/public/icons/` directory only contains a README.md placeholder.
 
----
+**Why it happens:**
+Developers configure the manifest first, planning to "add icons later," but forget or deprioritize. The app still works, so the 404s go unnoticed until someone checks DevTools or tries to install the PWA.
 
-## Breaking Changes
-
-### P1: Cookie Name Change Logs Out All Users
-
-**What breaks:** Auth.js v5 renamed the session cookie from `next-auth.session-token` to `authjs.session-token`. Browsers do not rename cookies automatically, so after upgrading, existing users' sessions are no longer recognized. Users are immediately logged out.
-
-**Warning signs:**
-- After migration deploy, all users report being logged out
-- No errors in logs (v5 simply doesn't see the old cookie)
-- Login works fine for new sessions, only existing sessions affected
-
-**Prevention:**
-Two options exist:
-
-1. **Cookie Migration Middleware (Recommended):** Create middleware that reads the old cookie, decodes with v4 algorithm (no salt), re-encodes with v5 algorithm (with salt), sets new cookie, deletes old cookie. This is complex but preserves sessions.
-
-2. **Keep Old Cookie Name:** Configure v5 to use the old cookie name (`next-auth.session-token`). However, this still requires handling the encoding difference (see P2).
-
-**Test:**
-- [ ] Create a test user session with v4 before migration
-- [ ] After migration, verify that user remains logged in
-- [ ] Verify new logins work correctly
-- [ ] Verify cookie name in browser DevTools matches expected
-
-**Phase to address:** First migration task - must be solved before any deployment
-
----
-
-### P2: JWT Encoding/Decoding Algorithm Changed
-
-**What breaks:** v5 added a salt to the JWT encryption process that v4 did not use. Even if you keep the old cookie name, v5 cannot decode tokens created by v4 because the encryption key derivation changed.
+**How to avoid:**
+- Generate icons BEFORE configuring manifest (not after)
+- Use automated icon generators: PWA Builder (pwabuilder.com/imageGenerator), RealFaviconGenerator
+- Add a build-time check or CI step that verifies all declared icons exist
+- Keep icon list minimal until ready: only 192x192 and 512x512 are required for Chrome installability
 
 **Warning signs:**
-- `auth()` returns `null` despite valid-looking cookies
-- "Invalid token" or decryption errors in logs
-- Users with old sessions see auth failures
+- Console errors: "GET /icons/icon-144x144.png 404"
+- PWA install prompt doesn't appear
+- "Manifest doesn't have a maskable icon" Lighthouse warning
+- `icons` array in manifest has multiple entries but `/public/icons/` is nearly empty
 
-**Prevention:**
-- Use secret rotation: Pass an array of secrets where the first successfully decrypts
-- Implement custom decode logic that tries v4 algorithm (no salt) first, then v5
-- Alternatively, accept that existing sessions will be invalidated (communicate to users)
-
-**Test:**
-- [ ] Log out a test user, log back in after migration
-- [ ] Verify JWT in cookie can be decoded by calling `auth()`
-- [ ] Test with both old and new sessions simultaneously
-
-**Phase to address:** Same task as P1 - cookie/JWT migration is one problem
+**Phase to address:** PWA/Icon Generation phase - before any landing page work
 
 ---
 
-### P3: `withAuth` Middleware Removed
+### Pitfall 2: Using "any maskable" Combined Purpose
 
-**What breaks:** The project's `src/middleware.ts` uses:
-```typescript
-import { withAuth } from 'next-auth/middleware'
-export default withAuth(...)
-```
-This import no longer exists in v5. The middleware pattern is completely different.
+**What goes wrong:**
+Icons display incorrectly on different platforms. Android crops too much; Windows shows excessive padding. Chrome warns: "Declaring an icon with purpose 'any maskable' is discouraged."
+
+**Why it happens:**
+Developers think combining purposes saves work. HabitStreak's current manifest uses `"purpose": "any maskable"` for all icons.
+
+**How to avoid:**
+- Create SEPARATE icon sets: one for `purpose: "any"` (minimal padding), one for `purpose: "maskable"` (40% safe zone padding)
+- Minimum configuration:
+  ```json
+  { "src": "/icon-192.png", "sizes": "192x192", "purpose": "any" },
+  { "src": "/icon-512.png", "sizes": "512x512", "purpose": "any" },
+  { "src": "/icon-maskable-192.png", "sizes": "192x192", "purpose": "maskable" },
+  { "src": "/icon-maskable-512.png", "sizes": "512x512", "purpose": "maskable" }
+  ```
+- Test with Maskable.app before finalizing
+- For maskable icons: main content must fit within center circle (40% radius)
 
 **Warning signs:**
-- Build fails with "Module not found: next-auth/middleware"
-- Or: middleware silently doesn't protect routes
+- Chrome DevTools warning about "any maskable"
+- Icons look too small on Android home screen
+- Icons have visible padding on Windows
+- Different appearance across iOS/Android/desktop
 
-**Prevention:**
-Replace with the new pattern:
-```typescript
-// src/middleware.ts
-import { auth } from "@/auth"
-import { NextResponse } from "next/server"
-
-export default auth((req) => {
-  if (!req.auth) {
-    return NextResponse.redirect(new URL("/login", req.url))
-  }
-})
-
-export const config = {
-  matcher: ['/((?!login|signup|api|_next/static|_next/image|favicon.ico|manifest.json|icons).*)']
-}
-```
-
-**Test:**
-- [ ] Access protected route while logged out - should redirect to /login
-- [ ] Access protected route while logged in - should work
-- [ ] Verify matcher config excludes correct paths
-
-**Phase to address:** Middleware update task
+**Phase to address:** PWA/Icon Generation phase
 
 ---
 
-### P4: `getServerSession` Replaced by `auth()`
+### Pitfall 3: Middleware Blocking Static Assets
 
-**What breaks:** The project's `src/lib/auth-helpers.ts` uses:
+**What goes wrong:**
+manifest.json, icons, robots.txt, or sitemap.xml return 401/403 or 404 because authentication middleware intercepts them. SEO suffers; PWA install fails.
+
+**Why it happens:**
+Default middleware patterns catch too much. HabitStreak's current matcher explicitly excludes `/icons` but this is fragile for future static assets.
+
+**Current HabitStreak middleware:**
 ```typescript
-import { getServerSession } from 'next-auth'
-const session = await getServerSession(authOptions)
+matcher: ['/((?!login|signup|api|_next/static|_next/image|favicon.ico|manifest.json|icons).*)']
 ```
-In v5, this is replaced by a single `auth()` function exported from your config file.
+
+**How to avoid:**
+Use a more robust matcher pattern that excludes ALL static files by extension:
+```typescript
+matcher: [
+  '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest.json|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf)).*)',
+]
+```
+Or Clerk's recommended pattern:
+```typescript
+'/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)'
+```
 
 **Warning signs:**
-- Build errors: "getServerSession is not exported from next-auth"
-- Or runtime: `getServerSession` returns `null` unexpectedly
+- robots.txt returns 401
+- Lighthouse PWA audit fails
+- manifest.json blocked on preview deployments
+- New static files 404 until manually added to matcher
 
-**Prevention:**
-1. Create new `auth.ts` config file that exports `auth` function
-2. Replace all `getServerSession(authOptions)` with `auth()`
-3. Update `auth-helpers.ts` to import from `@/auth`
-
-Before:
-```typescript
-import { getServerSession } from 'next-auth'
-import { authOptions } from './auth'
-const session = await getServerSession(authOptions)
-```
-
-After:
-```typescript
-import { auth } from '@/auth'
-const session = await auth()
-```
-
-**Test:**
-- [ ] All API routes return correct session data
-- [ ] `getCurrentUser()` returns user ID correctly
-- [ ] `requireAuth()` throws when not authenticated
-
-**Phase to address:** Auth helper refactor task
+**Phase to address:** Landing Page phase - update middleware when adding public routes
 
 ---
 
-### P5: `NextAuthOptions` Type Renamed to `NextAuthConfig`
+### Pitfall 4: Route Group Conflicts When Adding Landing Page
 
-**What breaks:** TypeScript compilation fails because `NextAuthOptions` doesn't exist in v5.
+**What goes wrong:**
+Adding a public landing page at `/` conflicts with existing protected routes. Users get redirected to login when hitting root, or worse, the landing page becomes protected.
+
+**Why it happens:**
+HabitStreak currently has `(auth)` and `(main)` route groups. Adding a new `(public)` group or standalone page at root requires careful layout and middleware coordination.
+
+**How to avoid:**
+- Create explicit `(public)` route group for landing, about, pricing pages
+- Update middleware to whitelist public routes BEFORE adding them
+- Never create duplicate route paths (e.g., `/about` in both public and main groups)
+- Test auth redirect behavior: logged-out users should see landing, logged-in users should go to `/vandaag`
 
 **Warning signs:**
-- TypeScript error: "Module 'next-auth' has no exported member 'NextAuthOptions'"
+- Root URL redirects to `/login` instead of showing landing page
+- "Conflicting route" build errors
+- Landing page requires authentication
+- Logged-in users stuck on landing page
 
-**Prevention:**
-Change type import:
-```typescript
-// Before
-import { NextAuthOptions } from 'next-auth'
-export const authOptions: NextAuthOptions = { ... }
-
-// After
-import NextAuth from 'next-auth'
-import type { NextAuthConfig } from 'next-auth'
-export const { handlers, auth, signIn, signOut } = NextAuth({ ... } satisfies NextAuthConfig)
-```
-
-**Test:**
-- [ ] `npm run build` completes without TypeScript errors
-- [ ] IDE shows no type errors in auth configuration
-
-**Phase to address:** Auth config restructure task
+**Phase to address:** Landing Page phase - first step before building UI
 
 ---
 
-### P6: Authorize Callback `req` Parameter Changed
+### Pitfall 5: First Impression UX Failures
 
-**What breaks:** The project's Credentials provider uses:
-```typescript
-async authorize(credentials, req) {
-  const clientIp = getClientIp(req as any)
-  const userAgent = req?.headers?.['user-agent']
-  // ... rate limiting logic
-}
-```
-In v5, the `req` parameter format has changed and may not provide headers the same way.
+**What goes wrong:**
+Users leave within 2.6 seconds because the above-the-fold content doesn't communicate value, has no clear CTA, or loads slowly.
+
+**Why it happens:**
+Developers focus on app functionality, treating landing page as an afterthought. They pack too much information above the fold or bury the CTA.
+
+**How to avoid:**
+- Keep above-the-fold minimal: headline + value prop + ONE primary CTA
+- CTA must be specific: "Start Tracking Free" not "Learn More"
+- Load time under 3 seconds (pages loading in 1s convert 2.5-5x better)
+- Include social proof visible without scroll
+- Mobile-first: test on actual phones, not just responsive preview
+- Limit glassmorphism effects (see Performance Traps below)
 
 **Warning signs:**
-- Rate limiting stops working (always sees same IP)
-- User agent logging shows undefined
-- Type errors about `req` parameter
+- High bounce rate (>60%)
+- No clear primary action above fold
+- CTA uses vague text ("Get Started", "Learn More")
+- Loading spinner visible for more than 1 second
+- Multiple competing CTAs above fold
 
-**Prevention:**
-- Test the new `credentials` object structure in v5
-- The request may now be accessed differently: `authorize({ request })` destructured from credentials
-- May need to pass IP/user-agent through form data or use different approach
-
-**Test:**
-- [ ] Rate limiting still functions after migration
-- [ ] Failed login attempts are tracked correctly
-- [ ] IP address is correctly detected in logs
-
-**Phase to address:** Credentials provider update task - needs investigation during implementation
+**Phase to address:** Landing Page phase - design review checkpoint
 
 ---
 
-### P7: Environment Variable Prefix Change
+### Pitfall 6: Apple Touch Icon Misconfiguration
 
-**What breaks:** v5 prefers `AUTH_` prefix over `NEXTAUTH_` prefix. While `NEXTAUTH_SECRET` still works as an alias, future compatibility may require migration.
+**What goes wrong:**
+iOS "Add to Home Screen" shows generic icon or wrong icon. Safari ignores the PWA manifest icons entirely.
+
+**Why it happens:**
+iOS requires specific `apple-touch-icon` meta tags AND correct file naming. The manifest.json `icons` array is NOT used by Safari/iOS. HabitStreak's layout.tsx references `/icons/icon-192x192.png` for apple icon, but that file doesn't exist.
+
+**How to avoid:**
+- Create `apple-icon.png` (180x180) in `/app` directory (Next.js auto-detects)
+- Or use metadata export with explicit apple icon path
+- Name must be `apple-icon.png` not `apple-touch-icon.png` for auto-detection
+- Always provide fallback in HTML head tags
 
 **Warning signs:**
-- Works but logs deprecation warnings
-- Documentation references `AUTH_SECRET` causing confusion
+- iOS home screen shows blank/default icon
+- Safari DevTools shows missing apple-touch-icon
+- `apple` property in metadata references non-existent file
 
-**Prevention:**
-- Rename `NEXTAUTH_SECRET` to `AUTH_SECRET` in all environments
-- Rename `NEXTAUTH_URL` to `AUTH_URL` (note: v5 auto-detects URL from request in most cases)
-- Update `.env.local`, `.env.production`, Docker configs, CI/CD variables
-
-**Test:**
-- [ ] Remove old `NEXTAUTH_*` variables, verify app still works
-- [ ] No deprecation warnings in console
-
-**Phase to address:** Environment update task - can be done alongside or after code changes
+**Phase to address:** PWA/Icon Generation phase
 
 ---
 
-### P8: Error Handling in Credentials Provider Changed
+### Pitfall 7: Service Worker Cache Staleness
 
-**What breaks:** In v4, you could throw errors in `authorize()` and access them via `res.error`. In v5, errors are only exposed via URL query parameters (`?error=CredentialsSignin&code=credentials`).
+**What goes wrong:**
+Users see old content even after deploying updates. The "just refresh" advice doesn't work because the service worker serves cached content.
+
+**Why it happens:**
+Aggressive caching without proper versioning. Service worker installed once, never updates. Safari especially honors cache directives strictly.
+
+**How to avoid:**
+- Use version-based cache names: `habitstreak-v1.2.0`
+- Clean up old caches in service worker `activate` event
+- Implement "Update Available" UI for major changes
+- For API calls, use Network-First or add timestamp query params
+- Consider workbox for managed caching strategies
 
 **Warning signs:**
-- Login error messages show generic "CredentialsSignin" instead of custom Dutch messages
-- Error codes in URL don't match expected values
-- Users don't see specific error reasons (locked account, rate limited, etc.)
+- Deployed changes don't appear until force-refresh
+- Users report seeing old UI after update
+- Cache storage growing unboundedly
+- "Update available" notifications fire incorrectly
 
-**Prevention:**
-- Extend `CredentialsSignin` error class to customize error codes
-- Update login page to read error from URL query params
-- Consider using server actions for more control over error responses
-
-```typescript
-import { CredentialsSignin } from "next-auth"
-
-class AccountLockedError extends CredentialsSignin {
-  code = "account_locked"
-}
-```
-
-**Test:**
-- [ ] Invalid credentials shows appropriate Dutch error message
-- [ ] Locked account shows lockout message with remaining time
-- [ ] Rate limit errors display correctly
-
-**Phase to address:** Error handling task - important for UX
+**Phase to address:** PWA Enhancement phase (if implementing offline)
 
 ---
 
-### P9: Adapter Package Name Changed
+### Pitfall 8: Glassmorphism Performance on Mobile
 
-**What breaks:** If using database adapters in the future, the package scope changed from `@next-auth/*-adapter` to `@auth/*-adapter`.
+**What goes wrong:**
+`backdrop-filter: blur()` causes jank, dropped frames, or excessive battery drain on mobile devices. Low-end Android phones become unusable.
+
+**Why it happens:**
+Glassmorphism is GPU-intensive. Developers test on high-end devices or desktop, missing performance issues.
+
+**How to avoid:**
+- Limit blur to 6-10px (not 20+px)
+- Maximum 2-3 glassmorphic elements per viewport
+- NEVER animate elements with backdrop-filter
+- Use `will-change: transform` for hardware acceleration
+- Provide solid-color fallback for low-end devices via media query
+- Test on actual low-end phones
 
 **Warning signs:**
-- Install fails: package not found
-- Import errors after upgrade
+- Scrolling stutters on mobile
+- Battery drains noticeably faster
+- FPS drops visible in DevTools Performance tab
+- Users complain of "laggy" feeling
 
-**Prevention:**
-Currently HabitStreak uses JWT sessions without a database session adapter, so this doesn't apply. However, if adding database sessions in future:
-```bash
-# Old
-npm install @next-auth/prisma-adapter
-
-# New
-npm install @auth/prisma-adapter
-```
-
-**Test:**
-- N/A for current JWT-only setup
-
-**Phase to address:** Only if adding database sessions in future
+**Phase to address:** Landing Page phase - performance review
 
 ---
 
-## JWT & Session Changes
+## Technical Debt Patterns
 
-### Configuration Structure
-
-**v4 (current):**
-```typescript
-// src/lib/auth.ts
-export const authOptions: NextAuthOptions = {
-  providers: [...],
-  callbacks: {
-    jwt({ token, user }) { ... },
-    session({ session, token }) { ... }
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-}
-```
-
-**v5 (target):**
-```typescript
-// src/auth.ts (root level recommended)
-import NextAuth from "next-auth"
-
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [...],
-  callbacks: {
-    jwt({ token, user }) { ... },  // Same signature
-    session({ session, token }) { ... }  // Same signature
-  },
-  // secret auto-detected from AUTH_SECRET env var
-})
-```
-
-### JWT Callback - Minimal Changes
-
-The JWT callback signature remains similar. The project's current callback:
-```typescript
-async jwt({ token, user }) {
-  if (user) {
-    token.id = user.id
-    token.email = user.email
-  }
-  return token
-}
-```
-This should work in v5 with no changes to the logic.
-
-### Session Callback - Minimal Changes
-
-The session callback signature remains similar. The project's current callback:
-```typescript
-async session({ session, token }) {
-  if (token && session.user) {
-    session.user.id = token.id as string
-    session.user.email = token.email as string
-  }
-  return session
-}
-```
-This should work in v5 with no changes to the logic.
-
-### Key Difference: Encryption
-
-The actual JWT content and callback logic don't change. What changes is how the JWT is encrypted before being stored in the cookie:
-- v4: Encrypts without salt
-- v5: Encrypts with salt derived from cookie name
-
-This means the same token data, encrypted by v4, cannot be decrypted by v5 without custom handling.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Placeholder README instead of icons | Can ship manifest.json structure | Constant 404 errors, PWA broken | Never - either generate icons or remove manifest references |
+| `"any maskable"` combined purpose | Fewer icon files to manage | Poor display on all platforms, Chrome warnings | Only during initial prototyping |
+| Hardcoded middleware exclusions | Quick fix for one file | Must update for every new static asset | Early development only |
+| Skipping mobile testing | Faster iteration | Broken UX on 60%+ of traffic | Never for landing pages |
+| Single CTA text for all contexts | Less copy to write | Lower conversion rates | A/B test first |
 
 ---
 
-## Credentials Provider Changes
+## Performance Traps
 
-### Authorize Function Signature
-
-**v4 (current):**
-```typescript
-async authorize(credentials, req) {
-  // credentials: { email: string, password: string }
-  // req: IncomingMessage with headers
-}
-```
-
-**v5 (target):**
-```typescript
-async authorize(credentials) {
-  // credentials: { email?: string, password?: string }
-  // Request access: unclear, may need different approach
-}
-```
-
-### Impact on HabitStreak
-
-The current implementation heavily uses `req` for:
-1. **IP address extraction:** `getClientIp(req)` for rate limiting
-2. **User agent logging:** `req.headers['user-agent']` for audit trail
-
-**Mitigation strategies:**
-
-1. **Pass through form data:** Add hidden fields for client IP (detected client-side) - security concern
-2. **Use middleware:** Extract IP in middleware, pass via header
-3. **Server actions:** Use Next.js server actions which have access to headers()
-4. **Accept limitation:** Rate limit by email only, not IP
-
-Recommend: Investigate v5's actual behavior during implementation. May need to refactor rate limiting approach.
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Large icon files | Slow manifest load, install delay | Compress with TinyPNG, use WebP where supported | On slow connections |
+| Too many glassmorphism elements | Scroll jank, high GPU usage | Max 2-3 per viewport, blur under 10px | Mid-range and low-end mobile |
+| Animated blur effects | Frame drops, battery drain | Never animate backdrop-filter | Any mobile device |
+| Unoptimized landing page images | LCP over 2.5s, bounce rate spike | Use next/image, responsive srcset, lazy loading | Mobile + slow connections |
+| Missing font optimization | Layout shift, slow FCP | Use next/font, font-display: swap | All connections |
 
 ---
 
-## Cookie & Security Changes
+## UX Pitfalls
 
-### Cookie Name
-
-| Version | Cookie Name |
-|---------|-------------|
-| v4 | `next-auth.session-token` |
-| v5 | `authjs.session-token` |
-
-### Cookie Options
-
-v5 provides more consistent cookie security:
-- `httpOnly: true` (same)
-- `secure: true` in production (same)
-- `sameSite: lax` (same)
-
-No changes needed to cookie security settings.
-
-### CSRF Protection
-
-v5 has improved CSRF protection built-in. The project doesn't customize CSRF, so this should be transparent.
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| No landing page CTA above fold | Users don't know what to do | Primary CTA visible without scroll |
+| Vague CTA text ("Learn More") | Low click-through | Action-oriented ("Start Tracking Free") |
+| Auth redirect flash | Brief login page visible before landing | Check auth server-side, no client flash |
+| Missing value proposition | Users leave within 3s | Clear headline: what it is + who it's for |
+| No social proof | Low trust, hesitation | Testimonials or user count near CTA |
+| Landing identical for logged-in users | Confusing, wastes time | Redirect logged-in users to /vandaag |
+| Mobile nav hamburger above fold | Wastes prime real estate | Simplify or remove nav on landing |
 
 ---
 
-## Common Migration Mistakes
+## "Looks Done But Isn't" Checklist
 
-### 1. Not Testing Cookie Migration
-**Mistake:** Deploy without testing existing sessions
-**Result:** All users logged out
-**Avoid:** Test with real v4 sessions before production deploy
+### PWA Icons
+- [ ] All declared icon sizes actually exist as files in `/public/icons/`
+- [ ] Icons render correctly at small sizes (test 72x72)
+- [ ] Maskable icons have proper 40% safe zone
+- [ ] Apple touch icon exists at 180x180 AND is referenced correctly
+- [ ] No console 404 errors for icon paths
+- [ ] Lighthouse PWA audit passes icon checks
 
-### 2. Forgetting Middleware Update
-**Mistake:** Update auth config but not middleware
-**Result:** Routes either unprotected or broken
-**Avoid:** Update middleware as part of same PR, test thoroughly
+### Landing Page
+- [ ] Accessible without authentication (middleware allows it)
+- [ ] CTA visible above fold on mobile (not just desktop)
+- [ ] Page loads in under 3 seconds on 3G
+- [ ] Logged-in users redirected to app (not stuck on landing)
+- [ ] No auth flash/flicker during load
+- [ ] Social proof visible (even if placeholder)
+- [ ] Works without JavaScript (basic content visible)
 
-### 3. Leaving Old Environment Variables
-**Mistake:** Keep `NEXTAUTH_*` vars without adding `AUTH_*`
-**Result:** Works now, may break in future v5 updates
-**Avoid:** Rename all env vars to `AUTH_*` prefix
+### Middleware Configuration
+- [ ] robots.txt accessible (test in incognito)
+- [ ] sitemap.xml accessible
+- [ ] manifest.json accessible
+- [ ] All icon paths accessible
+- [ ] Landing page route explicitly allowed
+- [ ] No blanket pattern that might catch future static files
 
-### 4. Not Updating Type Imports
-**Mistake:** Keep importing `NextAuthOptions`
-**Result:** TypeScript errors, but may compile with `any`
-**Avoid:** Update all type imports to v5 types
-
-### 5. Assuming `req` Works Same Way
-**Mistake:** Keep rate limiting code unchanged
-**Result:** IP detection fails, rate limiting broken
-**Avoid:** Verify request access pattern in v5 before migration
-
-### 6. Not Testing Error Messages
-**Mistake:** Assume error handling unchanged
-**Result:** Users see generic errors instead of Dutch messages
-**Avoid:** Test all error paths after migration
+### Performance
+- [ ] Glassmorphism blur under 10px
+- [ ] No more than 3 glass elements visible at once
+- [ ] No animations on backdrop-filter elements
+- [ ] Tested on actual mid-range Android phone
+- [ ] Lighthouse performance score > 80
 
 ---
 
-## Testing Checklist
+## Pitfall-to-Phase Mapping
 
-### Pre-Migration (create test data with v4)
-- [ ] Create test user account
-- [ ] Log in and note session cookie value
-- [ ] Record cookie name and format in DevTools
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| PWA Icons Not Generated | Icon Generation (first) | `ls public/icons/*.png` shows all declared sizes |
+| "any maskable" Combined Purpose | Icon Generation | Manifest has separate `any` and `maskable` entries |
+| Middleware Blocking Static Assets | Landing Page Setup | `curl -I domain.com/manifest.json` returns 200 |
+| Route Group Conflicts | Landing Page Setup | Unauthenticated user sees landing at `/` |
+| First Impression UX Failures | Landing Page Design | CTA above fold on 375px viewport |
+| Apple Touch Icon Misconfiguration | Icon Generation | iOS simulator shows correct icon |
+| Service Worker Cache Staleness | PWA Enhancement | Version bump triggers cache clear |
+| Glassmorphism Performance | Landing Page Design | Lighthouse performance > 80 on mobile |
 
-### Post-Migration Core Auth
-- [ ] Existing users can log in (if cookie migration implemented)
-- [ ] New user registration works
-- [ ] Login with valid credentials succeeds
-- [ ] Login with invalid credentials fails with Dutch error
-- [ ] Logout works and clears session
-- [ ] JWT contains user.id (decode and verify)
-- [ ] Session exposes user.id via auth()
+---
 
-### Middleware Protection
-- [ ] Unauthenticated access to /vandaag redirects to /login
-- [ ] Unauthenticated access to /inzichten redirects to /login
-- [ ] Unauthenticated access to /taken redirects to /login
-- [ ] Authenticated access to all protected routes works
-- [ ] /login and /signup accessible without auth
-- [ ] /api routes accessible (auth checked in route handlers)
-- [ ] Static assets load without auth check
+## Specific Fixes for HabitStreak
 
-### Rate Limiting (if IP detection preserved)
-- [ ] Multiple failed logins trigger rate limit
-- [ ] Rate limit message shows in Dutch
-- [ ] Account lockout still functions
-- [ ] Successful login resets failure count
+### Immediate (before landing page work):
 
-### Error Messages
-- [ ] Invalid credentials shows Dutch error
-- [ ] Account locked shows lockout duration
-- [ ] Rate limited shows wait time
-- [ ] Missing email/password shows validation error
+1. **Generate PWA icons** - The `/public/icons/` directory needs actual PNG files, not just a README
+2. **Fix manifest.json** - Change `"purpose": "any maskable"` to separate icon entries
+3. **Update middleware** - Use extension-based exclusion pattern for future-proofing
+4. **Create apple-icon.png** - 180x180 in `/app` directory
 
-### Session Management
-- [ ] Session persists across page navigation
-- [ ] Session expires after 30 days
-- [ ] getCurrentUser() returns correct user
-- [ ] requireAuth() throws for unauthenticated
-- [ ] isAuthenticated() returns correct boolean
+### During landing page work:
 
-### API Routes
-- [ ] All protected API routes return 401 when unauthenticated
-- [ ] All protected API routes work when authenticated
-- [ ] User data properly scoped by userId
+5. **Add `(public)` route group** - Clean separation from `(auth)` and `(main)`
+6. **Whitelist landing route** - Update middleware before adding the page
+7. **Implement auth-aware redirect** - Logged-in users go to `/vandaag`
+8. **Audit glassmorphism usage** - Reduce blur values and element count
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Auth.js Official Migration Guide](https://authjs.dev/getting-started/migrating-to-v5) - Official documentation
-- [Auth.js Next.js Reference](https://authjs.dev/reference/nextjs) - API documentation
-- [Auth.js Credentials Provider](https://authjs.dev/getting-started/authentication/credentials) - Credentials setup
-- [Auth.js Environment Variables](https://authjs.dev/guides/environment-variables) - Env configuration
+- [Next.js Metadata Files Documentation](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons) - favicon/icon configuration
+- [MDN PWA Icons Reference](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/icons) - manifest icon specification
+- [Chrome Lighthouse PWA Audit](https://developer.chrome.com/docs/lighthouse/pwa/maskable-icon-audit) - maskable icon requirements
+- [Next.js Route Groups Documentation](https://nextjs.org/docs/app/api-reference/file-conventions/route-groups) - route organization
 
 ### Secondary (MEDIUM confidence)
-- [GitHub Discussion #8487](https://github.com/nextauthjs/next-auth/discussions/8487) - Community migration experiences
-- [GitHub Issue #12167](https://github.com/nextauthjs/next-auth/issues/12167) - Migration tracking issue
-- [DEV.to Migration Guide](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad) - Real-world examples
-- [Medium: Migration Without Logout](https://medium.com/@sajvanleeuwen/migrating-from-nextauth-v4-to-auth-js-v5-without-logging-out-users-c7ac6bbb0e51) - Cookie migration approach
+- [Clerk Blog: Skip Middleware for Static Files](https://clerk.com/blog/skip-nextjs-middleware-static-and-public-files) - middleware patterns
+- [Dev.to: Why PWA icons shouldn't use "any maskable"](https://dev.to/progressier/why-a-pwa-app-icon-shouldnt-have-a-purpose-set-to-any-maskable-4c78) - icon purpose separation
+- [Zoho: 13 Landing Page Mistakes 2025](https://www.zoho.com/landingpage/landing-page-mistakes.html) - conversion pitfalls
+- [web.dev PWA Update Guide](https://web.dev/learn/pwa/update) - service worker versioning
 
-### Tertiary (LOW confidence - verify before using)
-- Various Stack Overflow answers about specific error handling
-- GitHub discussions about `req` parameter changes (needs hands-on verification)
-
----
-
-## Confidence Assessment
-
-| Area | Confidence | Reason |
-|------|------------|--------|
-| Cookie name change (P1) | HIGH | Documented in official migration guide, confirmed by multiple sources |
-| JWT encoding change (P2) | HIGH | Technical deep-dive in Medium article, matches official docs |
-| Middleware changes (P3) | HIGH | Clear documentation, code examples in official guide |
-| getServerSession replacement (P4) | HIGH | Core v5 feature, extensively documented |
-| Type changes (P5) | HIGH | Build will fail if wrong, easy to verify |
-| Authorize req parameter (P6) | MEDIUM | Less clear documentation, needs hands-on verification |
-| Environment variables (P7) | HIGH | Clearly documented, backward compatible |
-| Error handling (P8) | MEDIUM | Community reports vary, some workarounds exist |
-
----
-
-## Metadata
-
-**Research date:** 2026-01-19
-**Valid until:** 2026-04-19 (Auth.js stable, 3-month validity)
-**Researcher:** Claude (GSD Research Agent)
-**Project:** HabitStreak v1.2 Auth.js v5 Migration
+### Tertiary (verified against project code)
+- HabitStreak `/public/manifest.json` - current manifest structure
+- HabitStreak `/src/middleware.ts` - current middleware pattern
+- HabitStreak `/public/icons/README.md` - confirms icons not generated
+- HabitStreak `/src/app/layout.tsx` - confirms apple icon reference to missing file

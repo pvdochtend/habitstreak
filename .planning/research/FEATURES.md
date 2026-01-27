@@ -1,381 +1,328 @@
-# Features Research: Auth.js v5 Dynamic URL Detection
+# Feature Research: Landing Pages for Habit Tracking / Productivity Apps
 
-**Researched:** 2026-01-19
-**Domain:** Authentication / NextAuth.js to Auth.js v5 Migration
-**Confidence:** HIGH (verified with official Auth.js documentation)
+**Domain:** Landing pages for habit tracking / productivity apps
+**Researched:** 2026-01-26
+**Confidence:** HIGH (verified across multiple authoritative sources)
 
 ## Summary
 
-Auth.js v5 introduces automatic host detection that eliminates the strict `NEXTAUTH_URL` requirement from v4. The key feature is `trustHost`, which tells Auth.js to read the incoming request's `Host` header (or `X-Forwarded-Host` behind proxies) to determine the application URL dynamically. This means users can access the app via localhost:3000, 192.168.1.x:3000, or a custom domain without changing any configuration. The only required environment variable is `AUTH_SECRET` - the URL is inferred from each request.
+Landing pages for habit/productivity apps follow established conversion patterns. The standard structure is: Hero (headline + CTA + mockup) > Social Proof > Features > CTA repeat. For a self-hosted personal app without SaaS concerns (pricing, enterprise features), the focus shifts to: communicating value quickly, showcasing the visual experience, and making signup frictionless.
 
-**Primary recommendation:** Migrate to Auth.js v5 with `trustHost: true` in config and `AUTH_TRUST_HOST=true` in environment. Remove `NEXTAUTH_URL` entirely to enable dynamic URL detection.
+Key insight: HabitStreak's glassmorphism + confetti identity is a **differentiator** — most habit apps have utilitarian designs. The landing page should lead with visual appeal.
 
-## Core Feature: trustHost
+---
 
-### What It Does
+## Feature Landscape
 
-The `trustHost` configuration option tells Auth.js to derive the application URL from the incoming HTTP request headers instead of requiring a static environment variable. When enabled:
+### Table Stakes (Users Expect These)
 
-1. Auth.js reads the `Host` header from each incoming request
-2. Behind proxies, it reads `X-Forwarded-Host` and `X-Forwarded-Proto` headers
-3. It constructs callback URLs, redirect URLs, and session URLs dynamically
-4. No hardcoded URL configuration is needed
+These elements are expected on any app landing page. Missing them makes the page feel incomplete or untrustworthy.
 
-This is the exact feature that solves HabitStreak's multi-URL access problem.
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| **Hero Section** | First impression, communicates value in 5 seconds | LOW | Headline + subheadline + primary CTA + visual |
+| **Clear Value Proposition** | Visitors decide in seconds if page is relevant | LOW | "What does it do? Why should I care?" |
+| **Primary CTA Above Fold** | 73% of top-performing CTAs are above fold or in navbar | LOW | "Get Started" or "Sign Up" button, highly visible |
+| **App Screenshot/Mockup** | Visitors want to see the product before committing | LOW-MEDIUM | Phone mockup with real app UI, not placeholders |
+| **Feature Highlights** | Explains what the app does | LOW-MEDIUM | 3-4 key features with icons and short descriptions |
+| **Secondary CTA** | Catches users who scroll past first CTA | LOW | Repeat CTA at bottom of page |
+| **Mobile-Responsive Design** | 60% of traffic is mobile; page must work on all devices | LOW | Already using Tailwind/Next.js, built-in |
+| **Fast Load Time** | 53% abandon pages taking >3 seconds; 1s delay = 7% fewer conversions | MEDIUM | Optimize images, minimal JS for landing |
 
-### How It Works
+### Differentiators (Competitive Advantage)
 
-**Request Flow (Direct Access):**
+These features separate good landing pages from great ones. They build trust and increase conversion, but the app can launch without them.
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| **Visual Identity Showcase** | HabitStreak's glassmorphism + animations are unique; leading with beauty differentiates | MEDIUM | Animate mockup, show confetti, use brand colors |
+| **Interactive Demo/Preview** | 54% click-through rate on interactive demos; 1.7x more signups | HIGH | Would need to build sandboxed preview; defer |
+| **Micro-Animations** | Creates feeling of polish and delight; matches app experience | LOW-MEDIUM | Fade-ins, subtle parallax, hover effects |
+| **"How It Works" Section** | Reduces uncertainty for new users | LOW | 3 steps: Sign up > Add habits > Build streaks |
+| **Streak/Gamification Teaser** | Habit apps are about motivation; preview the reward system | LOW | Show streak counter, completion animations |
+| **Testimonials** | Social proof increases trust (but requires real users) | N/A | Skip for personal/self-hosted — no external users |
+| **Video Demo** | 86% increase in conversions for pages with video | HIGH | Production effort; defer to post-launch |
+| **App Store Badges** | Expected for mobile apps | N/A | Not applicable — HabitStreak is a PWA/web app |
+
+### Anti-Features (Deliberately NOT Building)
+
+These are common on SaaS landing pages but inappropriate for a personal self-hosted app.
+
+| Feature | Why Commonly Requested | Why Problematic for HabitStreak | Alternative |
+|---------|------------------------|----------------------------------|-------------|
+| **Pricing Section** | Standard for SaaS | Self-hosted, no paid tiers | None needed |
+| **Enterprise Features** | B2B SaaS pattern | Personal app, single user | None needed |
+| **Company Logos ("Trusted by")** | Social proof for SaaS | No enterprise customers | Skip entirely |
+| **User Count Stats** | "Join 1M+ users" builds FOMO | Self-hosted = personal use only | Skip entirely |
+| **Newsletter Signup** | Lead generation | No marketing emails needed | Skip entirely |
+| **Complex Navigation** | Multi-page marketing sites | Single-page landing is cleaner | Minimal nav: Logo + "Log In" + "Sign Up" |
+| **Cookie Banner** | GDPR for marketing cookies | Self-hosted, no third-party tracking | Skip entirely |
+| **Live Chat Widget** | Customer support | Self-hosted, you ARE the support | Skip entirely |
+| **Comparison Tables** | "Us vs Competitors" | Not competing; personal tool | Skip entirely |
+| **Blog/Resources Link** | Content marketing | Not a content business | Skip entirely |
+| **Request a Demo Form** | Enterprise sales | Immediate signup, no demo booking | Direct signup CTA |
+
+---
+
+## Feature Dependencies
+
 ```
-User accesses: http://192.168.1.100:3000/login
-                    |
-                    v
-            Request arrives with:
-            Host: 192.168.1.100:3000
-                    |
-                    v
-            Auth.js (trustHost: true)
-            Reads Host header -> "192.168.1.100:3000"
-                    |
-                    v
-            Constructs URLs:
-            - Callback: http://192.168.1.100:3000/api/auth/callback/credentials
-            - Session: http://192.168.1.100:3000/api/auth/session
-            - Redirect: http://192.168.1.100:3000/vandaag
-```
+                    +------------------+
+                    |   Hero Section   |
+                    | (headline, CTA,  |
+                    |    mockup)       |
+                    +--------+---------+
+                             |
+              +--------------+--------------+
+              |                             |
+    +---------v---------+         +---------v---------+
+    | Feature Highlights|         | How It Works      |
+    | (what it does)    |         | (3 steps)         |
+    +-------------------+         +-------------------+
+              |                             |
+              +--------------+--------------+
+                             |
+                    +--------v---------+
+                    | Secondary CTA    |
+                    | (signup button)  |
+                    +------------------+
+                             |
+                    +--------v---------+
+                    |     Footer       |
+                    | (minimal links)  |
+                    +------------------+
 
-**Request Flow (Behind Reverse Proxy):**
-```
-User accesses: https://habits.example.com/login
-                    |
-                    v
-            Reverse Proxy (nginx/traefik)
-            Forwards with headers:
-            - Host: habits.example.com
-            - X-Forwarded-Host: habits.example.com
-            - X-Forwarded-Proto: https
-                    |
-                    v
-            Auth.js (trustHost: true)
-            Reads X-Forwarded-* headers
-                    |
-                    v
-            Constructs URLs with https://habits.example.com
-```
-
-### Configuration
-
-**Option 1: In auth.ts configuration (recommended)**
-```typescript
-// src/auth.ts (Auth.js v5 format)
-import NextAuth from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [Credentials({ /* ... */ })],
-  trustHost: true,  // Enable dynamic URL detection
-  // ... rest of config
-})
-```
-
-**Option 2: Environment variable**
-```bash
-# .env or .env.production
-AUTH_TRUST_HOST=true
-```
-
-**Option 3: Both (belt and suspenders)**
-```typescript
-// auth.ts
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true,
-  // ...
-})
-```
-```bash
-# .env.production
-AUTH_TRUST_HOST=true
-```
-
-**Note:** Auth.js automatically sets `trustHost: true` when it detects Vercel (`VERCEL` env var) or Cloudflare Pages (`CF_PAGES` env var). For self-hosted deployments like Docker, you must set it explicitly.
-
-## URL Detection Behavior
-
-### Without trustHost (v4 behavior)
-
-In NextAuth v4, the URL handling is rigid:
-
-| Aspect | v4 Behavior |
-|--------|-------------|
-| **URL Source** | Reads from `NEXTAUTH_URL` environment variable only |
-| **If Not Set** | Falls back to `http://localhost:3000` or throws warnings |
-| **If Mismatched** | Authentication may fail, cookies may not work, redirects break |
-| **Multi-URL** | Not supported - must change `NEXTAUTH_URL` for each access method |
-
-**Current HabitStreak Problem:**
-- `NEXTAUTH_URL=http://localhost:3000` set
-- User accesses via `http://192.168.1.100:3000`
-- Callback URLs generated for `localhost:3000`
-- Session cookie scoped to `localhost`
-- Result: Login appears to work but session not maintained
-
-### With trustHost (v5 behavior)
-
-| Aspect | v5 Behavior with trustHost |
-|--------|---------------------------|
-| **URL Source** | Reads from `Host` header of each request |
-| **If AUTH_URL Not Set** | Works correctly - URL inferred from request |
-| **Proxy Support** | Reads `X-Forwarded-Host` and `X-Forwarded-Proto` |
-| **Multi-URL** | Fully supported - each request gets correct URL |
-
-**Expected HabitStreak Behavior After Migration:**
-- `AUTH_TRUST_HOST=true` set, no `AUTH_URL` needed
-- User accesses via `http://192.168.1.100:3000`
-- Host header: `192.168.1.100:3000`
-- Callback URLs generated for `192.168.1.100:3000`
-- Session cookie scoped to `192.168.1.100`
-- Result: Login works correctly on any access URL
-
-## Multi-URL Scenarios
-
-| Scenario | v4 Behavior | v5 with trustHost |
-|----------|-------------|-------------------|
-| **localhost:3000** | Works only if `NEXTAUTH_URL=http://localhost:3000` | Works automatically |
-| **127.0.0.1:3000** | Fails if NEXTAUTH_URL is localhost | Works automatically |
-| **IP address (LAN)** | Fails unless NEXTAUTH_URL matches exactly | Works automatically |
-| **Custom domain** | Fails unless NEXTAUTH_URL matches | Works automatically |
-| **Reverse proxy (HTTP)** | Fails - URL mismatch | Works with `AUTH_TRUST_HOST=true` |
-| **Reverse proxy (HTTPS)** | Fails - URL and protocol mismatch | Works - reads X-Forwarded-Proto |
-| **Multiple domains** | Not supported | Works - each request uses its own Host |
-
-### Detailed Scenario Analysis
-
-**Scenario 1: Development on localhost**
-```
-Access URL: http://localhost:3000
-Host header: localhost:3000
-Auth.js constructs: http://localhost:3000/api/auth/*
-Cookie domain: localhost
-Result: Works
+Dependencies:
+- Hero requires: App mockup screenshot (need to capture real UI)
+- Hero requires: Headline copy (needs copywriting)
+- Feature Highlights require: Icon set (can use existing Lucide icons)
+- All sections require: Brand colors + glassmorphism styles from app
 ```
 
-**Scenario 2: Access from another device on LAN**
+---
+
+## MVP Definition
+
+### Launch With (v1.3)
+
+These features define a complete, professional landing page that matches HabitStreak's quality.
+
+1. **Hero Section**
+   - Headline: Benefit-focused, Dutch ("Bouw gewoontes die blijven" or similar)
+   - Subheadline: One sentence explaining the app
+   - Primary CTA: "Aan de slag" / "Maak account" button
+   - Visual: Phone mockup with real app screenshot (Today view)
+
+2. **App Preview Mockup**
+   - Glassmorphism-styled phone frame
+   - Screenshot of the Today page with some habits
+   - Optional: Subtle animation (fade-in, slight float)
+
+3. **Feature Highlights (3-4 features)**
+   - Daily habit tracking
+   - Streak visualization
+   - 7-day insights chart
+   - Mobile-first design
+   - Each with icon + short Dutch description
+
+4. **How It Works (3 steps)**
+   - Step 1: Maak een account (icon: user)
+   - Step 2: Voeg je gewoontes toe (icon: plus)
+   - Step 3: Bouw je streak (icon: flame/star)
+
+5. **Secondary CTA**
+   - Repeat the signup button at bottom
+   - Same styling as hero CTA
+
+6. **Minimal Footer**
+   - Just copyright + maybe link to login if already have account
+
+7. **Mobile-Responsive**
+   - Stack sections vertically on mobile
+   - Touch-friendly CTA buttons
+
+### Add After Validation
+
+Features to consider after the landing page is live and working.
+
+1. **Micro-Animations**
+   - Parallax on scroll
+   - Staggered fade-ins for feature cards
+   - Hover effects on CTAs
+
+2. **Multiple Mockup Views**
+   - Show Insights page as second screenshot
+   - Carousel or scroll-triggered switch
+
+3. **Streak Counter Animation**
+   - Animated number counting up
+   - Confetti burst (matches app celebration)
+
+### Future Consideration
+
+Nice-to-have features that require significant effort.
+
+1. **Interactive Demo**
+   - Sandboxed version users can try without signup
+   - Complexity: HIGH — needs isolated state, guest mode
+
+2. **Video Walkthrough**
+   - 30-60 second product tour
+   - Complexity: HIGH — production, editing, hosting
+
+3. **Dark Mode Toggle**
+   - Preview app in dark mode from landing page
+   - Complexity: MEDIUM — requires dark mode in app first
+
+---
+
+## Feature Prioritization Matrix
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Hero Section | HIGH | LOW | **P0 - Must Have** |
+| App Mockup Screenshot | HIGH | LOW | **P0 - Must Have** |
+| Primary CTA Above Fold | HIGH | LOW | **P0 - Must Have** |
+| Feature Highlights | MEDIUM | LOW | **P0 - Must Have** |
+| Mobile-Responsive | HIGH | LOW | **P0 - Must Have** |
+| How It Works Section | MEDIUM | LOW | **P1 - Should Have** |
+| Secondary CTA | MEDIUM | LOW | **P1 - Should Have** |
+| Minimal Footer | LOW | LOW | **P1 - Should Have** |
+| Micro-Animations | MEDIUM | MEDIUM | **P2 - Nice to Have** |
+| Multiple Mockup Views | LOW | MEDIUM | **P2 - Nice to Have** |
+| Streak Animation | LOW | MEDIUM | **P2 - Nice to Have** |
+| Interactive Demo | HIGH | HIGH | **P3 - Future** |
+| Video Walkthrough | MEDIUM | HIGH | **P3 - Future** |
+
+---
+
+## Competitor Feature Analysis
+
+| Feature | Habitica | Todoist | Notion | Streaks App | Our Approach |
+|---------|----------|---------|--------|-------------|--------------|
+| **Hero Headline** | "Gamify Your Life" | "Clarity, finally." | "One workspace. Zero busywork." | "The to-do list that helps you form good habits" | Dutch, benefit-focused: "Bouw gewoontes die blijven" |
+| **Hero Visual** | Avatar/game art | App screenshot | Product GIF | iPhone mockup | Phone mockup with glassmorphism frame |
+| **Primary CTA** | "Get Started for Free" | "Start for free" | "Get Notion free" | "Download" | "Aan de slag" (Get Started) |
+| **Social Proof** | User count | 374K reviews, press quotes, stats | 100M users, Fortune 100, G2 badges | App Store rating | None (personal app) |
+| **Feature Sections** | RPG mechanics, quests, guilds | Clear mind, focus, plan, team | Agents, search, notes, workflows | 12 habits, health sync | Simple: track, streak, insights |
+| **Pricing** | Freemium tiers | Free/Pro/Business/Enterprise | Free/Plus/Business/Enterprise | One-time purchase | None (self-hosted) |
+| **Gamification Preview** | Avatars, pets, quests | None | None | Streak circles | Streak counter, confetti |
+| **Video** | None on homepage | None | Product carousel | None | None (defer) |
+| **Interactive Demo** | None | None | None | None | None (defer) |
+
+### Key Insight
+
+Commercial apps lead with scale ("30M downloads") and feature depth ("AI agents"). HabitStreak should lead with **visual delight** and **simplicity** — the glassmorphism design is more polished than most habit trackers.
+
+---
+
+## Conversion Best Practices Applied to HabitStreak
+
+### Above the Fold (Critical)
+
+Based on research: visitors decide in 5 seconds. Above the fold must include:
+
+1. **Headline** that passes "caveman test" — immediately clear what app does
+2. **CTA button** in contrasting color, large touch target
+3. **Visual** showing the product (not generic stock photo)
+
+**Recommendation for HabitStreak:**
 ```
-Access URL: http://192.168.1.100:3000
-Host header: 192.168.1.100:3000
-Auth.js constructs: http://192.168.1.100:3000/api/auth/*
-Cookie domain: 192.168.1.100
-Result: Works
-```
-
-**Scenario 3: Custom local domain (via /etc/hosts)**
-```
-Access URL: http://habitstreak.local:3000
-Host header: habitstreak.local:3000
-Auth.js constructs: http://habitstreak.local:3000/api/auth/*
-Cookie domain: habitstreak.local
-Result: Works
-```
-
-**Scenario 4: Behind nginx reverse proxy with HTTPS**
-```
-External URL: https://habits.example.com
-nginx config:
-  proxy_set_header Host $host;
-  proxy_set_header X-Forwarded-Host $host;
-  proxy_set_header X-Forwarded-Proto $scheme;
-
-Headers received by app:
-  Host: habits.example.com
-  X-Forwarded-Host: habits.example.com
-  X-Forwarded-Proto: https
-
-Auth.js constructs: https://habits.example.com/api/auth/*
-Cookie: Secure, domain habits.example.com
-Result: Works with secure cookies
-```
-
-**Scenario 5: Docker with internal networking**
-```
-Container internal: http://habitstreak:3000
-External access: http://192.168.1.100:3000
-
-With proper Docker networking (host mode or port mapping):
-Host header: 192.168.1.100:3000
-Auth.js constructs: http://192.168.1.100:3000/api/auth/*
-Result: Works
-```
-
-## Other Relevant v5 Features
-
-### 1. Simplified Environment Variables
-
-| v4 Variable | v5 Variable | Required? |
-|-------------|-------------|-----------|
-| `NEXTAUTH_SECRET` | `AUTH_SECRET` | Yes (only required var) |
-| `NEXTAUTH_URL` | `AUTH_URL` | No (auto-detected) |
-| N/A | `AUTH_TRUST_HOST` | Yes for self-hosted |
-
-**Migration:**
-```bash
-# Remove or comment out:
-# NEXTAUTH_URL=http://localhost:3000
-
-# Rename:
-NEXTAUTH_SECRET -> AUTH_SECRET
-
-# Add:
-AUTH_TRUST_HOST=true
-```
-
-Note: v5 still supports `NEXTAUTH_SECRET` and `NEXTAUTH_URL` as aliases for backward compatibility.
-
-### 2. Automatic Cookie Security
-
-Auth.js v5 automatically configures cookie security based on the detected protocol:
-
-| Detected Protocol | Cookie Behavior |
-|-------------------|-----------------|
-| `http://` | Non-secure cookies (SameSite=Lax) |
-| `https://` | Secure cookies (SameSite=Lax, Secure flag) |
-
-This means:
-- Local development via HTTP works without configuration
-- Production behind HTTPS automatically gets secure cookies
-- No need for `useSecureCookies` toggle
-
-### 3. New Configuration Structure
-
-Auth.js v5 uses a different export pattern:
-
-```typescript
-// v4 (current HabitStreak)
-import NextAuth from "next-auth"
-export const authOptions: NextAuthOptions = { ... }
-export default NextAuth(authOptions)
-
-// v5 (target)
-import NextAuth from "next-auth"
-export const { handlers, signIn, signOut, auth } = NextAuth({ ... })
-```
-
-The `auth` function replaces `getServerSession(authOptions)` for server-side auth checks.
-
-### 4. Route Handler Migration
-
-```typescript
-// v4: src/pages/api/auth/[...nextauth].ts or src/app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth"
-import { authOptions } from "@/lib/auth"
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST }
-
-// v5: src/app/api/auth/[...nextauth]/route.ts
-import { handlers } from "@/auth"
-export const { GET, POST } = handlers
-```
-
-### 5. Middleware Changes
-
-```typescript
-// v4
-export { default } from "next-auth/middleware"
-
-// v5
-import { auth } from "@/auth"
-export default auth
-```
-
-## Configuration Needed for Each Scenario
-
-### Minimal Self-Hosted (Docker/VPS)
-
-```typescript
-// src/auth.ts
-import NextAuth from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [Credentials({ /* existing logic */ })],
-  trustHost: true,
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  callbacks: {
-    /* existing callbacks */
-  },
-})
++------------------------------------------+
+|  Logo                        [Inloggen]  |
+|                                          |
+|   Bouw gewoontes                         |
+|   die blijven.                           |
+|                                          |
+|   Track je dagelijkse gewoontes,         |
+|   bouw streaks en vier je voortgang.     |
+|                                          |
+|   [Aan de slag]                          |
+|                                          |
+|        [Phone Mockup with Today view]    |
+|                                          |
++------------------------------------------+
 ```
 
-```bash
-# .env.production
-AUTH_SECRET=your-32-char-secret-here
-AUTH_TRUST_HOST=true
-# No AUTH_URL needed!
-```
+### Feature Section Pattern
 
-### Behind Reverse Proxy (nginx example)
+Use 3-4 features maximum. Each with:
+- Icon (use Lucide for consistency)
+- Short headline (2-4 words)
+- One-line description
 
-Same auth.ts as above, plus nginx config:
+**Recommended features to highlight:**
+1. **Dagelijkse check-ins** — Vink je gewoontes af met een tik
+2. **Streak tracking** — Houd je motivatie hoog met streaks
+3. **Weekoverzicht** — Bekijk je voortgang in een grafiek
+4. **Mobiel-eerst** — Ontworpen voor onderweg
 
-```nginx
-location / {
-    proxy_pass http://localhost:3000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
-```
+### CTA Best Practices
 
-### Force Specific URL (if needed)
+- One primary CTA (not competing options)
+- Action-oriented: "Aan de slag" > "Meer informatie"
+- Contrasting color (use primary brand color)
+- Repeat at bottom of page for scrollers
+- Large touch target (min 44px)
 
-If you ever need to force a specific URL (not recommended for HabitStreak's use case):
+---
 
-```bash
-# .env.production
-AUTH_SECRET=your-secret
-AUTH_URL=https://specific-domain.com
-AUTH_TRUST_HOST=true
-```
+## Technical Considerations
 
-## Migration Checklist for HabitStreak
+### Performance Budget
 
-- [ ] Update `next-auth` package to v5 (`npm install next-auth@5`)
-- [ ] Rename `src/lib/auth.ts` exports to v5 pattern
-- [ ] Add `trustHost: true` to auth config
-- [ ] Update environment variables:
-  - [ ] `NEXTAUTH_SECRET` -> `AUTH_SECRET` (or keep both for compatibility)
-  - [ ] Remove `NEXTAUTH_URL` entirely
-  - [ ] Add `AUTH_TRUST_HOST=true`
-- [ ] Update route handler in `src/app/api/auth/[...nextauth]/route.ts`
-- [ ] Update middleware in `src/middleware.ts`
-- [ ] Update auth helpers (`getCurrentUser`, `requireAuth`) to use new `auth()` function
-- [ ] Test login from multiple URLs:
-  - [ ] localhost:3000
-  - [ ] 127.0.0.1:3000
-  - [ ] LAN IP address
-  - [ ] Custom domain (if configured)
+| Metric | Target | Rationale |
+|--------|--------|-----------|
+| First Contentful Paint | <1.5s | 53% abandon after 3s |
+| Largest Contentful Paint | <2.5s | Core Web Vitals threshold |
+| Hero image size | <500KB | Mobile performance |
+| Total page weight | <1MB | Fast on mobile networks |
+
+### Implementation Notes
+
+- Landing page can be a separate route (`/`) vs app routes (`/vandaag`)
+- Consider pre-rendering landing page for instant load
+- Mockup image: Create once, optimize for web (WebP with PNG fallback)
+- Reuse existing Tailwind config and design tokens
+- Navigation: Only "Inloggen" and "Aan de slag" buttons (not full nav)
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Auth.js Migration Guide](https://authjs.dev/getting-started/migrating-to-v5) - Official v4 to v5 migration documentation
-- [Auth.js Deployment Guide](https://authjs.dev/getting-started/deployment) - Official deployment and AUTH_TRUST_HOST documentation
-- [Auth.js Next.js Reference](https://authjs.dev/reference/nextjs) - Official Next.js integration reference
-- [Auth.js Upgrade Guide](https://authjs.dev/guides/upgrade-to-v5) - Official upgrade guide with environment variable details
+- [Todoist.com](https://todoist.com) - Fetched and analyzed landing page structure
+- [Notion.com](https://notion.com) - Fetched and analyzed landing page structure
+- [Habitica Features Page](https://habitica.com/static/features) - Referenced for gamification patterns
+- [KlientBoost Landing Page Examples](https://www.klientboost.com/landing-pages/app-landing-page/) - 17 full-length examples
+- [Involve.me Landing Page Best Practices 2026](https://www.involve.me/blog/landing-page-best-practices) - Current best practices
+- [Hostinger Landing Page Statistics 2025](https://www.hostinger.com/tutorials/landing-page-statistics) - Conversion benchmarks
+- [Unbounce Mobile Landing Page Examples](https://unbounce.com/landing-page-examples/best-mobile-landing-page-examples/) - Mobile optimization
 
 ### Secondary (MEDIUM confidence)
-- [NextAuth.js v5 Guide - DEV Community](https://dev.to/acetoolz/nextauthjs-v5-guide-migrating-from-v4-with-real-examples-50ad) - Community migration examples
-- [GitHub Issue #11452](https://github.com/nextauthjs/next-auth/issues/11452) - AUTH_TRUST_HOST implementation details
-- [GitHub Issue #8281](https://github.com/nextauthjs/next-auth/issues/8281) - NEXTAUTH_URL handling in v5
+- [TyrAds Mobile App Landing Page Best Practices](https://tyrads.com/mobile-app-landing-page/) - App-specific patterns
+- [Storylane Interactive Demo Statistics](https://www.storylane.io/blog/awesome-interactive-demo-examples) - Demo conversion data
+- [Navattic State of Interactive Product Demo](https://www.navattic.com/report/state-of-the-interactive-product-demo-2023) - Demo placement stats
+- [Gamify Website Gamification Examples](https://www.gamify.com/gamification-blog/7-examples-of-website-gamification) - Gamification patterns
+- [Lapa Ninja Minimal Landing Pages](https://www.lapa.ninja/category/minimal/) - Design inspiration
 
-### Tertiary (LOW confidence - for known issues)
-- [GitHub Discussion #8449](https://github.com/nextauthjs/next-auth/discussions/8449) - Docker internal IP issues and workarounds
-- [GitHub Issue #10928](https://github.com/nextauthjs/next-auth/issues/10928) - Redirect URL issues (edge cases)
+### Tertiary (LOW confidence - design inspiration only)
+- [Dribbble Habit Tracker Designs](https://dribbble.com/tags/habit-tracker) - Visual inspiration
+- [Figma Habitus Template](https://www.figma.com/community/file/1507106587522840897) - Landing page template reference
+- [GitHub Mobile App Landing Template](https://github.com/sofiyevsr/mobile-app-landing-template) - Indie developer template
+
+---
+
+## Confidence Assessment
+
+| Area | Level | Reason |
+|------|-------|--------|
+| Table Stakes | HIGH | Consistent across all sources (Todoist, Notion, best practice guides) |
+| Differentiators | HIGH | Verified with conversion statistics and competitor analysis |
+| Anti-Features | HIGH | Clear distinction between SaaS and self-hosted use cases |
+| Competitor Analysis | MEDIUM | Based on current live sites; may change |
+| Conversion Stats | MEDIUM | Statistics from 2023-2025 sources; trends stable |
+| MVP Definition | HIGH | Based on minimum viable patterns from successful apps |
+
+**Research date:** 2026-01-26
+**Valid until:** 2026-03-26 (landing page patterns stable; check for new trends quarterly)
