@@ -64,9 +64,9 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PWA-01 | Phase 10 | Pending |
-| PWA-02 | Phase 10 | Pending |
-| PWA-03 | Phase 10 | Pending |
+| PWA-01 | Phase 10 | Complete |
+| PWA-02 | Phase 10 | Complete |
+| PWA-03 | Phase 10 | Complete |
 | LAND-01 | Phase 11 | Pending |
 | LAND-02 | Phase 11 | Pending |
 | LAND-03 | Phase 11 | Pending |
@@ -85,4 +85,4 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after roadmap creation*
+*Last updated: 2026-01-27 after Phase 10 completion*

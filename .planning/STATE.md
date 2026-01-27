@@ -57,7 +57,7 @@ Last session: 2026-01-27
 Stopped at: Completed 10-01-PLAN.md (PWA Icon Generation)
 Resume file: None
 
-Next: Phase 10 complete. Ready for `/gsd:plan-phase 11` (Landing Page) or `/gsd:plan-phase 12` (PWA Install Banner).
+Next: Phase 10 complete. Ready for `/gsd:plan-phase 11` (Landing Page).
 
 ---
 *Last updated: 2026-01-27 after 10-01 completion*
