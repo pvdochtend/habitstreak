@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
         streakFreezes: true,
         colorScheme: true,
         darkMode: true,
+        installPromptDismissed: true,
+        pwaInstalled: true,
         createdAt: true,
       },
     })
@@ -71,6 +73,12 @@ const updateUserSchema = z.object({
   darkMode: z
     .boolean({ errorMap: () => ({ message: 'Donkere modus moet true of false zijn' }) })
     .optional(),
+  installPromptDismissed: z
+    .boolean({ errorMap: () => ({ message: 'installPromptDismissed moet true of false zijn' }) })
+    .optional(),
+  pwaInstalled: z
+    .boolean({ errorMap: () => ({ message: 'pwaInstalled moet true of false zijn' }) })
+    .optional(),
 })
 
 export async function PATCH(request: NextRequest) {
@@ -90,13 +98,15 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const { dailyTarget, colorScheme, darkMode } = validation.data
+    const { dailyTarget, colorScheme, darkMode, installPromptDismissed, pwaInstalled } = validation.data
 
     // Build update data
     const updateData: any = {}
     if (dailyTarget !== undefined) updateData.dailyTarget = dailyTarget
     if (colorScheme !== undefined) updateData.colorScheme = colorScheme
     if (darkMode !== undefined) updateData.darkMode = darkMode
+    if (installPromptDismissed !== undefined) updateData.installPromptDismissed = installPromptDismissed
+    if (pwaInstalled !== undefined) updateData.pwaInstalled = pwaInstalled
 
     // Update user
     const user = await prisma.user.update({
@@ -109,6 +119,8 @@ export async function PATCH(request: NextRequest) {
         streakFreezes: true,
         colorScheme: true,
         darkMode: true,
+        installPromptDismissed: true,
+        pwaInstalled: true,
         createdAt: true,
       },
     })
