@@ -1,5 +1,7 @@
 # Debug: Test Failures - Prisma Mock & Playwright Configuration
 
+**Status:** RESOLVED (2026-01-27)
+
 ## Problem Statement
 Two categories of test failures occur when running `npm test`:
 1. Rate-limit unit tests fail due to incomplete Prisma mock
@@ -86,6 +88,20 @@ npm run test:e2e
 ## Priority
 Low - cosmetic issue, doesn't affect functionality
 
+## Resolution
+
+**Applied 2026-01-27:**
+
+1. **Prisma mock fixed** — Added `findFirst` and `deleteMany` to `authAttempt` mock in `tests/unit/rate-limit.test.ts`
+
+2. **Vitest config fixed** — Added `include` and `exclude` patterns to `vitest.config.ts`:
+   ```typescript
+   include: ['tests/unit/**/*.test.ts'],
+   exclude: ['tests/e2e/**/*', 'node_modules/**/*'],
+   ```
+
+**Result:** All 71 tests pass across 5 test files.
+
 ---
 *Created: 2026-01-19*
-*Related to: Pre-existing test configuration*
+*Resolved: 2026-01-27*
