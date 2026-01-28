@@ -106,17 +106,17 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Schema migration + TypeScript types for PWA tracking
-- [ ] 13-02-PLAN.md — API endpoints, context provider, and root layout integration
+- [x] 13-01-PLAN.md — Schema migration + TypeScript types for PWA tracking
+- [x] 13-02-PLAN.md — API endpoints, context provider, and root layout integration
 
 **Success Criteria:**
-1. App correctly identifies iOS Safari vs Chromium browsers on all devices
-2. App correctly detects when user is viewing in standalone/PWA mode
-3. beforeinstallprompt event is captured globally before any component mounts
-4. Dismissal state persists across browser sessions permanently
-5. Install prompts never show to users who already installed the app
+1. App correctly identifies iOS Safari vs Chromium browsers on all devices ✓
+2. App correctly detects when user is viewing in standalone/PWA mode ✓
+3. beforeinstallprompt event is captured globally before any component mounts ✓
+4. Dismissal state persists across browser sessions permanently ✓
+5. Install prompts never show to users who already installed the app ✓
 
-**Status:** Planned
+**Status:** Complete
 
 ---
 
@@ -167,8 +167,8 @@ Plans:
 | v1.3 First Impressions | 10-12 | 3 | Complete | 2026-01-27 |
 | v1.4 App Experience | 13-15 | 2 | In Progress | — |
 
-**Next:** Execute Phase 13 (Install Infrastructure)
+**Next:** Plan Phase 14 (Landing Page Install Experience)
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-28 after Phase 13 planning*
+*Last updated: 2026-01-28 after Phase 13 completion*
