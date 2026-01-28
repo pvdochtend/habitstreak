@@ -11,6 +11,42 @@ export type { User, Task, CheckIn, SchedulePreset, CheckInStatus }
 export type ColorScheme = 'blue' | 'pink'
 
 // ════════════════════════════════════
+// PWA TYPES
+// ════════════════════════════════════
+
+/**
+ * Browser event fired when PWA is installable (Chromium only)
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/BeforeInstallPromptEvent
+ */
+export interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[]
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed'
+    platform: string
+  }>
+  prompt(): Promise<{
+    outcome: 'accepted' | 'dismissed'
+  }>
+}
+
+/**
+ * Platform detection result for PWA install flow
+ */
+export type PwaPlatform = 'ios' | 'chromium' | 'unsupported'
+
+// Extend global types for PWA browser APIs
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent
+    appinstalled: Event
+  }
+  interface Navigator {
+    /** iOS Safari standalone mode indicator */
+    standalone?: boolean
+  }
+}
+
+// ════════════════════════════════════
 // AUTH TYPES
 // ════════════════════════════════════
 export interface AuthUser {
