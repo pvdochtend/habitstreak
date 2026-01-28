@@ -21,6 +21,8 @@ model User {
   streakFreezes   Int      @default(0) @map("streak_freezes")
   colorScheme     String   @default("blue") @map("color_scheme")
   darkMode        Boolean  @default(false) @map("dark_mode")
+  installPromptDismissed  Boolean  @default(false) @map("install_prompt_dismissed")
+  pwaInstalled            Boolean  @default(false) @map("pwa_installed")
   createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations
