@@ -103,6 +103,12 @@ Plans:
 
 **Requirements:** PLAT-01, PLAT-02, PLAT-03, BANR-05, DISM-01, DISM-02, DISM-03
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Schema migration + TypeScript types for PWA tracking
+- [ ] 13-02-PLAN.md — API endpoints, context provider, and root layout integration
+
 **Success Criteria:**
 1. App correctly identifies iOS Safari vs Chromium browsers on all devices
 2. App correctly detects when user is viewing in standalone/PWA mode
@@ -110,7 +116,7 @@ Plans:
 4. Dismissal state persists across browser sessions permanently
 5. Install prompts never show to users who already installed the app
 
-**Status:** Pending
+**Status:** Planned
 
 ---
 
@@ -159,10 +165,10 @@ Plans:
 | v1.1 Self-Hosting | 5-8 | 6 | Complete | 2026-01-19 |
 | v1.2 Auth.js v5 | 9 | 2 | Complete | 2026-01-23 |
 | v1.3 First Impressions | 10-12 | 3 | Complete | 2026-01-27 |
-| v1.4 App Experience | 13-15 | 0 | In Progress | — |
+| v1.4 App Experience | 13-15 | 2 | In Progress | — |
 
-**Next:** Plan Phase 13 (Install Infrastructure)
+**Next:** Execute Phase 13 (Install Infrastructure)
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-28 after v1.4 roadmap creation*
+*Last updated: 2026-01-28 after Phase 13 planning*
