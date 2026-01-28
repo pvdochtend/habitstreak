@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/theme-context'
+import { PwaInstallProvider } from '@/contexts/pwa-install-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -41,7 +42,9 @@ export default function RootLayout({
     <html lang="nl" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider>
-          {children}
+          <PwaInstallProvider>
+            {children}
+          </PwaInstallProvider>
         </ThemeProvider>
       </body>
     </html>
