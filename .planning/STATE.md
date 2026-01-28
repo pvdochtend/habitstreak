@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 13 - Install Infrastructure
 Plan: —
-Status: Defining requirements
-Last activity: 2026-01-27 — Milestone v1.4 started
+Status: Ready for planning
+Last activity: 2026-01-28 — v1.4 roadmap created
 
-Progress: [░░░░░░░░░░] 0% (v1.4 App Experience)
+Progress: [░░░░░░░░░░] 0% (v1.4 App Experience - Phase 13/15)
 
 ## Milestone History
 
@@ -42,6 +42,12 @@ Progress: [░░░░░░░░░░] 0% (v1.4 App Experience)
 
 All decisions logged in PROJECT.md Key Decisions table.
 
+**v1.4 Architecture Decisions:**
+- Root provider pattern for beforeinstallprompt event capture (prevents timing race condition)
+- Database storage for dismissal state (iOS localStorage evicts after 7 days)
+- Zero new dependencies (native browser APIs sufficient)
+- Foundation-first phase ordering (infrastructure before UI prevents rewrites)
+
 ### Pending Todos
 
 None.
@@ -52,11 +58,11 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-27
-Stopped at: v1.3 milestone archived
+Last session: 2026-01-28
+Stopped at: v1.4 roadmap created
 Resume file: None
 
-Next: Define requirements, then `/gsd:plan-phase 13`
+Next: `/gsd:plan-phase 13`
 
 ---
-*Last updated: 2026-01-27 after v1.4 milestone start*
+*Last updated: 2026-01-28 after v1.4 roadmap creation*
