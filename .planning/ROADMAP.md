@@ -128,6 +128,11 @@ Plans:
 
 **Requirements:** BANR-01, BANR-03, BANR-04, IOS-01, IOS-02, IOS-03, ANDR-01, ANDR-02
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 14-01-PLAN.md — PWA install banner UI with iOS walkthrough modal
+
 **Success Criteria:**
 1. Visitor on Android Chrome sees install banner with native prompt button
 2. Visitor on iOS Safari sees install banner with "Show me how" button
@@ -135,7 +140,7 @@ Plans:
 4. Android user clicking "Install" triggers native browser install dialog
 5. User clicking dismiss button permanently hides banner for that device
 
-**Status:** Pending
+**Status:** Planned
 
 ---
 
@@ -165,10 +170,10 @@ Plans:
 | v1.1 Self-Hosting | 5-8 | 6 | Complete | 2026-01-19 |
 | v1.2 Auth.js v5 | 9 | 2 | Complete | 2026-01-23 |
 | v1.3 First Impressions | 10-12 | 3 | Complete | 2026-01-27 |
-| v1.4 App Experience | 13-15 | 2 | In Progress | — |
+| v1.4 App Experience | 13-15 | 3 | In Progress | — |
 
-**Next:** Plan Phase 14 (Landing Page Install Experience)
+**Next:** Execute Phase 14 (Landing Page Install Experience)
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-28 after Phase 13 completion*
+*Last updated: 2026-01-29 after Phase 14 planning*
