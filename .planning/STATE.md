@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-Phase: 13 - Install Infrastructure
-Plan: Complete
-Status: Verified
-Last activity: 2026-01-28 — Phase 13 execution complete
+Phase: 14 - Landing Page Install
+Plan: 01 Complete
+Status: Ready for Phase 15
+Last activity: 2026-01-29 — Completed 14-01-PLAN.md
 
-Progress: [███░░░░░░░] 33% (v1.4 App Experience - Phase 13/15)
+Progress: [████░░░░░░] 40% (v1.4 App Experience - Phase 14/15)
 
 ## Milestone History
 
@@ -26,13 +26,14 @@ Progress: [███░░░░░░░] 33% (v1.4 App Experience - Phase 13/1
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22 (across v1.0 + v1.1 + v1.2 + v1.3 + v1.4)
+- Total plans completed: 23 (across v1.0 + v1.1 + v1.2 + v1.3 + v1.4)
 - Average duration: ~15 min/plan
 - Total milestones: 4 shipped
 
 **v1.4 Milestone (in progress):**
 - Phase 13, Plan 01: 4 min
 - Phase 13, Plan 02: 88 min (slow build due to WSL)
+- Phase 14, Plan 01: ~15 min
 
 ## Accumulated Context
 
@@ -55,6 +56,11 @@ All decisions logged in PROJECT.md Key Decisions table.
 - Database sync is write-only backup - never read back to override localStorage
 - PwaInstallProvider nested inside ThemeProvider in root layout
 
+**Plan 14-01 Decisions:**
+- Screen reader dismiss text hidden on mobile (sr-only sm:not-sr-only)
+- 2.5s animation delay via inline style, not custom Tailwind class
+- WalkthroughStep internal component for consistent step styling
+
 ### Pending Todos
 
 1. **Add service worker for PWA installability** (pwa) — enables beforeinstallprompt on Chromium
@@ -65,11 +71,11 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28
-Stopped at: Phase 13 execution complete
+Last session: 2026-01-29
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
 
-Next: `/gsd:discuss-phase 14`
+Next: `/gsd:plan-phase 15` or continue with Phase 15 planning
 
 ---
-*Last updated: 2026-01-28 after Phase 13 execution*
+*Last updated: 2026-01-29 after Phase 14 Plan 01 execution*
