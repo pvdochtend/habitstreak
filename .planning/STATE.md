@@ -57,7 +57,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-None.
+1. **Add service worker for PWA installability** (pwa) — enables beforeinstallprompt on Chromium
 
 ### Blockers/Concerns
 
