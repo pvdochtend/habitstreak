@@ -4,6 +4,7 @@ import { HeroSection } from '@/components/landing/hero-section'
 import { PhoneMockup } from '@/components/landing/phone-mockup'
 import { FeatureHighlights } from '@/components/landing/feature-highlights'
 import { AnimatedBackground } from '@/components/backgrounds/animated-background'
+import { InstallBanner } from '@/components/pwa/install-banner'
 
 export default async function HomePage() {
   const user = await getCurrentUser()
@@ -22,6 +23,7 @@ export default async function HomePage() {
         <PhoneMockup />
         <FeatureHighlights />
       </div>
+      <InstallBanner />
     </main>
   )
 }
