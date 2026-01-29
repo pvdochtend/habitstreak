@@ -15,22 +15,22 @@ Requirements for App Experience milestone. Each maps to roadmap phases.
 
 ### Install Banner
 
-- [ ] **BANR-01**: Landing page shows install banner for non-installed visitors
+- [x] **BANR-01**: Landing page shows install banner for non-installed visitors
 - [ ] **BANR-02**: In-app pages show install banner for logged-in users
-- [ ] **BANR-03**: Banner displays platform-appropriate messaging (iOS vs Android)
-- [ ] **BANR-04**: Banner has dismiss button that hides permanently
-- [ ] **BANR-05**: Banner hidden when app already installed (standalone mode)
+- [x] **BANR-03**: Banner displays platform-appropriate messaging (iOS vs Android)
+- [x] **BANR-04**: Banner has dismiss button that hides permanently
+- [x] **BANR-05**: Banner hidden when app already installed (standalone mode)
 
 ### iOS Walkthrough
 
-- [ ] **IOS-01**: "Show me how" button opens visual walkthrough modal
-- [ ] **IOS-02**: Walkthrough shows step-by-step iOS Add to Home Screen process
-- [ ] **IOS-03**: Walkthrough uses Dutch text consistent with app
+- [x] **IOS-01**: "Show me how" button opens visual walkthrough modal
+- [x] **IOS-02**: Walkthrough shows step-by-step iOS Add to Home Screen process
+- [x] **IOS-03**: Walkthrough uses Dutch text consistent with app
 
 ### Android Install
 
-- [ ] **ANDR-01**: Install button triggers native beforeinstallprompt dialog
-- [ ] **ANDR-02**: Install button disabled/hidden if prompt not available
+- [x] **ANDR-01**: Install button triggers native beforeinstallprompt dialog
+- [x] **ANDR-02**: Install button disabled/hidden if prompt not available
 
 ### Dismissal Persistence
 
@@ -75,16 +75,16 @@ Deferred to later milestones.
 | PLAT-01 | Phase 13 | Complete |
 | PLAT-02 | Phase 13 | Complete |
 | PLAT-03 | Phase 13 | Complete |
-| BANR-01 | Phase 14 | Pending |
+| BANR-01 | Phase 14 | Complete |
 | BANR-02 | Phase 15 | Pending |
-| BANR-03 | Phase 14 | Pending |
-| BANR-04 | Phase 14 | Pending |
+| BANR-03 | Phase 14 | Complete |
+| BANR-04 | Phase 14 | Complete |
 | BANR-05 | Phase 13 | Complete |
-| IOS-01 | Phase 14 | Pending |
-| IOS-02 | Phase 14 | Pending |
-| IOS-03 | Phase 14 | Pending |
-| ANDR-01 | Phase 14 | Pending |
-| ANDR-02 | Phase 14 | Pending |
+| IOS-01 | Phase 14 | Complete |
+| IOS-02 | Phase 14 | Complete |
+| IOS-03 | Phase 14 | Complete |
+| ANDR-01 | Phase 14 | Complete |
+| ANDR-02 | Phase 14 | Complete |
 | DISM-01 | Phase 13 | Complete |
 | DISM-02 | Phase 13 | Complete |
 | DISM-03 | Phase 13 | Complete |
@@ -99,4 +99,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-28 after Phase 13 completion*
+*Last updated: 2026-01-29 after Phase 14 completion*

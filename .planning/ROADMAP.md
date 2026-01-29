@@ -131,16 +131,16 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 14-01-PLAN.md — PWA install banner UI with iOS walkthrough modal
+- [x] 14-01-PLAN.md — PWA install banner UI with iOS walkthrough modal
 
 **Success Criteria:**
-1. Visitor on Android Chrome sees install banner with native prompt button
-2. Visitor on iOS Safari sees install banner with "Show me how" button
-3. iOS user clicking "Show me how" sees visual walkthrough with Share icon and step-by-step instructions in Dutch
-4. Android user clicking "Install" triggers native browser install dialog
-5. User clicking dismiss button permanently hides banner for that device
+1. Visitor on Android Chrome sees install banner with native prompt button ✓
+2. Visitor on iOS Safari sees install banner with "Show me how" button ✓
+3. iOS user clicking "Show me how" sees visual walkthrough with Share icon and step-by-step instructions in Dutch ✓
+4. Android user clicking "Install" triggers native browser install dialog ✓
+5. User clicking dismiss button permanently hides banner for that device ✓
 
-**Status:** Planned
+**Status:** Complete
 
 ---
 
@@ -172,8 +172,8 @@ Plans:
 | v1.3 First Impressions | 10-12 | 3 | Complete | 2026-01-27 |
 | v1.4 App Experience | 13-15 | 3 | In Progress | — |
 
-**Next:** Execute Phase 14 (Landing Page Install Experience)
+**Next:** Plan Phase 15 (In-App Install Access)
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-29 after Phase 14 planning*
+*Last updated: 2026-01-29 after Phase 14 execution*
