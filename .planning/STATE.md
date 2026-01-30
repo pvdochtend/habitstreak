@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-Phase: 14 - Landing Page Install Experience
-Plan: Complete
-Status: Verified
-Last activity: 2026-01-29 — Phase 14 execution complete
+Phase: 15 - In-App Install Access (COMPLETE)
+Plan: 01 of 01
+Status: Phase complete
+Last activity: 2026-01-30 — Completed 15-01-PLAN.md
 
-Progress: [██████░░░░] 67% (v1.4 App Experience - Phase 14/15)
+Progress: [██████████] 100% (v1.4 App Experience - Phase 15/15)
 
 ## Milestone History
 
@@ -26,14 +26,15 @@ Progress: [██████░░░░] 67% (v1.4 App Experience - Phase 14/1
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23 (across v1.0 + v1.1 + v1.2 + v1.3 + v1.4)
+- Total plans completed: 24 (across v1.0 + v1.1 + v1.2 + v1.3 + v1.4)
 - Average duration: ~15 min/plan
 - Total milestones: 4 shipped
 
-**v1.4 Milestone (in progress):**
+**v1.4 Milestone (complete):**
 - Phase 13, Plan 01: 4 min
 - Phase 13, Plan 02: 88 min (slow build due to WSL)
 - Phase 14, Plan 01: ~15 min
+- Phase 15, Plan 01: 24 min
 
 ## Accumulated Context
 
@@ -61,6 +62,10 @@ All decisions logged in PROJECT.md Key Decisions table.
 - 2.5s animation delay via inline style, not custom Tailwind class
 - WalkthroughStep internal component for consistent step styling
 
+**Plan 15-01 Decisions:**
+- InstallSettingsCard bypasses isDismissed (permanent fallback for users who dismissed banner)
+- Settings card manages own walkthrough state (doesn't trigger dismissal)
+
 ### Pending Todos
 
 1. **Add service worker for PWA installability** (pwa) — enables beforeinstallprompt on Chromium
@@ -71,11 +76,11 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29
-Stopped at: Phase 14 execution complete
+Last session: 2026-01-30
+Stopped at: Phase 15 execution complete
 Resume file: None
 
-Next: `/gsd:discuss-phase 15`
+Next: v1.4 milestone complete - archive roadmap
 
 ---
-*Last updated: 2026-01-29 after Phase 14 execution*
+*Last updated: 2026-01-30 after Phase 15 execution*
