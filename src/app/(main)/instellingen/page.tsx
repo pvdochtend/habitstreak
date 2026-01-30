@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ApiResponse, ColorScheme } from '@/types'
 import { Loader2, LogOut, Palette, Moon, Sun, Check } from 'lucide-react'
+import { InstallSettingsCard } from '@/components/pwa/install-settings-card'
 import { useTheme } from '@/contexts/theme-context'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/ui/page-transition'
@@ -291,6 +292,9 @@ export default function InstellingenPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Install App Card - shows when app is installable */}
+      <InstallSettingsCard />
 
       {/* Daily Target Settings */}
       <Card className="glass animate-slide-up hover-lift shadow-sm">
