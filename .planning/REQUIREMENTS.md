@@ -9,14 +9,14 @@ Requirements for App Experience milestone. Each maps to roadmap phases.
 
 ### Platform Detection
 
-- [ ] **PLAT-01**: App detects iOS Safari vs Chromium browsers
-- [ ] **PLAT-02**: App detects standalone/PWA mode (already installed)
-- [ ] **PLAT-03**: App captures beforeinstallprompt event globally (prevents timing race)
+- [x] **PLAT-01**: App detects iOS Safari vs Chromium browsers
+- [x] **PLAT-02**: App detects standalone/PWA mode (already installed)
+- [x] **PLAT-03**: App captures beforeinstallprompt event globally (prevents timing race)
 
 ### Install Banner
 
 - [x] **BANR-01**: Landing page shows install banner for non-installed visitors
-- [ ] **BANR-02**: In-app pages show install banner for logged-in users
+- [x] **BANR-02**: In-app pages show install banner for logged-in users
 - [x] **BANR-03**: Banner displays platform-appropriate messaging (iOS vs Android)
 - [x] **BANR-04**: Banner has dismiss button that hides permanently
 - [x] **BANR-05**: Banner hidden when app already installed (standalone mode)
@@ -34,15 +34,15 @@ Requirements for App Experience milestone. Each maps to roadmap phases.
 
 ### Dismissal Persistence
 
-- [ ] **DISM-01**: Dismissed state stored in localStorage
-- [ ] **DISM-02**: Dismissal persists across sessions permanently
-- [ ] **DISM-03**: Dismissal is per-device (not per-user)
+- [x] **DISM-01**: Dismissed state stored in localStorage
+- [x] **DISM-02**: Dismissal persists across sessions permanently
+- [x] **DISM-03**: Dismissal is per-device (not per-user)
 
 ### Settings Fallback
 
-- [ ] **SETT-01**: Settings page shows "Install app" button
-- [ ] **SETT-02**: Settings button available even after banner dismissed
-- [ ] **SETT-03**: Settings button triggers platform-appropriate action (prompt or walkthrough)
+- [x] **SETT-01**: Settings page shows "Install app" button
+- [x] **SETT-02**: Settings button available even after banner dismissed
+- [x] **SETT-03**: Settings button triggers platform-appropriate action (prompt or walkthrough)
 
 ## Future Requirements
 
@@ -76,7 +76,7 @@ Deferred to later milestones.
 | PLAT-02 | Phase 13 | Complete |
 | PLAT-03 | Phase 13 | Complete |
 | BANR-01 | Phase 14 | Complete |
-| BANR-02 | Phase 15 | Pending |
+| BANR-02 | Phase 15 | Complete |
 | BANR-03 | Phase 14 | Complete |
 | BANR-04 | Phase 14 | Complete |
 | BANR-05 | Phase 13 | Complete |
@@ -88,9 +88,9 @@ Deferred to later milestones.
 | DISM-01 | Phase 13 | Complete |
 | DISM-02 | Phase 13 | Complete |
 | DISM-03 | Phase 13 | Complete |
-| SETT-01 | Phase 15 | Pending |
-| SETT-02 | Phase 15 | Pending |
-| SETT-03 | Phase 15 | Pending |
+| SETT-01 | Phase 15 | Complete |
+| SETT-02 | Phase 15 | Complete |
+| SETT-03 | Phase 15 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 19 total
@@ -99,4 +99,4 @@ Deferred to later milestones.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-29 after Phase 14 completion*
+*Last updated: 2026-01-30 after Phase 15 completion*

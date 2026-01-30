@@ -6,7 +6,7 @@
 - ✅ **v1.1 Self-Hosting & Polish** - Phases 5-8 (shipped 2026-01-19) - [Archive](milestones/v1.1-ROADMAP.md)
 - ✅ **v1.2 Auth.js v5 Migration** - Phase 9 (shipped 2026-01-23) - [Archive](milestones/v1.2-ROADMAP.md)
 - ✅ **v1.3 First Impressions** - Phases 10-12 (shipped 2026-01-27) - [Archive](milestones/v1.3-ROADMAP.md)
-- 🚧 **v1.4 App Experience** - Phases 13-15 (in progress)
+- ✅ **v1.4 App Experience** - Phases 13-15 (shipped 2026-01-30)
 
 ## Phases
 
@@ -155,15 +155,15 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 15-01-PLAN.md — In-app install banner and settings card
+- [x] 15-01-PLAN.md — In-app install banner and settings card
 
 **Success Criteria:**
-1. Logged-in user sees install banner on app pages (not just landing page)
-2. Settings page shows "Install app" card between Account and Daily Target sections
-3. Settings install button works even after banner was dismissed
-4. Settings button triggers correct action for user's platform (native prompt for Android, walkthrough for iOS)
+1. Logged-in user sees install banner on app pages (not just landing page) ✓
+2. Settings page shows "Install app" card between Account and Daily Target sections ✓
+3. Settings install button works even after banner was dismissed ✓
+4. Settings button triggers correct action for user's platform (native prompt for Android, walkthrough for iOS) ✓
 
-**Status:** Pending
+**Status:** Complete
 
 ---
 
@@ -175,10 +175,10 @@ Plans:
 | v1.1 Self-Hosting | 5-8 | 6 | Complete | 2026-01-19 |
 | v1.2 Auth.js v5 | 9 | 2 | Complete | 2026-01-23 |
 | v1.3 First Impressions | 10-12 | 3 | Complete | 2026-01-27 |
-| v1.4 App Experience | 13-15 | 4 | In Progress | — |
+| v1.4 App Experience | 13-15 | 4 | Complete | 2026-01-30 |
 
-**Next:** Execute Phase 15 (In-App Install Access)
+**Next:** `/gsd:audit-milestone` — verify cross-phase integration before archiving
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-30 after Phase 15 planning*
+*Last updated: 2026-01-30 after Phase 15 execution*
