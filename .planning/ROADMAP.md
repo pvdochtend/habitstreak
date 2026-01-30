@@ -152,6 +152,11 @@ Plans:
 
 **Requirements:** BANR-02, SETT-01, SETT-02, SETT-03
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 15-01-PLAN.md — In-app install banner and settings card
+
 **Success Criteria:**
 1. Logged-in user sees install banner on app pages (not just landing page)
 2. Settings page shows "Install app" card between Account and Daily Target sections
@@ -170,10 +175,10 @@ Plans:
 | v1.1 Self-Hosting | 5-8 | 6 | Complete | 2026-01-19 |
 | v1.2 Auth.js v5 | 9 | 2 | Complete | 2026-01-23 |
 | v1.3 First Impressions | 10-12 | 3 | Complete | 2026-01-27 |
-| v1.4 App Experience | 13-15 | 3 | In Progress | — |
+| v1.4 App Experience | 13-15 | 4 | In Progress | — |
 
-**Next:** Plan Phase 15 (In-App Install Access)
+**Next:** Execute Phase 15 (In-App Install Access)
 
 ---
 *Roadmap created: 2026-01-19*
-*Last updated: 2026-01-29 after Phase 14 execution*
+*Last updated: 2026-01-30 after Phase 15 planning*
