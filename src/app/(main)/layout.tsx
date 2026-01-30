@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth-helpers'
 import { redirect } from 'next/navigation'
 import { BottomNav } from '@/components/navigation/bottom-nav'
 import { AnimatedBackground } from '@/components/backgrounds/animated-background'
+import { InstallBanner } from '@/components/pwa/install-banner'
 
 export default async function MainLayout({
   children,
@@ -18,6 +19,7 @@ export default async function MainLayout({
     <div className="min-h-svh">
       <AnimatedBackground />
       <main className="pb-20 container max-w-2xl mx-auto relative z-10">{children}</main>
+      <InstallBanner />
       <BottomNav />
     </div>
   )
