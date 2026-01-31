@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Make every interaction feel rewarding.
-**Current focus:** Planning next milestone
+**Current focus:** Phase 16 - Minimal Service Worker
 
 ## Current Position
 
-Phase: Defining requirements
-Plan: —
-Status: Milestone v1.5 started, defining requirements
-Last activity: 2026-01-31 — Milestone v1.5 started
+Phase: 16 of 16 (Service Worker + Offline Support)
+Plan: — (ready to plan)
+Status: Ready to plan
+Last activity: 2026-01-31 — Roadmap created for v1.5 milestone
 
-Progress: Defining requirements
+Progress: [..........] 0%
 
 ## Milestone History
 
@@ -39,7 +39,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-None — service worker is now v1.5 milestone scope.
+None.
 
 ### Blockers/Concerns
 
@@ -48,10 +48,10 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-31
-Stopped at: v1.4 milestone complete
+Stopped at: v1.5 roadmap created
 Resume file: None
 
-Next: `/gsd:new-milestone`
+Next: `/gsd:plan-phase 16`
 
 ---
-*Last updated: 2026-01-31 after v1.5 milestone started*
+*Last updated: 2026-01-31 after v1.5 roadmap created*

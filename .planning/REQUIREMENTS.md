@@ -56,30 +56,30 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+Which plans cover which requirements.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| SW-01 | TBD | Pending |
-| SW-02 | TBD | Pending |
-| SW-03 | TBD | Pending |
-| CACHE-01 | TBD | Pending |
-| CACHE-02 | TBD | Pending |
-| CACHE-03 | TBD | Pending |
-| CACHE-04 | TBD | Pending |
-| OFFLINE-01 | TBD | Pending |
-| OFFLINE-02 | TBD | Pending |
-| OFFLINE-03 | TBD | Pending |
-| VERIFY-01 | TBD | Pending |
-| VERIFY-02 | TBD | Pending |
-| VERIFY-03 | TBD | Pending |
-| VERIFY-04 | TBD | Pending |
+| Requirement | Phase | Plan | Status |
+|-------------|-------|------|--------|
+| SW-01 | 16 | 16-01 | Pending |
+| SW-02 | 16 | 16-01 | Pending |
+| SW-03 | 16 | 16-01 | Pending |
+| CACHE-01 | 16 | 16-02 | Pending |
+| CACHE-02 | 16 | 16-02 | Pending |
+| CACHE-03 | 16 | 16-02 | Pending |
+| CACHE-04 | 16 | 16-02 | Pending |
+| OFFLINE-01 | 16 | 16-03 | Pending |
+| OFFLINE-02 | 16 | 16-03 | Pending |
+| OFFLINE-03 | 16 | 16-03 | Pending |
+| VERIFY-01 | 16 | 16-04 | Pending |
+| VERIFY-02 | 16 | 16-04 | Pending |
+| VERIFY-03 | 16 | 16-04 | Pending |
+| VERIFY-04 | 16 | 16-04 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 (pending roadmap)
+- Mapped to phase 16: 14 (4 plans)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-01-31*
-*Last updated: 2026-01-31 after initial definition*
+*Last updated: 2026-01-31 after roadmap created*
