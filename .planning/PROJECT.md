@@ -6,6 +6,15 @@
 
 HabitStreak now has a complete PWA install experience — install banners on landing page and in-app, iOS visual walkthrough with 3-step Dutch instructions, Android native prompt integration, and settings page fallback. The app correctly detects platform (iOS Safari vs Chromium), standalone mode, and persists dismissal per-device.
 
+## Current Milestone: v1.5 Service Worker
+
+**Goal:** Complete PWA foundation with service worker registration for Chromium install prompts and app shell caching for faster repeat loads.
+
+**Target features:**
+- Service worker registration (enables beforeinstallprompt on Chrome/Edge)
+- App shell caching (JS, CSS, static assets)
+- Verify end-to-end PWA install flow on Chromium browsers
+
 ## What This Is
 
 A playful, energetic redesign of HabitStreak's user interface featuring glassmorphism design, full-energy animations, and celebratory interactions. The app transforms habit tracking from a chore into a joyful experience with confetti bursts, animated checkmarks, flickering streak flames, and dynamic floating backgrounds.
@@ -72,7 +81,11 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ### Active
 
-<!-- Next milestone requirements go here -->
+<!-- v1.5 Service Worker — in progress -->
+
+- [ ] Service worker registration — minimal SW that satisfies browser installability requirements
+- [ ] App shell caching — cache static assets (JS, CSS, icons) for faster repeat loads
+- [ ] Chromium install verification — beforeinstallprompt fires and native dialog works
 
 ### Out of Scope
 
@@ -90,7 +103,7 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ## Context
 
-**Current state:** HabitStreak v1.3 shipped with inviting entry experience. 6,048 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), complete PWA icon set, glassmorphism landing page, polished auth pages.
+**Current state:** HabitStreak v1.4 shipped with complete PWA install experience. 6,629 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), install banners, iOS walkthrough, platform detection.
 
 **Tech stack:** Next.js 15 (standalone output), React 19, TypeScript, Tailwind CSS, shadcn/ui, Prisma, PostgreSQL, Docker, Auth.js v5 (trustHost-enabled).
 
@@ -148,4 +161,4 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | Zero PWA dependencies | Native browser APIs sufficient for install experience | ✓ Good — no bundle impact |
 
 ---
-*Last updated: 2026-01-31 after v1.4 milestone complete*
+*Last updated: 2026-01-31 after v1.5 milestone started*

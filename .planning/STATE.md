@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 
 ## Current Position
 
-Phase: Between milestones
-Plan: N/A
-Status: v1.4 complete, ready for next milestone
-Last activity: 2026-01-31 — v1.4 App Experience complete
+Phase: Defining requirements
+Plan: —
+Status: Milestone v1.5 started, defining requirements
+Last activity: 2026-01-31 — Milestone v1.5 started
 
-Progress: Ready for next milestone planning
+Progress: Defining requirements
 
 ## Milestone History
 
@@ -39,7 +39,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-1. **Add service worker for PWA installability** (pwa) — enables beforeinstallprompt on Chromium
+None — service worker is now v1.5 milestone scope.
 
 ### Blockers/Concerns
 
@@ -54,4 +54,4 @@ Resume file: None
 Next: `/gsd:new-milestone`
 
 ---
-*Last updated: 2026-01-31 after v1.4 milestone complete*
+*Last updated: 2026-01-31 after v1.5 milestone started*
