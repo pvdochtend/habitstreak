@@ -2,21 +2,9 @@
 
 ## Current State
 
-**Shipped:** v1.3 First Impressions (2026-01-27)
+**Shipped:** v1.4 App Experience (2026-01-31)
 
-HabitStreak now has a complete entry experience — landing page with glassmorphism hero, phone mockup, feature highlights, and polished auth pages with branding. PWA icons are generated and manifest works correctly.
-
-## Current Milestone: v1.4 App Experience
-
-**Goal:** Make PWA installation discoverable and easy, especially for iOS users.
-
-**Target features:**
-- Install banner on landing page and in-app (after login)
-- iOS walkthrough with visual step-by-step guide
-- Android native install prompt via beforeinstallprompt API
-- Settings page "Install" button as fallback
-- Permanent dismissal with localStorage persistence
-- Hide prompts when already installed (standalone mode detection)
+HabitStreak now has a complete PWA install experience — install banners on landing page and in-app, iOS visual walkthrough with 3-step Dutch instructions, Android native prompt integration, and settings page fallback. The app correctly detects platform (iOS Safari vs Chromium), standalone mode, and persists dismissal per-device.
 
 ## What This Is
 
@@ -72,17 +60,19 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 - ✓ PWA icons — Complete icon set (72-512px) generated from favicon.svg, manifest 404s fixed — v1.3
 - ✓ Login page polish — Welcoming message, flame branding, animated backgrounds on login/signup — v1.3
 
+<!-- v1.4 App Experience — shipped 2026-01-31 -->
+
+- ✓ PWA install banner on landing page — discoverable prompt for new visitors with platform-specific CTA — v1.4
+- ✓ PWA install banner in-app — prompt for logged-in users on all main pages — v1.4
+- ✓ iOS visual walkthrough — 3-step Dutch "Add to Home Screen" guide with Share icon — v1.4
+- ✓ Android native install prompt — beforeinstallprompt API integration — v1.4
+- ✓ Settings page install button — permanent fallback for dismissed users — v1.4
+- ✓ Permanent dismissal — localStorage per-device persistence with database backup — v1.4
+- ✓ Standalone mode detection — hide prompts when already installed — v1.4
+
 ### Active
 
-<!-- v1.4 App Experience — in progress -->
-
-- [ ] PWA install banner on landing page — discoverable prompt for new visitors
-- [ ] PWA install banner in-app — prompt for logged-in users
-- [ ] iOS visual walkthrough — step-by-step "Add to Home Screen" guide
-- [ ] Android native install prompt — beforeinstallprompt API integration
-- [ ] Settings page install button — fallback for dismissed users
-- [ ] Permanent dismissal — localStorage persistence, never re-show
-- [ ] Standalone mode detection — hide prompts when already installed
+<!-- Next milestone requirements go here -->
 
 ### Out of Scope
 
@@ -111,6 +101,8 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 **v1.2 delivered (2026-01-23):** Auth.js v5 migration with trustHost support, dynamic URL detection (localhost/IP/domain all work without config), split configuration pattern (edge-compatible auth.config.ts + full auth.ts), zero-regression auth functionality preservation.
 
 **v1.3 delivered (2026-01-27):** Inviting entry experience — landing page with hero, phone mockup, feature highlights; PWA icon set (9 icons); polished login/signup with branding and animated backgrounds.
+
+**v1.4 delivered (2026-01-31):** PWA install experience — install banners on landing page and in-app, iOS visual walkthrough, Android native prompt, settings fallback. Platform detection (iOS Safari vs Chromium), standalone mode detection, persistent per-device dismissal.
 
 **Known issues:**
 - iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) — deferred to future version
@@ -150,6 +142,10 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | Server-side landing redirect | Authenticated users redirect to /vandaag server-side | ✓ Good — simpler than route groups |
 | CSS phone mockup | Stylized mockup instead of screenshot for theme consistency | ✓ Good — maintainable across themes |
 | Reusable AuthHeader | Consistent branding across login/signup pages | ✓ Good — easy to update |
+| Root provider pattern | Capture beforeinstallprompt before components mount | ✓ Good — prevents timing race |
+| localStorage source of truth | iOS evicts localStorage after 7 days inactive; database is backup only | ✓ Good — per-device behavior |
+| Settings card bypasses dismissal | Permanent fallback for users who changed their mind | ✓ Good — always accessible |
+| Zero PWA dependencies | Native browser APIs sufficient for install experience | ✓ Good — no bundle impact |
 
 ---
-*Last updated: 2026-01-27 after v1.4 milestone start*
+*Last updated: 2026-01-31 after v1.4 milestone complete*

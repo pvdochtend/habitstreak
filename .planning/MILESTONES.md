@@ -1,5 +1,33 @@
 # Project Milestones: HabitStreak
 
+## v1.4 App Experience (Shipped: 2026-01-31)
+
+**Delivered:** Made PWA installation discoverable and easy with install banners, iOS visual walkthrough, and settings fallback.
+
+**Phases completed:** 13-15 (4 plans total)
+
+**Key accomplishments:**
+
+- PWA install infrastructure — Context provider with platform detection (iOS Safari vs Chromium), beforeinstallprompt capture, and standalone mode detection
+- Landing page install banner — First-time visitors see install prompt with platform-specific CTA and 2.5s delayed slide-up animation
+- iOS visual walkthrough — 3-step Dutch instructions modal with Share icon for Add to Home Screen
+- In-app install banner — Logged-in users see install prompt on all main app pages
+- Settings install card — Permanent fallback that works even after banner dismissal
+- Persistent dismissal — localStorage-based per-device storage with database backup
+
+**Stats:**
+
+- 33 files created/modified
+- +3,814 lines (6,629 total TypeScript/TSX)
+- 3 phases, 4 plans
+- 3 days (2026-01-28 → 2026-01-30)
+
+**Git range:** `docs(13)` → `docs(15)`
+
+**What's next:** To be determined — service worker for full Chromium install support, or new features
+
+---
+
 ## v1.3 First Impressions (Shipped: 2026-01-27)
 
 **Delivered:** Inviting entry experience with glassmorphism landing page, phone mockup, feature highlights, and polished auth pages with branding.

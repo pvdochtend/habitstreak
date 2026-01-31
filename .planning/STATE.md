@@ -2,22 +2,23 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-27)
+See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Make every interaction feel rewarding.
-**Current focus:** v1.4 App Experience — COMPLETE
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 15 - In-App Install Access (COMPLETE)
-Plan: 01 of 01
-Status: Verified
-Last activity: 2026-01-30 — Completed 15-01-PLAN.md
+Phase: Between milestones
+Plan: N/A
+Status: v1.4 complete, ready for next milestone
+Last activity: 2026-01-31 — v1.4 App Experience complete
 
-Progress: [██████████] 100% (v1.4 App Experience - Phase 15/15)
+Progress: Ready for next milestone planning
 
 ## Milestone History
 
+- **v1.4 App Experience** - Shipped 2026-01-31 (Phases 13-15, 4 plans) - [Archive](milestones/v1.4-ROADMAP.md)
 - **v1.3 First Impressions** - Shipped 2026-01-27 (Phases 10-12, 3 plans) - [Archive](milestones/v1.3-ROADMAP.md)
 - **v1.2 Auth.js v5 Migration** - Shipped 2026-01-23 (Phase 9, 2 plans) - [Archive](milestones/v1.2-ROADMAP.md)
 - **v1.1 Self-Hosting & Polish** - Shipped 2026-01-19 (Phases 5-8, 6 plans) - [Archive](milestones/v1.1-ROADMAP.md)
@@ -26,45 +27,15 @@ Progress: [██████████] 100% (v1.4 App Experience - Phase 15/
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24 (across v1.0 + v1.1 + v1.2 + v1.3 + v1.4)
+- Total plans completed: 28 (across v1.0 + v1.1 + v1.2 + v1.3 + v1.4)
 - Average duration: ~15 min/plan
-- Total milestones: 4 shipped
-
-**v1.4 Milestone (complete):**
-- Phase 13, Plan 01: 4 min
-- Phase 13, Plan 02: 88 min (slow build due to WSL)
-- Phase 14, Plan 01: ~15 min
-- Phase 15, Plan 01: 24 min
+- Total milestones: 5 shipped
 
 ## Accumulated Context
 
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
-
-**v1.4 Architecture Decisions:**
-- Root provider pattern for beforeinstallprompt event capture (prevents timing race condition)
-- Database storage for dismissal state (iOS localStorage evicts after 7 days)
-- Zero new dependencies (native browser APIs sufficient)
-- Foundation-first phase ordering (infrastructure before UI prevents rewrites)
-
-**Plan 13-01 Decisions:**
-- Place PWA fields after darkMode to group user preferences together
-- Use declare global for browser API type extensions to avoid separate .d.ts files
-
-**Plan 13-02 Decisions:**
-- localStorage is source of truth for dismissal (per-device, not per-user)
-- Database sync is write-only backup - never read back to override localStorage
-- PwaInstallProvider nested inside ThemeProvider in root layout
-
-**Plan 14-01 Decisions:**
-- Screen reader dismiss text hidden on mobile (sr-only sm:not-sr-only)
-- 2.5s animation delay via inline style, not custom Tailwind class
-- WalkthroughStep internal component for consistent step styling
-
-**Plan 15-01 Decisions:**
-- InstallSettingsCard bypasses isDismissed (permanent fallback for users who dismissed banner)
-- Settings card manages own walkthrough state (doesn't trigger dismissal)
 
 ### Pending Todos
 
@@ -76,11 +47,11 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-30
-Stopped at: Phase 15 execution complete
+Last session: 2026-01-31
+Stopped at: v1.4 milestone complete
 Resume file: None
 
-Next: `/gsd:audit-milestone`
+Next: `/gsd:new-milestone`
 
 ---
-*Last updated: 2026-01-30 after Phase 15 execution*
+*Last updated: 2026-01-31 after v1.4 milestone complete*
