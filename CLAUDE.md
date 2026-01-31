@@ -303,6 +303,16 @@ npm run test:e2e
 - Database indexes on frequently queried fields
 - Prisma connection pooling (configured)
 
+## Debugging Approach
+
+Before asking the user to verify anything or take action:
+1. Map the full pipeline/flow where the issue could occur
+2. Identify which steps can be verified locally
+3. Check all local-verifiable steps first
+4. Only involve the user when local investigation is exhausted
+
+Goal: Be 95% confident about the root cause before asking user for verification.
+
 ## Troubleshooting
 
 ### Database Connection Issues
