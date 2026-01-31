@@ -796,3 +796,423 @@ test('dismissal persists across routes', async ({ page }) => {
 **Alternatives considered:**
 - All at once: Higher risk, harder to test
 - In-app first: Most complex, delays value delivery
+
+---
+
+# Service Worker Integration Architecture
+
+**Domain:** Service worker integration with Next.js 15 App Router and standalone output
+**Researched:** 2026-01-31
+**Confidence:** HIGH (Official Next.js docs + verified patterns)
+
+## Executive Summary
+
+Service workers in Next.js 15 App Router require a **static file in `public/`** that is **manually registered from a client component**. The existing standalone output mode (`output: 'standalone'`) does NOT automatically copy the `public/` directory - this is handled separately in the Dockerfile. The existing `PwaInstallProvider` provides the ideal integration point for service worker registration.
+
+## Recommended Architecture
+
+### File Structure
+
+```
+public/
+├── sw.js                      ← NEW: Service worker file (static)
+├── manifest.json              ← EXISTING: PWA manifest
+├── favicon.svg                ← EXISTING
+└── icons/                     ← EXISTING: PWA icons
+
+src/
+├── contexts/
+│   └── pwa-install-context.tsx ← MODIFY: Add SW registration
+└── lib/
+    └── service-worker.ts       ← NEW: Registration utilities (optional)
+```
+
+### Why This Architecture?
+
+1. **`public/sw.js`**: Service workers must be served from root scope (`/sw.js`)
+2. **Static file**: No build step required - avoids complexity of Serwist/next-pwa
+3. **Registration in existing provider**: `PwaInstallProvider` already runs on mount, ideal place
+4. **Standalone compatible**: Dockerfile already copies `public/` directory
+
+## Integration Points
+
+### 1. Service Worker File Location
+
+**Location:** `/mnt/c/sources/habitstreak/public/sw.js`
+
+**Why `public/`:**
+- Files in `public/` are served at root URL (`/sw.js`)
+- Service worker scope requires serving from root or desired scope
+- Next.js automatically serves `public/` contents at build time
+
+**Scope considerations:**
+- Default scope: `/` (controls entire site)
+- Registration with `scope: '/'` explicitly sets this
+
+### 2. Standalone Output Compatibility
+
+**Current state:** The Dockerfile already handles `public/` directory:
+
+```dockerfile
+# Line 70 in Dockerfile
+COPY --from=builder /app/public ./public
+```
+
+**Verification:** Service worker in `public/sw.js` will be:
+1. Included in Docker build
+2. Copied to production container
+3. Served at `/sw.js` by `server.js`
+
+**No changes needed** to Dockerfile or next.config.js for basic service worker.
+
+### 3. Registration Strategy
+
+**Where to register:** Extend existing `PwaInstallProvider`
+
+**Current code in `src/contexts/pwa-install-context.tsx`:**
+```typescript
+useEffect(() => {
+  // Detect platform
+  const detectedPlatform = detectPwaPlatform()
+  // ... existing code
+}, [])
+```
+
+**Recommended addition:**
+```typescript
+useEffect(() => {
+  // Existing platform detection...
+
+  // NEW: Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/sw.js', {
+        scope: '/',
+        updateViaCache: 'none',
+      })
+      .then((registration) => {
+        console.log('SW registered:', registration.scope)
+      })
+      .catch((error) => {
+        console.error('SW registration failed:', error)
+      })
+  }
+}, [])
+```
+
+**Why in `PwaInstallProvider`:**
+- Already a client component with `useEffect`
+- Runs on app mount (root layout)
+- Centralizes all PWA logic
+- Avoids adding another provider/component
+
+### 4. HTTP Headers for Service Worker
+
+**Current `next.config.js`** has general headers but needs service worker specific ones.
+
+**Required headers for `/sw.js`:**
+```javascript
+{
+  source: '/sw.js',
+  headers: [
+    {
+      key: 'Content-Type',
+      value: 'application/javascript; charset=utf-8',
+    },
+    {
+      key: 'Cache-Control',
+      value: 'no-cache, no-store, must-revalidate',
+    },
+  ],
+},
+```
+
+**Why these headers:**
+- `Content-Type`: Ensures browser interprets as JavaScript
+- `Cache-Control: no-cache`: Browser always checks for updates (critical for SW lifecycle)
+
+## Data Flow
+
+### Service Worker Registration Flow
+
+```
+App loads
+    ↓
+PwaInstallProvider mounts (root layout)
+    ↓
+useEffect runs (client-side only)
+    ↓
+Check: 'serviceWorker' in navigator
+    ↓ (yes)
+navigator.serviceWorker.register('/sw.js')
+    ↓
+Browser fetches /sw.js from public/
+    ↓
+SW installs, activates
+    ↓
+SW controls all network requests for scope
+```
+
+### Build and Deployment Flow
+
+```
+npm run build
+    ↓
+Next.js builds to .next/
+    ↓
+Standalone output created (no public/)
+    ↓
+Docker build runs
+    ↓
+Dockerfile copies public/ to container
+    ↓
+server.js serves public/ at runtime
+    ↓
+/sw.js available at https://domain/sw.js
+```
+
+## Service Worker Scope and Capabilities
+
+### Minimal Service Worker (Phase 1)
+
+For installability, a service worker only needs to exist and handle `fetch`:
+
+```javascript
+// public/sw.js - Minimal for installability
+self.addEventListener('fetch', (event) => {
+  // Network-first strategy (pass through)
+  event.respondWith(fetch(event.request))
+})
+```
+
+### Offline Shell (Phase 2, optional)
+
+```javascript
+// public/sw.js - With offline shell
+const CACHE_NAME = 'habitstreak-v1'
+const OFFLINE_URL = '/offline'
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.add(OFFLINE_URL)
+    })
+  )
+})
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(OFFLINE_URL)
+      })
+    )
+  }
+})
+```
+
+## Patterns to Follow
+
+### Pattern 1: Conditional Registration
+
+**What:** Only register in production or when supported
+
+```typescript
+useEffect(() => {
+  // Skip in development (optional - SW works in dev too)
+  // const isDev = process.env.NODE_ENV === 'development'
+  // if (isDev) return
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none',
+    })
+  }
+}, [])
+```
+
+### Pattern 2: Update Notification
+
+**What:** Notify users when new SW version available
+
+```typescript
+useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then((registration) => {
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing
+        newWorker?.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New content available, show update prompt
+            console.log('New version available')
+          }
+        })
+      })
+    })
+  }
+}, [])
+```
+
+### Pattern 3: Skip Waiting
+
+**What:** Activate new SW immediately
+
+```javascript
+// In sw.js
+self.addEventListener('install', () => {
+  self.skipWaiting()
+})
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim())
+})
+```
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Registering in Server Component
+
+**Problem:** Server components don't have access to `navigator`
+
+**Why bad:** Build error or runtime error
+
+**Instead:** Always register in client component with `'use client'`
+
+### Anti-Pattern 2: Caching Service Worker File
+
+**Problem:** Setting `Cache-Control: max-age` on `/sw.js`
+
+**Why bad:** Users don't get updates - browser uses cached SW
+
+**Instead:** Always use `no-cache, no-store, must-revalidate`
+
+### Anti-Pattern 3: Large Service Worker File
+
+**Problem:** Including heavy libraries or logic in SW
+
+**Why bad:** Delays installation, blocks activation
+
+**Instead:** Keep SW minimal, fetch data as needed
+
+### Anti-Pattern 4: Not Handling Registration Errors
+
+**Problem:** Fire-and-forget registration without catch
+
+**Why bad:** Silent failures, hard to debug
+
+**Instead:** Always add `.catch()` and log errors
+
+## Build Integration
+
+### No Build Step Needed
+
+For a static `public/sw.js`, no build configuration is required.
+
+**Advantages:**
+- Simple setup
+- No additional dependencies
+- Works with standalone output
+- Easy to understand and maintain
+
+### Alternative: Serwist (Not Recommended for This Project)
+
+Serwist provides advanced caching but adds complexity:
+- Requires `@serwist/next` plugin
+- Generates SW from TypeScript
+- More configuration
+- May conflict with standalone output
+
+**Recommendation:** Start with static `public/sw.js`, add Serwist later if advanced caching needed.
+
+## Verification Checklist
+
+After implementation, verify:
+
+| Check | How to Verify |
+|-------|---------------|
+| SW file exists | `curl https://domain/sw.js` returns JavaScript |
+| SW registered | DevTools → Application → Service Workers shows registered |
+| Headers correct | DevTools → Network → sw.js → Headers shows no-cache |
+| Works offline | DevTools → Network → Offline checkbox, reload page |
+| Docker works | Build and run container, check /sw.js accessible |
+
+## Testing Strategy
+
+### Manual Testing
+
+1. **Chrome DevTools:**
+   - Application → Service Workers → Check registration
+   - Application → Service Workers → Update on reload
+   - Network → Offline → Test offline behavior
+
+2. **Lighthouse:**
+   - PWA audit should pass with SW registered
+   - Check "Registers a service worker"
+
+### Automated Testing (E2E)
+
+```typescript
+// tests/e2e/service-worker.spec.ts
+test('service worker registers', async ({ page }) => {
+  await page.goto('/')
+
+  // Wait for SW to register
+  await page.waitForFunction(() => {
+    return navigator.serviceWorker.controller !== null
+  })
+
+  // Verify SW is controlling the page
+  const swState = await page.evaluate(() => {
+    return navigator.serviceWorker.controller?.state
+  })
+
+  expect(swState).toBe('activated')
+})
+```
+
+## Phase Implementation Order
+
+### Phase 1: Minimal SW for Installability
+
+**Files to create/modify:**
+1. Create `public/sw.js` (minimal fetch handler)
+2. Modify `next.config.js` (add SW headers)
+3. Modify `src/contexts/pwa-install-context.tsx` (add registration)
+
+**Verification:** Chrome Lighthouse PWA audit passes
+
+### Phase 2: Offline Shell (Optional)
+
+**Files to create/modify:**
+1. Create `src/app/offline/page.tsx` (offline fallback page)
+2. Update `public/sw.js` (cache offline page, serve on failure)
+
+**Verification:** App shows offline page when network unavailable
+
+### Phase 3: Advanced Caching (Optional, Future)
+
+**Consider:** Serwist migration for:
+- Precaching static assets
+- Runtime caching strategies
+- Background sync
+
+## Sources
+
+### High Confidence (Official Documentation)
+
+- [Next.js: Progressive Web Apps Guide](https://nextjs.org/docs/app/guides/progressive-web-apps) - Official SW guidance
+- [Next.js: Standalone Output](https://nextjs.org/docs/pages/api-reference/config/next-config-js/output) - Public directory handling
+- [MDN: Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) - Registration API
+
+### Medium Confidence (Community Patterns)
+
+- [LogRocket: Implementing Service Workers in Next.js](https://blog.logrocket.com/implementing-service-workers-next-js/) - Registration patterns
+- [DEV Community: Adding a Service Worker to Next.js](https://dev.to/josedonato/adding-a-service-worker-into-your-next-js-application-1dib) - Client component approach
+- [Serwist Documentation](https://serwist.pages.dev/docs/next/getting-started) - Advanced patterns (reference only)
+
+### Verified Project Context
+
+- Dockerfile (line 70): Confirms `public/` directory is copied
+- `next.config.js`: Confirms standalone output mode
+- `src/contexts/pwa-install-context.tsx`: Confirms existing PWA provider structure

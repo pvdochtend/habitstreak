@@ -1,612 +1,296 @@
-# Technology Stack — PWA Install Prompts
+# Technology Stack: Service Worker for HabitStreak PWA
 
-**Project:** HabitStreak
-**Focus:** PWA install prompt experience
-**Researched:** 2026-01-27
+**Project:** HabitStreak Service Worker Implementation
+**Researched:** 2026-01-31
+**Goal:** Enable `beforeinstallprompt` event and app shell caching in existing Next.js 15 PWA
 
 ## Executive Summary
 
-**No new dependencies required.** PWA install prompts can be implemented with native browser APIs and existing Next.js 15/React 19 stack. Custom React hooks and TypeScript types are the only additions needed.
+**Recommendation: Use a custom minimal service worker (no library)**
 
-**Key principle:** Keep it lightweight. The install prompt is a progressive enhancement, not a core dependency.
+For HabitStreak's specific goal—enabling the `beforeinstallprompt` event and caching static assets—a custom 30-line service worker is the right choice. Serwist adds unnecessary complexity for this use case.
 
----
+### Why NOT Serwist
 
-## Recommended Stack Changes
+| Factor | Impact |
+|--------|--------|
+| Overkill for goal | Serwist is designed for complex offline-first apps. HabitStreak only needs install prompt + asset caching |
+| Webpack dependency | `@serwist/next` requires webpack; conflicts with Turbopack in dev |
+| Build complexity | Adds TypeScript service worker compilation, manifest injection |
+| Next.js 15 issues | Reported issues with sw.js not being generated in Next.js 15 ([GitHub #73457](https://github.com/vercel/next.js/issues/73457)) |
+| Config overhead | Requires next.config.js wrapper, tsconfig changes, gitignore changes |
 
-### Zero New Dependencies ✅
+### Why Custom Service Worker
 
-**Rationale:** Native browser APIs (`beforeinstallprompt`, `window.navigator.standalone`) provide all functionality needed. Third-party libraries add unnecessary bundle size for marginal DX improvements.
+| Factor | Benefit |
+|--------|---------|
+| Minimal scope | 30-50 lines of JavaScript, easy to understand and maintain |
+| No dependencies | Zero new packages to install or update |
+| Direct control | Know exactly what's cached and how |
+| Standalone compatible | Works with `output: 'standalone'` without issues |
+| Official pattern | Next.js docs show manual `public/sw.js` approach |
 
-| Category | Current | Change | Rationale |
-|----------|---------|--------|-----------|
-| Framework | Next.js 15 | **No change** | App Router supports Client Components for event listeners |
-| React | React 19 | **No change** | `useEffect` and `useState` sufficient for event handling |
-| TypeScript | TypeScript 5.7.2 | **No change** | Custom type definitions for non-standard APIs |
-| UI | Tailwind + shadcn/ui | **No change** | Existing glassmorphism components for prompt UI |
+## Recommended Stack Additions
 
----
+### Core: Zero New Dependencies
 
-## Implementation Approach
+No new npm packages required. Use browser-native Service Worker API.
 
-### 1. Browser Detection (Zero Dependencies)
+### Implementation Files
 
-**What:** Detect iOS Safari vs Chromium browsers to show appropriate install UX.
+| File | Purpose |
+|------|---------|
+| `public/sw.js` | Minimal service worker with fetch handler and cache-first strategy |
+| Registration in layout | Client-side registration using `navigator.serviceWorker.register()` |
 
-**Implementation:**
-```typescript
-// No library needed — use native APIs
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-const isInStandaloneMode = window.navigator.standalone === true;
-const isChromium = 'BeforeInstallPromptEvent' in window;
+### Service Worker Strategy
+
+**Goal-aligned minimal implementation:**
+
+1. **Fetch handler** - Required for `beforeinstallprompt` to fire (Chrome requirement)
+2. **Cache-first for static assets** - Cache `/_next/static/*`, icons, manifest
+3. **Network-first for API/pages** - Don't cache dynamic content
+4. **Version-based cache busting** - Simple cache name with version string
+
+## Detailed Comparison: Serwist vs Custom
+
+### Serwist (@serwist/next)
+
+**Latest version:** 9.5.0 (published late January 2026)
+
+**Packages required:**
+```bash
+npm i @serwist/next && npm i -D serwist
+# OR for Turbopack:
+npm i -D @serwist/turbopack esbuild serwist
 ```
 
-**Why not use a library:**
-- Detection logic is 3 lines of code
-- No maintenance burden from external dependency
-- Libraries like `react-device-detect` add 50KB+ for unused features
+**Configuration required:**
+1. Wrap `next.config.js` with `withSerwistInit`
+2. Create `app/sw.ts` with Serwist initialization
+3. Update `tsconfig.json` to add `"@serwist/next/typings"` and `"webworker"` lib
+4. Update `.gitignore` to exclude generated files
+5. For Turbopack: Create route handler at `app/serwist/[path]/route.ts`
 
-**Sources:**
-- [Detection | web.dev](https://web.dev/learn/pwa/detection)
-- [PWA iOS Limitations](https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide)
+**Pros:**
+- Automatic precache manifest generation
+- Built-in cache strategies
+- TypeScript support
+- Handles cache versioning automatically
 
----
+**Cons:**
+- 2 new dependencies (production + dev)
+- Webpack-based (conflicts with Turbopack dev server)
+- Reported Next.js 15 compatibility issues
+- Complex configuration for simple use case
+- Turbopack version requires additional esbuild dependency
 
-### 2. Install Prompt Handling (Custom Hook)
+**Verdict:** Overkill. Use when building offline-first app with complex caching needs.
 
-**What:** Listen for `beforeinstallprompt` event (Chromium) and trigger install dialog.
+### Custom Service Worker (Recommended)
 
-**Implementation:** Custom React hook in project code.
+**Packages required:** None
 
-```typescript
-// src/hooks/usePWAInstall.ts
-'use client'
-import { useState, useEffect } from 'react'
+**Configuration required:**
+1. Create `public/sw.js` (30-50 lines)
+2. Add registration code to layout (10 lines)
+3. Add cache-control header for `/sw.js` in `next.config.js`
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[]
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed'
-    platform: string
-  }>
-  prompt(): Promise<void>
-}
+**Pros:**
+- Zero dependencies
+- Full control over caching behavior
+- Works with both webpack and Turbopack
+- Compatible with `output: 'standalone'`
+- Easy to understand and debug
+- Next.js official documentation pattern
 
-export function usePWAInstall() {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null)
+**Cons:**
+- Manual cache versioning (update version string on deploy)
+- No automatic precache manifest (must list assets manually OR use cache-on-first-fetch)
+- No TypeScript (plain JavaScript in public/)
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-    }
+**Verdict:** Perfect fit for HabitStreak's requirements.
 
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
+### next-pwa (shadowwalker/next-pwa)
 
-  const promptInstall = async () => {
-    if (!deferredPrompt) return false
-    deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-    setDeferredPrompt(null)
-    return outcome === 'accepted'
+**Status:** Not recommended. Last updated 2+ years ago, not maintained for Next.js 15.
+
+### @ducanh2912/next-pwa
+
+**Status:** Actively recommends migrating to Serwist. Not a long-term solution.
+
+## Implementation Specification
+
+### Minimal Service Worker (public/sw.js)
+
+```javascript
+const CACHE_NAME = 'habitstreak-v1';
+const STATIC_ASSETS = [
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
+];
+
+// Install: pre-cache essential assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+  );
+  self.skipWaiting();
+});
+
+// Activate: clean old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Fetch: cache-first for static, network-first for dynamic
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Cache-first for static assets
+  if (url.pathname.startsWith('/_next/static/') ||
+      url.pathname.startsWith('/icons/') ||
+      url.pathname === '/manifest.json') {
+    event.respondWith(
+      caches.match(event.request).then((cached) => cached || fetch(event.request))
+    );
+    return;
   }
 
-  return { canInstall: !!deferredPrompt, promptInstall }
+  // Network-first for everything else (don't block, just pass through)
+  event.respondWith(fetch(event.request));
+});
+```
+
+### Registration Code
+
+Add to a client component that loads on all pages:
+
+```typescript
+// In useEffect or component initialization
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', {
+    scope: '/',
+    updateViaCache: 'none'
+  });
 }
 ```
 
-**Why not use `react-pwa-install`:**
-- Last updated **5 years ago** (2020) — unmaintained
-- Adds 20KB for functionality we can write in 30 lines
-- Doesn't support React 19 hooks patterns
-- Custom hook gives full control over UX timing
-
-**Why not use `pwa-install-handler`:**
-- Generic API doesn't integrate well with React state
-- Forces imperative patterns instead of declarative hooks
-- No TypeScript types included
-- 15KB dependency for 3 functions
-
-**Sources:**
-- [react-pwa-install - npm](https://www.npmjs.com/package/react-pwa-install)
-- [React Hook for Add to Homescreen](https://gist.github.com/rikukissa/cb291a4a82caa670d2e0547c520eae53)
-- [Setting up a PWA with install button in Next.js 15](https://gist.github.com/cdnkr/25d3746bdb35767d66c7ae6d26c2ed98)
-
----
-
-### 3. TypeScript Types (Custom Definitions)
-
-**What:** Type definitions for non-standard browser APIs.
-
-**Implementation:** Add to `src/types/pwa.d.ts`:
-
-```typescript
-// src/types/pwa.d.ts
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[]
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed'
-    platform: string
-  }>
-  prompt(): Promise<void>
-}
-
-interface Navigator {
-  standalone?: boolean
-}
-
-interface WindowEventMap {
-  beforeinstallprompt: BeforeInstallPromptEvent
-}
-```
-
-**Why not use `@types/pwa`:**
-- Package doesn't exist for these non-standard APIs
-- TypeScript DOM lib excludes experimental features intentionally
-- Custom types are 15 lines and fully controlled
-
-**Sources:**
-- [BeforeInstallPromptEvent - MDN](https://developer.mozilla.org/en-US/docs/Web/API/BeforeInstallPromptEvent)
-- [Mastering beforeinstallprompt in TypeScript](https://www.xjavascript.com/blog/beforeinstallprompt-typescript/)
-
----
-
-### 4. iOS Install Instructions (Pure UI)
-
-**What:** Show manual "Add to Home Screen" instructions for iOS Safari users.
-
-**Implementation:** Use existing shadcn/ui components with glassmorphism styles.
-
-**Component structure:**
-```
-<Dialog> (shadcn/ui)
-  └─ <GlassCard> (existing)
-      └─ iOS instruction steps with icons
-```
-
-**No new dependencies needed:**
-- Lucide React icons (already installed) for Safari share icon
-- Tailwind animations (already configured) for step-by-step reveal
-- Dialog component (shadcn/ui already used throughout app)
-
-**Why not use `pwa-install` web component:**
-- Adds 100KB+ web component polyfills
-- Doesn't match existing glassmorphism design
-- Forces generic UI instead of branded experience
-- Not React-native (mixing paradigms)
-
-**Sources:**
-- [iOS Safari PWA Install Instructions](https://brainhub.eu/library/pwa-on-ios)
-- [iPhone iOS PWA Strategies](https://scandiweb.com/blog/pwa-ios-strategies/)
-
----
-
-## Browser Compatibility Matrix
-
-| Feature | Chrome/Edge | Safari iOS | Safari Desktop | Firefox | Implementation |
-|---------|-------------|------------|----------------|---------|----------------|
-| `beforeinstallprompt` | ✅ Yes | ❌ No | ❌ No | ❌ No | Custom hook |
-| `navigator.standalone` | ❌ No | ✅ Yes | ❌ No | ❌ No | Direct check |
-| Manual install | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | Always available |
-| Install banner | ✅ Auto | ❌ Manual | ❌ Manual | ❌ Manual | Conditional UI |
-
-**Implementation strategy:**
-1. **Chromium browsers:** Show install button using `beforeinstallprompt`
-2. **iOS Safari:** Show manual instruction dialog
-3. **Already installed:** Hide all install prompts (check `navigator.standalone` or `matchMedia('(display-mode: standalone)')`)
-4. **Other browsers:** Hide install UI gracefully (no error state)
-
-**Sources:**
-- [Window: beforeinstallprompt event - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event)
-- [Installation | web.dev](https://web.dev/learn/pwa/installation)
-
----
-
-## Alternatives Considered & Rejected
-
-### ❌ next-pwa Package
-
-**Why considered:** Popular PWA plugin for Next.js.
-
-**Why rejected:**
-- **Broken in Next.js 15 with Turbopack** (incompatible webpack dependency)
-- HabitStreak already has manifest.json and service worker
-- Only needed for build-time service worker generation (not install prompts)
-- Would add complexity without solving the prompt UX problem
-
-**Sources:**
-- [next-pwa - npm](https://www.npmjs.com/package/next-pwa)
-- [Progressive Web App Setup Guide for Next.js 15](https://dev.to/rakibcloud/progressive-web-app-pwa-setup-guide-for-nextjs-15-complete-step-by-step-walkthrough-2b85)
-
----
-
-### ❌ react-pwa-install (v1.0.12)
-
-**Why considered:** React-specific install prompt library.
-
-**Why rejected:**
-- **Last updated 5 years ago** (circa 2020-2021)
-- Doesn't support React 19 or Next.js 15 patterns
-- Only 1 dependent package in npm registry (no community)
-- Custom hook is simpler and more maintainable
-
-**Sources:**
-- [react-pwa-install - npm](https://www.npmjs.com/package/react-pwa-install)
-
----
-
-### ❌ @dotmind/react-use-pwa
-
-**Why considered:** Modern React hooks for PWA features.
-
-**Why rejected:**
-- Adds features beyond install prompt (offline detection, app size)
-- Increases bundle size for unused functionality
-- Install prompt implementation is identical to custom hook
-- No integration advantage with Next.js 15
-
-**Sources:**
-- [react-use-pwa - GitHub](https://github.com/dotmind/react-use-pwa)
-
----
-
-### ❌ pwa-install Web Component (PWABuilder)
-
-**Why considered:** Official Microsoft PWABuilder project component.
-
-**Why rejected:**
-- **100KB+ size** for web component polyfills
-- Forces web component paradigm in React app
-- Generic UI doesn't match HabitStreak's glassmorphism design
-- iOS instructions UI is basic/unbranded
-- Mixing React and web components increases complexity
-
-**Sources:**
-- [pwa-install - GitHub](https://github.com/pwa-builder/pwa-install)
-
----
-
-## Integration Points with Existing Stack
-
-### Next.js 15 App Router
-
-**Client Component pattern:**
-```typescript
-// app/components/InstallPrompt.tsx
-'use client'  // Required for browser event listeners
-
-import { usePWAInstall } from '@/hooks/usePWAInstall'
-
-export function InstallPrompt() {
-  const { canInstall, promptInstall } = usePWAInstall()
-  // ... component logic
-}
-```
-
-**Why this works:**
-- Server Components (default) render layout/static content
-- Install button is Client Component (progressive enhancement)
-- Event listeners only run in browser (no SSR issues)
-- Zero impact on initial page load (lazy loaded)
-
-**Sources:**
-- [Getting Started: Server and Client Components - Next.js](https://nextjs.org/docs/app/getting-started/server-and-client-components)
-- [Tips, Good Practices, and Pitfalls with Next.js 15](https://www.staytuneed.com/blog/tips-good-practices-and-pitfalls-with-next-js-15)
-
----
-
-### Tailwind CSS + Glassmorphism
-
-**Existing design tokens apply:**
-```tsx
-<div className="backdrop-blur-xl bg-white/10 border border-white/20">
-  {/* Install prompt content */}
-</div>
-```
-
-**No new styles needed:**
-- Glassmorphism classes already defined globally
-- Animations (`animate-fade-in`, `animate-slide-up`) already configured
-- Touch targets (`.touch-target`) already standardized
-- Color system (`primary`, `muted`, etc.) already established
-
----
-
-### shadcn/ui Components
-
-**Reuse existing components:**
-- `<Dialog>` for iOS instruction modal
-- `<Button>` for install trigger
-- `<Card>` base for glassmorphic containers
-- Icons from `lucide-react` (already installed)
-
-**No new UI library needed.**
-
----
-
-## What NOT to Add
-
-### ❌ Service Worker Libraries (Workbox, etc.)
-
-**Why NOT needed:**
-- HabitStreak already has service worker from v1.3
-- Install prompts are independent of service worker implementation
-- Would add 50KB+ for no install prompt benefit
-
----
-
-### ❌ Analytics Libraries for Install Tracking
-
-**Why defer:**
-- Can track with existing console.log for MVP
-- Analytics integration is separate concern
-- Add later if install conversion data needed
-- Don't couple install UX to analytics dependency
-
----
-
-### ❌ Polyfills for `beforeinstallprompt`
-
-**Why NOT needed:**
-- Non-Chromium browsers don't support this API (by design)
-- No polyfill can add functionality Safari doesn't implement
-- Graceful degradation (hide button) is the correct pattern
-- Polyfill would add false capability detection
-
----
-
-## Installation Steps
-
-**NO npm install required.**
-
-### 1. Add TypeScript Types
-
-```bash
-# Create type definitions file
-touch src/types/pwa.d.ts
-```
-
-**Content:** See "TypeScript Types" section above.
-
----
-
-### 2. Create Custom Hook
-
-```bash
-# Create hooks directory if needed
-mkdir -p src/hooks
-touch src/hooks/usePWAInstall.ts
-```
-
-**Content:** See "Install Prompt Handling" section above.
-
----
-
-### 3. Verify Existing Dependencies
-
-```bash
-# Ensure all required packages already installed
-npm list react react-dom next lucide-react
-```
-
-**Expected:** All found (already in package.json).
-
----
-
-## Configuration Notes
-
-### Manifest.json (Already Configured ✅)
-
-Current configuration supports install prompts:
-- `start_url: "/"` — Entry point defined
-- `display: "fullscreen"` — Standalone mode preference
-- `icons` array with 72px-512px — All required sizes present
-- `theme_color` and `background_color` — Branding set
-
-**No changes needed.**
-
----
-
-### Meta Tags (Verify in `layout.tsx`)
-
-Required for iOS Safari install:
-```tsx
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="HabitStreak" />
-```
-
-**Action:** Verify these exist (likely added in v1.3 PWA work).
-
----
-
-## Performance Considerations
-
-### Bundle Size Impact
-
-| Addition | Size | Impact |
-|----------|------|--------|
-| Custom hook | ~1KB | Negligible |
-| TypeScript types | 0KB (compile-time only) | None |
-| iOS instruction component | ~2KB | Negligible |
-| **Total** | **~3KB** | **<0.1% of typical Next.js bundle** |
-
-**Comparison to libraries:**
-- `react-pwa-install`: ~20KB (7x larger)
-- `pwa-install` web component: ~100KB (33x larger)
-- Custom implementation: **~3KB** ✅
-
----
-
-### Runtime Performance
-
-**Event listener overhead:**
-- Single `beforeinstallprompt` listener per session
-- Fires once at page load (Chromium only)
-- No polling, no intervals, no background work
-- **Negligible performance impact**
-
-**iOS detection:**
-- One-time regex check on mount
-- Cached in component state
-- **<1ms execution time**
-
----
-
-## Security Considerations
-
-### No Third-Party Code Execution
-
-**Benefit:** Zero dependencies means zero supply chain attack surface for install prompts.
-
-**Alternative risk:** If using `react-pwa-install` (unmaintained), vulnerable to dependency hijacking.
-
----
-
-### User Consent Required
-
-**Browser enforcement:**
-- `beforeinstallprompt` only fires if user hasn't dismissed
-- `prompt()` requires user gesture (can't auto-trigger)
-- iOS install is always manual (Safari menu)
-
-**Implementation respects browser controls** (no dark patterns possible).
-
----
-
-## Testing Strategy
-
-### Unit Tests (Vitest)
-
-Mock browser APIs:
-```typescript
-// usePWAInstall.test.ts
-describe('usePWAInstall', () => {
-  it('captures beforeinstallprompt event', () => {
-    const mockEvent = new Event('beforeinstallprompt')
-    // ... test logic
-  })
-})
-```
-
----
-
-### E2E Tests (Playwright)
-
-**Chromium-specific:**
-```typescript
-test('shows install button on Chromium', async ({ page }) => {
-  await page.goto('/')
-  // Playwright runs in Chromium — event should fire
-  await expect(page.getByRole('button', { name: /installeer/i })).toBeVisible()
-})
-```
-
-**iOS Safari simulation:**
-```typescript
-test('shows iOS instructions on Safari', async ({ page }) => {
-  await page.setUserAgent('iPhone...')
-  // Test iOS-specific UI
-})
-```
-
----
-
-## Deployment Checklist
-
-- [x] Manifest.json with all required fields (already exists)
-- [x] PWA icons 72px-512px (already generated in v1.3)
-- [ ] Add `pwa.d.ts` type definitions
-- [ ] Create `usePWAInstall.ts` custom hook
-- [ ] Build install button component
-- [ ] Build iOS instruction modal
-- [ ] Test on Chrome Android (beforeinstallprompt)
-- [ ] Test on iPhone Safari (manual instructions)
-- [ ] Verify standalone mode detection
-- [ ] Test install flow end-to-end
-
----
-
-## Future Extensibility
-
-### If Analytics Needed Later
-
-```typescript
-// Easy to add tracking without changing hook
-const handleInstall = async () => {
-  const accepted = await promptInstall()
-
-  // Add analytics here
-  if (accepted) {
-    analytics.track('pwa_installed')
+### next.config.js Header Addition
+
+```javascript
+headers: async () => [
+  // ... existing headers
+  {
+    source: '/sw.js',
+    headers: [
+      { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+      { key: 'Content-Type', value: 'application/javascript; charset=utf-8' }
+    ]
   }
-}
+]
 ```
 
-**No library dependency needed now.**
+## Chrome Installability Requirements (Verified)
 
----
+For `beforeinstallprompt` to fire, Chrome requires:
 
-### If A/B Testing Install Messaging
+| Requirement | HabitStreak Status |
+|-------------|-------------------|
+| Valid manifest with name/short_name | Done (manifest.json) |
+| Icons (192px + 512px) | Done (8 icon sizes) |
+| start_url | Done ("/") |
+| display: standalone/fullscreen | Done ("fullscreen") |
+| HTTPS | Done (production) |
+| Service worker with fetch handler | **Missing - to implement** |
 
-Current implementation supports easy variant testing:
-```tsx
-const installMessage = variant === 'A'
-  ? 'Installeer de app'
-  : 'Voeg toe aan startscherm'
+**Source:** [Chrome Developer Docs](https://developer.chrome.com/docs/lighthouse/pwa/installable-manifest)
+
+**Note:** As of Chrome 108 (mobile) and 112 (desktop), the service worker is no longer required for menu-based installation. However, the `beforeinstallprompt` event (for custom install buttons) still requires a fetch handler.
+
+## Docker/Standalone Considerations
+
+The custom service worker approach works seamlessly with `output: 'standalone'`:
+
+1. `public/sw.js` is copied to `.next/standalone/public/` during build
+2. No build-time service worker generation needed
+3. No additional Docker configuration required
+4. Works with existing Dockerfile
+
+**No changes to Docker setup required.**
+
+## Alternatives Considered
+
+### 1. Wait for Chrome to Remove Fetch Handler Requirement
+
+Chrome is "working to incorporate new signals" for the install prompt. However:
+- No timeline provided
+- Current behavior still requires fetch handler
+- Not actionable today
+
+**Verdict:** Not viable.
+
+### 2. Use Workbox Directly (without Serwist/next-pwa)
+
+Could use `workbox-webpack-plugin` directly, but:
+- Still requires webpack plugin integration
+- More complex than custom SW for this use case
+- Adds dependency for marginal benefit
+
+**Verdict:** Unnecessary complexity.
+
+### 3. Use @serwist/turbopack
+
+Newer Turbopack-compatible version, but:
+- Requires esbuild as additional dependency
+- Creates route handler (`app/serwist/[path]/route.ts`)
+- Still overkill for simple caching
+
+**Verdict:** Consider only if HabitStreak needs complex offline features later.
+
+## Final Recommendation
+
+```
++---------------------------+------------------+
+|  Approach                 |  Recommendation  |
++---------------------------+------------------+
+|  Custom service worker    |  USE THIS        |
+|  Serwist                  |  Skip            |
+|  next-pwa                 |  Deprecated      |
+|  @ducanh2912/next-pwa     |  Skip            |
+|  Workbox direct           |  Skip            |
++---------------------------+------------------+
 ```
 
-**Custom hook doesn't constrain UX experiments.**
+**Implementation effort:** ~1 hour
+- Create `public/sw.js` (30 lines)
+- Add registration to layout
+- Add header to next.config.js
+- Test in Chrome DevTools
 
----
+**Zero new dependencies. Maximum simplicity. Goal achieved.**
 
-## Sources Summary
+## Sources
 
-**Official Documentation:**
-- [BeforeInstallPromptEvent - MDN](https://developer.mozilla.org/en-US/docs/Web/API/BeforeInstallPromptEvent)
-- [Window: beforeinstallprompt event - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event)
-- [Trigger installation from your PWA - MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Trigger_install_prompt)
-- [Guides: PWAs - Next.js](https://nextjs.org/docs/app/guides/progressive-web-apps)
+### Official Documentation
+- [Next.js PWA Guide](https://nextjs.org/docs/app/guides/progressive-web-apps) - Official service worker pattern
+- [Chrome Installability Criteria](https://developer.chrome.com/blog/update-install-criteria) - Fetch handler requirements
+- [MDN Making PWAs Installable](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable) - Manifest requirements
 
-**Implementation Guides:**
-- [Setting up a PWA with install button in Next.js 15 - GitHub Gist](https://gist.github.com/cdnkr/25d3746bdb35767d66c7ae6d26c2ed98)
-- [Progressive Web App Setup Guide for Next.js 15 - DEV](https://dev.to/rakibcloud/progressive-web-app-pwa-setup-guide-for-nextjs-15-complete-step-by-step-walkthrough-2b85)
-- [React Hook for Add to Homescreen - GitHub Gist](https://gist.github.com/rikukissa/cb291a4a82caa670d2e0547c520eae53)
+### Library Documentation
+- [Serwist Getting Started](https://serwist.pages.dev/docs/next/getting-started) - Configuration details
+- [Serwist Turbopack Guide](https://serwist.pages.dev/docs/next/turbo) - Turbopack-specific setup
 
-**iOS-Specific:**
-- [PWA on iOS - Current Status & Limitations](https://brainhub.eu/library/pwa-on-ios)
-- [PWA iOS Limitations and Safari Support](https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide)
-- [Detection | web.dev](https://web.dev/learn/pwa/detection)
-- [iPhone iOS PWA Strategies](https://scandiweb.com/blog/pwa-ios-strategies/)
+### Package Information
+- [serwist npm](https://www.npmjs.com/package/serwist) - Version 9.5.0, published January 2026
+- [@serwist/next npm](https://www.npmjs.com/package/@serwist/next) - Version 9.5.0
+- [@serwist/turbopack npm](https://www.npmjs.com/package/@serwist/turbopack) - Version 9.5.0
 
-**Libraries Evaluated (Not Used):**
-- [react-pwa-install - npm](https://www.npmjs.com/package/react-pwa-install)
-- [react-use-pwa - GitHub](https://github.com/dotmind/react-use-pwa)
-- [pwa-install-handler - npm](https://www.npmjs.com/package/pwa-install-handler)
-- [pwa-install - GitHub (PWABuilder)](https://github.com/pwa-builder/pwa-install)
-- [next-pwa - npm](https://www.npmjs.com/package/next-pwa)
-
-**TypeScript Patterns:**
-- [Mastering beforeinstallprompt in TypeScript](https://www.xjavascript.com/blog/beforeinstallprompt-typescript/)
-
-**Best Practices:**
-- [Installation | web.dev](https://web.dev/learn/pwa/installation)
-- [Tips, Good Practices, and Pitfalls with Next.js 15](https://www.staytuneed.com/blog/tips-good-practices-and-pitfalls-with-next-js-15)
-- [Getting Started: Server and Client Components - Next.js](https://nextjs.org/docs/app/getting-started/server-and-client-components)
-
----
-
-## Confidence Assessment
-
-| Aspect | Level | Rationale |
-|--------|-------|-----------|
-| Browser APIs | **HIGH** | MDN official docs + web.dev Google standards |
-| Next.js 15 Integration | **HIGH** | Official Next.js docs + verified 2026 guides |
-| iOS Detection | **HIGH** | Multiple authoritative sources confirm `navigator.standalone` |
-| TypeScript Patterns | **MEDIUM** | Community patterns (no official TS types for non-standard API) |
-| Library Evaluation | **HIGH** | npm registry data + package maintenance history verified |
-
-**Overall: HIGH confidence** — Implementation approach is well-documented and aligns with 2026 best practices.
+### Issue Tracking
+- [Next.js #73457](https://github.com/vercel/next.js/issues/73457) - Serwist sw.js not created in Next.js 15
