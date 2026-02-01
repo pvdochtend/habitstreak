@@ -296,6 +296,18 @@ export default function InstellingenPage() {
       {/* Install App Card - shows when app is installable */}
       <InstallSettingsCard />
 
+      {/* Version Info */}
+      <Card className="glass animate-slide-up hover-lift shadow-sm">
+        <CardHeader>
+          <CardTitle>Versie</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            v{process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0'} ({process.env.NEXT_PUBLIC_COMMIT_SHA?.slice(0, 7) || 'dev'})
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Daily Target Settings */}
       <Card className="glass animate-slide-up hover-lift shadow-sm">
         <CardHeader>

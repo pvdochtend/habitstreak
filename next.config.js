@@ -51,6 +51,11 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
+  // Version info for settings page
+  env: {
+    NEXT_PUBLIC_APP_VERSION: require('./package.json').version,
+    NEXT_PUBLIC_COMMIT_SHA: process.env.COMMIT_SHA || 'dev',
+  },
 }
 
 module.exports = nextConfig

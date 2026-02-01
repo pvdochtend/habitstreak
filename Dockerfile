@@ -48,6 +48,10 @@ COPY . .
 # Real DATABASE_URL will be provided at runtime
 ENV DATABASE_URL="postgresql://localhost/temp"
 
+# Accept commit SHA for version display
+ARG COMMIT_SHA=dev
+ENV COMMIT_SHA=$COMMIT_SHA
+
 # Build Next.js application
 RUN npm run build
 
