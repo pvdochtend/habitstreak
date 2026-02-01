@@ -1,36 +1,93 @@
 // HabitStreak Service Worker
-// Enables PWA install prompts (beforeinstallprompt) and provides foundation for caching
+// Enables PWA install prompts and caches static assets for offline performance
 
 const CACHE_VERSION = 'v1'
 const CACHE_NAME = `habitstreak-${CACHE_VERSION}`
 
-// Install event - activate immediately
-self.addEventListener('install', (event) => {
-  // Skip waiting to activate immediately
-  self.skipWaiting()
-})
+// Assets to precache on install
+const PRECACHE_URLS = [
+  '/icons/icon-72x72.png',
+  '/icons/icon-96x96.png',
+  '/icons/icon-128x128.png',
+  '/icons/icon-144x144.png',
+  '/icons/icon-152x152.png',
+  '/icons/icon-192x192.png',
+  '/icons/icon-384x384.png',
+  '/icons/icon-512x512.png',
+  '/icons/apple-touch-icon.png',
+]
 
-// Activate event - claim clients immediately
-self.addEventListener('activate', (event) => {
+// Install event - precache icons and activate
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    self.clients.claim()
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE_URLS)
+    }).then(() => {
+      return self.skipWaiting()
+    })
   )
 })
 
-// Fetch handler - required for beforeinstallprompt
-// Currently network passthrough, caching added in 16-02
+// Activate event - clean up old caches and claim clients
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name.startsWith('habitstreak-') && name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      )
+    }).then(() => {
+      return self.clients.claim()
+    })
+  )
+})
+
+// Fetch handler - caching strategies for different asset types
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url)
+
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
     return
   }
 
   // Network-only for API routes (never cache)
-  const url = new URL(event.request.url)
   if (url.pathname.startsWith('/api/')) {
     return
   }
 
-  // Default: network passthrough (caching added in 16-02)
-  event.respondWith(fetch(event.request))
+  // Cache-first for static Next.js assets and icons
+  if (
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname === '/manifest.json'
+  ) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) {
+          return cached
+        }
+        return fetch(event.request).then((response) => {
+          // Don't cache non-ok responses
+          if (!response || response.status !== 200) {
+            return response
+          }
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clone)
+          })
+          return response
+        })
+      })
+    )
+    return
+  }
+
+  // Default: network-first with cache fallback (for offline support)
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request)
+    })
+  )
 })
