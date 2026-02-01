@@ -1,8 +1,8 @@
 # Milestone v1.5: Service Worker
 
-**Status:** In Progress
+**Status:** Complete
 **Phases:** 16
-**Total Plans:** 4
+**Total Plans:** 5
 
 ## Overview
 
@@ -10,7 +10,7 @@ Complete the PWA foundation with service worker registration, app shell caching,
 
 ## Phases
 
-- [ ] **Phase 16: Service Worker + Offline Support** - Complete PWA with SW registration, caching, and offline fallback
+- [x] **Phase 16: Service Worker + Offline Support** - Complete PWA with SW registration, caching, and offline fallback
 
 ## Phase Details
 
@@ -37,10 +37,11 @@ Complete the PWA foundation with service worker registration, app shell caching,
   15. Production Docker build includes sw.js and offline page
 
 Plans:
-- [ ] 16-01: Minimal Service Worker — registration, fetch handler, headers
-- [ ] 16-02: App Shell Caching — static assets, icons, versioned cache
-- [ ] 16-03: Offline Fallback Page — Dutch glassmorphism offline page
-- [ ] 16-04: Verification — Lighthouse audit, platform testing, Docker build
+- [x] 16-01: Minimal Service Worker — registration, fetch handler, headers
+- [x] 16-02: App Shell Caching — static assets, icons, versioned cache
+- [x] 16-03: Offline Fallback Page — Dutch glassmorphism offline page
+- [x] 16-04: Verification — Lighthouse audit, platform testing, Docker build
+- [x] 16-05: Gap Closure — Retry button navigation fix
 
 ---
 
@@ -48,7 +49,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 16. Service Worker + Offline Support | 0/4 | Not started | - |
+| 16. Service Worker + Offline Support | 5/5 | ✓ Complete | 2026-02-01 |
 
 ---
 *Created: 2026-01-31*
