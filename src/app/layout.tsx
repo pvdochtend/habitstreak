@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/theme-context'
 import { PwaInstallProvider } from '@/contexts/pwa-install-context'
+import { ServiceWorkerRegistration } from '@/components/pwa/service-worker-registration'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -46,6 +47,7 @@ export default function RootLayout({
             {children}
           </PwaInstallProvider>
         </ThemeProvider>
+        <ServiceWorkerRegistration />
       </body>
     </html>
   )
