@@ -6,6 +6,7 @@ const CACHE_NAME = `habitstreak-${CACHE_VERSION}`
 
 // Assets to precache on install
 const PRECACHE_URLS = [
+  '/offline',
   '/icons/icon-72x72.png',
   '/icons/icon-96x96.png',
   '/icons/icon-128x128.png',
@@ -84,7 +85,17 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Default: network-first with cache fallback (for offline support)
+  // Navigation requests: network-first with offline fallback page
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/offline')
+      })
+    )
+    return
+  }
+
+  // Default: network-first with cache fallback
   event.respondWith(
     fetch(event.request).catch(() => {
       return caches.match(event.request)
