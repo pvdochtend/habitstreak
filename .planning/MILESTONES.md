@@ -1,5 +1,33 @@
 # Project Milestones: HabitStreak
 
+## v1.5 Service Worker (Shipped: 2026-02-01)
+
+**Delivered:** Completed PWA foundation with service worker registration, app shell caching, and branded offline fallback page enabling Chromium install prompts.
+
+**Phases completed:** 16 (5 plans total)
+
+**Key accomplishments:**
+
+- Service worker with fetch handler — Enables beforeinstallprompt event on Chrome/Edge for native install dialogs
+- App shell caching — Cache-first strategy for static assets (JS, CSS, icons) with versioned cache cleanup
+- Branded offline page — Dutch "Je bent offline" message with glassmorphism styling
+- Network-only API routes — Ensures fresh data, prevents stale responses
+- Gap closure — Fixed retry button to navigate home instead of reloading offline page
+- Production-ready verification — Docker build includes sw.js and offline page
+
+**Stats:**
+
+- 34 files created/modified
+- 8,880 lines of TypeScript/TSX total
+- 1 phase, 5 plans
+- 2 days (2026-01-31 → 2026-02-01)
+
+**Git range:** `78563a1` → `ec72e68`
+
+**What's next:** To be determined in next milestone planning
+
+---
+
 ## v1.4 App Experience (Shipped: 2026-01-31)
 
 **Delivered:** Made PWA installation discoverable and easy with install banners, iOS visual walkthrough, and settings fallback.

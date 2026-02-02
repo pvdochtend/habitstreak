@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 16-service-worker-offline-support
 source: [16-01-SUMMARY.md, 16-02-SUMMARY.md, 16-03-SUMMARY.md, 16-04-SUMMARY.md]
 started: 2026-02-01T12:35:00Z
@@ -57,7 +57,10 @@ skipped: 0
   reason: "User reported: Clicking on 'opnieuw proberen' after putting it in 'online' mode does nothing. Only Refresh of the page (F5) will fix it."
   severity: major
   test: 7
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "window.location.reload() reloads /offline page itself, not original destination. Service worker fallback changes URL to /offline, so reload just reloads the offline page."
+  artifacts:
+    - path: "src/app/offline/page.tsx"
+      issue: "Line 17: onClick={() => window.location.reload()} reloads /offline instead of navigating to app"
+  missing:
+    - "Change window.location.reload() to window.location.href = '/' to navigate to home page"
+  debug_session: "direct-diagnosis"

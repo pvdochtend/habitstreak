@@ -2,18 +2,13 @@
 
 ## Current State
 
-**Shipped:** v1.4 App Experience (2026-01-31)
+**Shipped:** v1.5 Service Worker (2026-02-01)
 
-HabitStreak now has a complete PWA install experience — install banners on landing page and in-app, iOS visual walkthrough with 3-step Dutch instructions, Android native prompt integration, and settings page fallback. The app correctly detects platform (iOS Safari vs Chromium), standalone mode, and persists dismissal per-device.
+HabitStreak now has a complete PWA with service worker support — install prompts work on Chromium browsers (Chrome/Edge desktop and Android), static assets are cached for faster repeat loads, and users see a branded offline page when network is unavailable. The service worker enables beforeinstallprompt events that were blocked without a fetch handler.
 
-## Current Milestone: v1.5 Service Worker
+## Next Milestone Goals
 
-**Goal:** Complete PWA foundation with service worker registration for Chromium install prompts and app shell caching for faster repeat loads.
-
-**Target features:**
-- Service worker registration (enables beforeinstallprompt on Chrome/Edge)
-- App shell caching (JS, CSS, static assets)
-- Verify end-to-end PWA install flow on Chromium browsers
+To be determined — project on hold or next milestone planning needed.
 
 ## What This Is
 
@@ -79,13 +74,16 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 - ✓ Permanent dismissal — localStorage per-device persistence with database backup — v1.4
 - ✓ Standalone mode detection — hide prompts when already installed — v1.4
 
+<!-- v1.5 Service Worker — shipped 2026-02-01 -->
+
+- ✓ Service worker registration — minimal SW with fetch handler enabling Chromium install prompts — v1.5
+- ✓ App shell caching — cache-first for static assets (JS, CSS, icons), versioned cache cleanup — v1.5
+- ✓ Offline fallback page — branded "Je bent offline" page with glassmorphism styling — v1.5
+- ✓ Chromium install verification — beforeinstallprompt fires and native dialog works — v1.5
+
 ### Active
 
-<!-- v1.5 Service Worker — in progress -->
-
-- [ ] Service worker registration — minimal SW that satisfies browser installability requirements
-- [ ] App shell caching — cache static assets (JS, CSS, icons) for faster repeat loads
-- [ ] Chromium install verification — beforeinstallprompt fires and native dialog works
+(No active requirements — next milestone planning needed)
 
 ### Out of Scope
 
@@ -103,7 +101,7 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 
 ## Context
 
-**Current state:** HabitStreak v1.4 shipped with complete PWA install experience. 6,629 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), install banners, iOS walkthrough, platform detection.
+**Current state:** HabitStreak v1.5 shipped with complete PWA including service worker. 8,880 lines of TypeScript/TSX, production-ready Docker deployment (351MB image), service worker with app shell caching, branded offline page.
 
 **Tech stack:** Next.js 15 (standalone output), React 19, TypeScript, Tailwind CSS, shadcn/ui, Prisma, PostgreSQL, Docker, Auth.js v5 (trustHost-enabled).
 
@@ -116,6 +114,8 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 **v1.3 delivered (2026-01-27):** Inviting entry experience — landing page with hero, phone mockup, feature highlights; PWA icon set (9 icons); polished login/signup with branding and animated backgrounds.
 
 **v1.4 delivered (2026-01-31):** PWA install experience — install banners on landing page and in-app, iOS visual walkthrough, Android native prompt, settings fallback. Platform detection (iOS Safari vs Chromium), standalone mode detection, persistent per-device dismissal.
+
+**v1.5 delivered (2026-02-01):** Service worker + offline support — minimal SW with fetch handler enabling Chromium install prompts, app shell caching (cache-first for static assets), versioned cache cleanup, branded offline fallback page with glassmorphism styling.
 
 **Known issues:**
 - iOS scroll-to-top on navigation (tracked in `.planning/debug/scroll-to-top-ios-navigation.md`) — deferred to future version
@@ -159,6 +159,11 @@ A playful, energetic redesign of HabitStreak's user interface featuring glassmor
 | localStorage source of truth | iOS evicts localStorage after 7 days inactive; database is backup only | ✓ Good — per-device behavior |
 | Settings card bypasses dismissal | Permanent fallback for users who changed their mind | ✓ Good — always accessible |
 | Zero PWA dependencies | Native browser APIs sufficient for install experience | ✓ Good — no bundle impact |
+| SW registration outside providers | Registration is independent of React context | ✓ Good — clean separation |
+| Cache-first for static assets | Next.js content-hashes assets, so immutable and safe to cache-first | ✓ Good — faster repeat loads |
+| Network-only for API routes | Ensures fresh data, prevents stale responses | ✓ Good — no stale data |
+| Offline page uses glassmorphism | Brand consistency with existing HabitStreak UI patterns | ✓ Good — cohesive experience |
+| Lighthouse CLI skipped in WSL | Chrome headless has connection issues in WSL | — Documented, manual DevTools |
 
 ---
-*Last updated: 2026-01-31 after v1.5 milestone started*
+*Last updated: 2026-02-01 after v1.5 milestone complete*
